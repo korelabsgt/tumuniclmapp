@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react"; 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import GeneradorFicha from "./GeneradorFicha"; 
+import GeneradorFicha from "./GeneradorFicha";
 import {
   User,
   Shield,
@@ -41,11 +41,23 @@ type RenglonConfig = {
 };
 
 const renglonConfig: Record<string, RenglonConfig> = {
-  "011": { salarioLabel: "Salario Base (011)", bonoLabel: "Bonificación (015)", tieneBono: true },
+  "011": {
+    salarioLabel: "Salario Base (011)",
+    bonoLabel: "Bonificación (015)",
+    tieneBono: true,
+  },
   "061": { salarioLabel: "Dietas (061)", tieneBono: false },
-  "022": { salarioLabel: "Salario Base (022)", bonoLabel: "Bonificación (027)", tieneBono: true },
+  "022": {
+    salarioLabel: "Salario Base (022)",
+    bonoLabel: "Bonificación (027)",
+    tieneBono: true,
+  },
   "029": { salarioLabel: "Honorarios (029)", tieneBono: false },
-  "031": { salarioLabel: "Jornal (031)", bonoLabel: "Bonificación (033)", tieneBono: true },
+  "031": {
+    salarioLabel: "Jornal (031)",
+    bonoLabel: "Bonificación (033)",
+    tieneBono: true,
+  },
   "035": { salarioLabel: "Retribución a destajo (035)", tieneBono: false },
   "036": { salarioLabel: "Retribución por servicios (036)", tieneBono: false },
 };
@@ -66,7 +78,9 @@ const InfoItem = ({
   isTotal?: boolean;
 }) => (
   <div className="flex items-start gap-4 py-1">
-    <div className={`mt-1 ${isDeduction ? "text-red-500" : "text-blue-500 dark:text-blue-400"} ${isTotal ? "text-green-600 dark:text-green-500" : ""}`}>
+    <div
+      className={`mt-1 ${isDeduction ? "text-red-500" : "text-blue-500 dark:text-blue-400"} ${isTotal ? "text-green-600 dark:text-green-500" : ""}`}
+    >
       {icon}
     </div>
     <div className="flex flex-col">
@@ -74,7 +88,9 @@ const InfoItem = ({
       {isLoading ? (
         <Loader2 className="h-4 w-4 animate-spin text-gray-400 mt-1" />
       ) : (
-        <h3 className={`text-xs font-semibold ${isDeduction ? "text-red-700 dark:text-red-400" : "text-gray-800 dark:text-gray-100"} ${isTotal ? "text-lg text-green-700 dark:text-green-500" : ""}`}>
+        <h3
+          className={`text-xs font-semibold ${isDeduction ? "text-red-700 dark:text-red-400" : "text-gray-800 dark:text-gray-100"} ${isTotal ? "text-lg text-green-700 dark:text-green-500" : ""}`}
+        >
           {value || "--"}
         </h3>
       )}
@@ -97,18 +113,19 @@ const calcularEdad = (fechaString: string | null | undefined): string => {
 const formatearFecha = (fechaString: string | null | undefined): string => {
   if (!fechaString) return "--";
   const fecha = new Date(fechaString);
-  const formatStr = new Intl.DateTimeFormat('es-GT', { 
-    weekday: 'short', 
-    day: '2-digit', 
-    month: '2-digit', 
-    year: 'numeric',
-    timeZone: 'UTC' 
+  const formatStr = new Intl.DateTimeFormat("es-GT", {
+    weekday: "short",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    timeZone: "UTC",
   }).format(fecha);
-  const formatMod = formatStr.replace(/[,\.]/g, '').trim();
+  const formatMod = formatStr.replace(/[,\.]/g, "").trim();
   return formatMod.charAt(0).toUpperCase() + formatMod.slice(1);
 };
 
-const cleanDigits = (val: string | null | undefined) => (val?.toString() || '').replace(/\D/g, '');
+const cleanDigits = (val: string | null | undefined) =>
+  (val?.toString() || "").replace(/\D/g, "");
 
 const formatPhone = (val: string | null | undefined) => {
   const clean = cleanDigits(val).slice(0, 8);
@@ -124,7 +141,9 @@ const formatDPI = (val: string | null | undefined) => {
 };
 
 const formatEveryFour = (val: string | null | undefined) => {
-  return cleanDigits(val).replace(/(.{4})/g, '$1 ').trim();
+  return cleanDigits(val)
+    .replace(/(.{4})/g, "$1 ")
+    .trim();
 };
 
 interface TarjetaEmpleadoProps {
@@ -152,7 +171,8 @@ export default function TarjetaEmpleado({
   onClose,
   userId,
 }: TarjetaEmpleadoProps) {
-  const { usuario: datosCompletos, cargando: cargandoDatos } = useInfoUsuario(userId);
+  const { usuario: datosCompletos, cargando: cargandoDatos } =
+    useInfoUsuario(userId);
   const { llamadas } = useLlamadasAtencion(userId || "");
   const { rol } = useUserData();
   const [showExportModal, setShowExportModal] = useState(false);
@@ -163,13 +183,16 @@ export default function TarjetaEmpleado({
   // Nacimiento viene de la tabla info_usuario via getDetalleUsuarioAction
   const nacimiento = datosCompletos?.nacimiento ?? null;
 
-  const ROLES_FINANCIERA = ["SUPER", "RRHH", "SECRETARIO", "DAFIM"];
+  const ROLES_FINANCIERA = ["SUPER", "RRHH"]; // "SECRETARIO", "DAFIM" A;ADIR DESPUES
   const mostrarFinanciera = ROLES_FINANCIERA.includes(rol);
 
   const ROLES_DESCARGA = ["SUPER", "RRHH", "SECRETARIO", "DAFIM"];
   const puedeDescargar = ROLES_DESCARGA.includes(rol);
 
-  const formatCurrency = (amount: number | null | undefined, options: { sign?: "default" | "negative" } = {}) => {
+  const formatCurrency = (
+    amount: number | null | undefined,
+    options: { sign?: "default" | "negative" } = {},
+  ) => {
     if (amount === null || amount === undefined) return "--";
     const formatted = `Q ${Math.abs(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     return options.sign === "negative" ? `- ${formatted}` : formatted;
@@ -181,7 +204,11 @@ export default function TarjetaEmpleado({
       const [hours, minutes, seconds] = timeString.split(":");
       const date = new Date();
       date.setHours(parseInt(hours), parseInt(minutes), parseInt(seconds));
-      return new Intl.DateTimeFormat("es-GT", { hour: "2-digit", minute: "2-digit", hour12: true }).format(date);
+      return new Intl.DateTimeFormat("es-GT", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      }).format(date);
     } catch (e) {
       return timeString;
     }
@@ -190,7 +217,10 @@ export default function TarjetaEmpleado({
   const formatDays = (days: number[] | null | undefined) => {
     if (!days || days.length === 0) return "--";
     const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
-    return days.sort((a, b) => a - b).map((d) => dayNames[d] || "?").join(", ");
+    return days
+      .sort((a, b) => a - b)
+      .map((d) => dayNames[d] || "?")
+      .join(", ");
   };
 
   const isGlobalLoading = cargandoDatos;
@@ -201,21 +231,35 @@ export default function TarjetaEmpleado({
   const configActual = renglon ? renglonConfig[renglon] : null;
   const tieneBono = configActual?.tieneBono || false;
   const salarioLabel = configActual ? configActual.salarioLabel : "Salario";
-  const bonoLabel = configActual && configActual.bonoLabel ? configActual.bonoLabel : "Bonificación";
+  const bonoLabel =
+    configActual && configActual.bonoLabel
+      ? configActual.bonoLabel
+      : "Bonificación";
 
   const totalDevengado = salarioBase + bonificacion;
   const aplicaPrimaFianza = datosCompletos?.prima || false;
   const aplicaPlanPrestaciones = datosCompletos?.plan_prestaciones || false;
 
   const deduccionIGSS = salarioBase * PORCENTAJE_IGSS;
-  const deduccionPlan = aplicaPlanPrestaciones ? salarioBase * PORCENTAJE_PLAN_PRESTACIONES : 0;
-  const deduccionPrimaFianza = aplicaPrimaFianza ? calcularPrimaFianza(salarioBase) : 0;
+  const deduccionPlan = aplicaPlanPrestaciones
+    ? salarioBase * PORCENTAJE_PLAN_PRESTACIONES
+    : 0;
+  const deduccionPrimaFianza = aplicaPrimaFianza
+    ? calcularPrimaFianza(salarioBase)
+    : 0;
 
   const totalDeducciones = deduccionIGSS + deduccionPlan + deduccionPrimaFianza;
   const liquidoARecibir = totalDevengado - totalDeducciones;
 
   const pathItems = datosCompletos?.puesto_path_jerarquico
-    ? datosCompletos.puesto_path_jerarquico.split(" > ").filter((item) => item.toUpperCase() !== "SIN DIRECCIÓN" && item.toUpperCase() !== "SIN DIRECCION").slice(1)
+    ? datosCompletos.puesto_path_jerarquico
+        .split(" > ")
+        .filter(
+          (item) =>
+            item.toUpperCase() !== "SIN DIRECCIÓN" &&
+            item.toUpperCase() !== "SIN DIRECCION",
+        )
+        .slice(1)
     : [];
 
   const horario = datosCompletos?.horario_nombre
@@ -258,17 +302,30 @@ export default function TarjetaEmpleado({
                   <p className="text-[10px] sm:text-[12px] font-black text-neutral-600 dark:text-neutral-400 tracking-widest uppercase leading-tight">
                     Municipalidad de Concepción Las Minas
                   </p>
-                  <p className="text-[8px] sm:text-[10px] font-bold text-neutral-500/80 tracking-wide mt-0.5">Expediente de Empleado</p>
+                  <p className="text-[8px] sm:text-[10px] font-bold text-neutral-500/80 tracking-wide mt-0.5">
+                    Expediente de Empleado
+                  </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 {!isGlobalLoading && puedeDescargar && (
-                  <Button variant="outline" size="icon" title="Exportar Ficha (Imagen/PDF)" onClick={() => setShowExportModal(true)} className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 border-blue-200 dark:border-blue-800 h-8 w-8 sm:h-10 sm:w-10">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    title="Exportar Ficha (Imagen/PDF)"
+                    onClick={() => setShowExportModal(true)}
+                    className="bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/40 border-blue-200 dark:border-blue-800 h-8 w-8 sm:h-10 sm:w-10"
+                  >
                     <Download className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                   </Button>
                 )}
-                <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 sm:h-10 sm:w-10 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-8 w-8 sm:h-10 sm:w-10 bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700"
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -284,21 +341,21 @@ export default function TarjetaEmpleado({
                   <div className="flex flex-col w-full">
                     <div className="flex flex-col-reverse sm:flex-row items-start sm:items-center sm:justify-between gap-4 sm:gap-6 w-full">
                       <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-3 w-full sm:w-auto pr-12 sm:pr-0">
-                          <h2 className="text-base font-bold truncate w-full sm:w-auto">
-                              {datosCompletos?.nombre || "N/A"}
-                          </h2>
-                          
-                          <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-800 px-2 py-0.5 rounded text-xs shrink-0">
-                              <Cake className="h-3 w-3 text-blue-500" />
-                              <span className="font-semibold text-blue-700 dark:text-blue-300">
-                                  {edad}
-                              </span>
-                          </div>
+                        <h2 className="text-base font-bold truncate w-full sm:w-auto">
+                          {datosCompletos?.nombre || "N/A"}
+                        </h2>
+
+                        <div className="flex items-center gap-1.5 bg-blue-50 dark:bg-blue-900/40 border border-blue-100 dark:border-blue-800 px-2 py-0.5 rounded text-xs shrink-0">
+                          <Cake className="h-3 w-3 text-blue-500" />
+                          <span className="font-semibold text-blue-700 dark:text-blue-300">
+                            {edad}
+                          </span>
+                        </div>
                       </div>
 
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setShowFaltasModal(true)} 
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowFaltasModal(true)}
                         className="w-full sm:w-auto bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 shadow-sm border border-blue-200 dark:border-blue-800 gap-2 font-bold px-6 py-5 sm:py-2.5 text-sm sm:text-base rounded-xl shrink-0 transition-colors duration-200"
                       >
                         <FileText className="h-5 w-5 sm:h-4 sm:w-4" />
@@ -309,7 +366,10 @@ export default function TarjetaEmpleado({
                     {pathItems.length > 0 && (
                       <div className="mt-4 w-full border-t border-gray-200 dark:border-gray-700 pt-3">
                         <h4 className="flex items-center text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                          <Briefcase size={14} className="mr-2 text-blue-500 flex-shrink-0" />
+                          <Briefcase
+                            size={14}
+                            className="mr-2 text-blue-500 flex-shrink-0"
+                          />
                           Ubicación Organizacional
                         </h4>
                         <div className="flex flex-wrap items-center gap-1.5">
@@ -322,21 +382,36 @@ export default function TarjetaEmpleado({
                     {horario && (
                       <div className="mt-4 w-full border-t border-gray-200 dark:border-gray-700 pt-3">
                         <h4 className="flex items-center text-xs font-semibold text-gray-800 dark:text-gray-200 mb-2">
-                          <Clock size={14} className="mr-2 text-blue-500 flex-shrink-0" />
+                          <Clock
+                            size={14}
+                            className="mr-2 text-blue-500 flex-shrink-0"
+                          />
                           Información de Horario
                         </h4>
                         <div className="flex flex-col lg:flex-row lg:items-center lg:gap-4">
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Horario:</span> {horario.nombre}
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              Horario:
+                            </span>{" "}
+                            {horario.nombre}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 lg:border-l lg:pl-4">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Días:</span> {horario.dias}
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              Días:
+                            </span>{" "}
+                            {horario.dias}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 lg:border-l lg:pl-4">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Entrada:</span> {horario.entrada}
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              Entrada:
+                            </span>{" "}
+                            {horario.entrada}
                           </p>
                           <p className="text-xs text-gray-500 dark:text-gray-400 lg:border-l lg:pl-4">
-                            <span className="font-medium text-gray-700 dark:text-gray-300">Salida:</span> {horario.salida}
+                            <span className="font-medium text-gray-700 dark:text-gray-300">
+                              Salida:
+                            </span>{" "}
+                            {horario.salida}
                           </p>
                         </div>
                       </div>
@@ -349,67 +424,166 @@ export default function TarjetaEmpleado({
                     <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 mb-2">
                       Información Personal
                     </h3>
-                    <InfoItem icon={<User size={18} />} label="Nombre Completo" value={datosCompletos?.nombre} />
-                    
-                    <InfoItem icon={<Calendar size={18} />} label="Fecha de Nacimiento" value={fechaNacimiento} />
-
-                    <InfoItem icon={<Phone size={18} />} label="Teléfono" value={formatPhone(datosCompletos?.telefono)} />
-                    <InfoItem icon={<Fingerprint size={18} />} label="DPI" value={formatDPI(datosCompletos?.dpi)} />
-                    <InfoItem 
-                      icon={<Shield size={18} />} 
-                      label="IGSS" 
-                      value={
-                        cleanDigits(datosCompletos?.igss) === cleanDigits(datosCompletos?.dpi) && datosCompletos?.igss 
-                        ? formatDPI(datosCompletos?.igss) 
-                        : datosCompletos?.igss
-                      } 
+                    <InfoItem
+                      icon={<User size={18} />}
+                      label="Nombre Completo"
+                      value={datosCompletos?.nombre}
                     />
-                    <InfoItem icon={<Hash size={18} />} label="NIT" value={formatEveryFour(datosCompletos?.nit)} />
-                    <InfoItem icon={<CircleDollarSign size={18} />} label="No. Cuenta" value={formatEveryFour(datosCompletos?.cuenta_no)} />
-                    <InfoItem icon={<MapPin size={18} />} label="Dirección" value={datosCompletos?.direccion} />
+
+                    <InfoItem
+                      icon={<Calendar size={18} />}
+                      label="Fecha de Nacimiento"
+                      value={fechaNacimiento}
+                    />
+
+                    <InfoItem
+                      icon={<Phone size={18} />}
+                      label="Teléfono"
+                      value={formatPhone(datosCompletos?.telefono)}
+                    />
+                    <InfoItem
+                      icon={<Fingerprint size={18} />}
+                      label="DPI"
+                      value={formatDPI(datosCompletos?.dpi)}
+                    />
+                    <InfoItem
+                      icon={<Shield size={18} />}
+                      label="IGSS"
+                      value={
+                        cleanDigits(datosCompletos?.igss) ===
+                          cleanDigits(datosCompletos?.dpi) &&
+                        datosCompletos?.igss
+                          ? formatDPI(datosCompletos?.igss)
+                          : datosCompletos?.igss
+                      }
+                    />
+                    <InfoItem
+                      icon={<Hash size={18} />}
+                      label="NIT"
+                      value={formatEveryFour(datosCompletos?.nit)}
+                    />
+                    <InfoItem
+                      icon={<CircleDollarSign size={18} />}
+                      label="No. Cuenta"
+                      value={formatEveryFour(datosCompletos?.cuenta_no)}
+                    />
+                    <InfoItem
+                      icon={<MapPin size={18} />}
+                      label="Dirección"
+                      value={datosCompletos?.direccion}
+                    />
                   </div>
 
                   <div className="flex flex-col mt-6 md:mt-0">
                     <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300 border-b pb-2 mb-2">
                       Información de Contrato
                     </h3>
-                    <InfoItem icon={<Briefcase size={18} />} label="Cargo" value={datosCompletos?.puesto_nombre} />
+                    <InfoItem
+                      icon={<Briefcase size={18} />}
+                      label="Cargo"
+                      value={datosCompletos?.puesto_nombre}
+                    />
                     <div className="flex items-start gap-4 py-1">
                       <div className="mt-1 text-blue-500 dark:text-blue-400">
                         <Calendar size={18} />
                       </div>
                       <div className="flex flex-col">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Fecha de Contrato</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Fecha de Contrato
+                        </p>
                         <h3 className="text-xs font-semibold text-gray-800 dark:text-gray-100 flex flex-wrap gap-x-2">
-                          <span><span className="font-medium text-gray-500 dark:text-gray-400">Inicio:</span> {formatearFecha(datosCompletos?.fecha_ini)}</span>
+                          <span>
+                            <span className="font-medium text-gray-500 dark:text-gray-400">
+                              Inicio:
+                            </span>{" "}
+                            {formatearFecha(datosCompletos?.fecha_ini)}
+                          </span>
                           {datosCompletos?.fecha_fin && (
                             <>
-                              <span className="hidden sm:inline text-gray-400">|</span>
-                              <span><span className="font-medium text-gray-500 dark:text-gray-400">Fin:</span> {formatearFecha(datosCompletos?.fecha_fin)}</span>
+                              <span className="hidden sm:inline text-gray-400">
+                                |
+                              </span>
+                              <span>
+                                <span className="font-medium text-gray-500 dark:text-gray-400">
+                                  Fin:
+                                </span>{" "}
+                                {formatearFecha(datosCompletos?.fecha_fin)}
+                              </span>
                             </>
                           )}
                         </h3>
                       </div>
                     </div>
-                    <InfoItem icon={<FileText size={18} />} label="Renglón" value={renglon} />
+                    <InfoItem
+                      icon={<FileText size={18} />}
+                      label="Renglón"
+                      value={renglon}
+                    />
 
                     {mostrarFinanciera ? (
                       <>
-                        <InfoItem icon={<CircleDollarSign size={18} />} label={salarioLabel} value={formatCurrency(salarioBase)} />
+                        <InfoItem
+                          icon={<CircleDollarSign size={18} />}
+                          label={salarioLabel}
+                          value={formatCurrency(salarioBase)}
+                        />
                         {tieneBono && (
-                          <InfoItem icon={<BadgeDollarSign size={18} />} label={bonoLabel} value={formatCurrency(bonificacion)} />
+                          <InfoItem
+                            icon={<BadgeDollarSign size={18} />}
+                            label={bonoLabel}
+                            value={formatCurrency(bonificacion)}
+                          />
                         )}
-                        <InfoItem icon={<Wallet size={18} />} label="Total Devengado" value={formatCurrency(totalDevengado)} isTotal={true} />
-                        <InfoItem icon={<Shield size={18} />} label={`IGSS (${(PORCENTAJE_IGSS * 100).toFixed(2)}%)`} value={formatCurrency(deduccionIGSS, { sign: "negative" })} isDeduction={true} />
+                        <InfoItem
+                          icon={<Wallet size={18} />}
+                          label="Total Devengado"
+                          value={formatCurrency(totalDevengado)}
+                          isTotal={true}
+                        />
+                        <InfoItem
+                          icon={<Shield size={18} />}
+                          label={`IGSS (${(PORCENTAJE_IGSS * 100).toFixed(2)}%)`}
+                          value={formatCurrency(deduccionIGSS, {
+                            sign: "negative",
+                          })}
+                          isDeduction={true}
+                        />
                         {aplicaPlanPrestaciones && (
-                          <InfoItem icon={<Building2 size={18} />} label={`Plan de Prestaciones (${(PORCENTAJE_PLAN_PRESTACIONES * 100).toFixed(0)}%)`} value={formatCurrency(deduccionPlan, { sign: "negative" })} isDeduction={true} />
+                          <InfoItem
+                            icon={<Building2 size={18} />}
+                            label={`Plan de Prestaciones (${(PORCENTAJE_PLAN_PRESTACIONES * 100).toFixed(0)}%)`}
+                            value={formatCurrency(deduccionPlan, {
+                              sign: "negative",
+                            })}
+                            isDeduction={true}
+                          />
                         )}
                         {aplicaPrimaFianza && (
-                          <InfoItem icon={<Lock size={18} />} label="Prima de Fianza" value={formatCurrency(deduccionPrimaFianza, { sign: "negative" })} isDeduction={true} />
+                          <InfoItem
+                            icon={<Lock size={18} />}
+                            label="Prima de Fianza"
+                            value={formatCurrency(deduccionPrimaFianza, {
+                              sign: "negative",
+                            })}
+                            isDeduction={true}
+                          />
                         )}
-                        <InfoItem icon={<TrendingDown size={18} />} label="Total Deducciones" value={formatCurrency(totalDeducciones, { sign: "negative" })} isDeduction={true} isTotal={true} />
+                        <InfoItem
+                          icon={<TrendingDown size={18} />}
+                          label="Total Deducciones"
+                          value={formatCurrency(totalDeducciones, {
+                            sign: "negative",
+                          })}
+                          isDeduction={true}
+                          isTotal={true}
+                        />
                         <div className="border-t border-gray-200 ">
-                          <InfoItem icon={<Banknote size={20} />} label="Líquido a Recibir" value={formatCurrency(liquidoARecibir)} isTotal={true} />
+                          <InfoItem
+                            icon={<Banknote size={20} />}
+                            label="Líquido a Recibir"
+                            value={formatCurrency(liquidoARecibir)}
+                            isTotal={true}
+                          />
                         </div>
                       </>
                     ) : (
@@ -419,7 +593,7 @@ export default function TarjetaEmpleado({
                 </div>
               </div>
             )}
-            
+
             <GeneradorFicha
               isOpen={showExportModal}
               onClose={() => setShowExportModal(false)}
@@ -437,19 +611,22 @@ export default function TarjetaEmpleado({
 
           {/* Modal de Faltas */}
           {showFaltasModal && userId && (
-            <div 
+            <div
               className="fixed inset-0 z-[60] flex items-center justify-center p-1 sm:p-4 bg-black/30 dark:bg-black/70 backdrop-blur-sm"
               onClick={() => setShowFaltasModal(false)}
             >
-              <div 
+              <div
                 className="bg-white dark:bg-neutral-900 rounded-lg w-full max-w-4xl p-6 shadow-xl border dark:border-neutral-800 max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
               >
-                <LlamadaAtencionManager id={userId} onClose={() => setShowFaltasModal(false)} readOnly={true} />
+                <LlamadaAtencionManager
+                  id={userId}
+                  onClose={() => setShowFaltasModal(false)}
+                  readOnly={true}
+                />
               </div>
             </div>
           )}
-
         </motion.div>
       )}
     </AnimatePresence>

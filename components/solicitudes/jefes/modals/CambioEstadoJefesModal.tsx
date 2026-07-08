@@ -30,6 +30,25 @@ export default function CambioEstadoJefesModal({ isOpen, onClose, onSuccess, sol
     return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
+  const sendPushNotification = async (titulo: string, mensaje: string, userIds: string[]) => {
+    try {
+      if (userIds.length === 0) return;
+
+      await fetch('/api/push/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: titulo,
+          message: mensaje,
+          url: '/protected/solicitudes/jefes',
+          targetIds: userIds,
+        }),
+      });
+    } catch (error) {
+      console.error('Error enviando notificación push:', error);
+    }
+  };
+
   const handleAprobar = async () => {
     if (!solicitud) return;
     try {
@@ -39,6 +58,13 @@ export default function CambioEstadoJefesModal({ isOpen, onClose, onSuccess, sol
         });
 
         if (res.success) {
+            if (solicitud.solicitante_uid) {
+                sendPushNotification(
+                  '✅ Solicitud Confirmada',
+                  `Tu solicitud ha sido confirmada por el jefe asignado.`,
+                  [solicitud.solicitante_uid]
+                );
+            }
             Swal.fire({ title: '¡Confirmada!', text: 'Solicitud marcada como confirmada.', icon: 'success', timer: 1500, showConfirmButton: false });
             onSuccess('completado'); 
         } else {
@@ -64,6 +90,13 @@ export default function CambioEstadoJefesModal({ isOpen, onClose, onSuccess, sol
         }); 
         
         if (res.success) {
+            if (solicitud.solicitante_uid) {
+                sendPushNotification(
+                  '❌ Solicitud Rechazada',
+                  `Tu solicitud ha sido rechazada. Motivo: ${comentarios}`,
+                  [solicitud.solicitante_uid]
+                );
+            }
             Swal.fire({ title: 'Rechazada', text: 'La solicitud ha sido rechazada.', icon: 'info', timer: 1500, showConfirmButton: false });
             onSuccess('rechazado', comentarios); 
         } else {
@@ -77,7 +110,7 @@ export default function CambioEstadoJefesModal({ isOpen, onClose, onSuccess, sol
   if (!isOpen || !solicitud) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       
       <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl flex flex-col border border-gray-200 dark:border-neutral-800 relative transition-all duration-300 w-full max-w-2xl overflow-hidden">
         

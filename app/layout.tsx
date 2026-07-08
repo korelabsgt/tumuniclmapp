@@ -15,6 +15,7 @@ import SystemGuard from "@/components/system-guard";
 import DevBanner from "@/components/dev/DevBanner";
 import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
+import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
 
 export const metadata: Metadata = {
   title: "SIGEM -CLM-",
@@ -71,6 +72,7 @@ export default async function RootLayout({
                 <DevBanner />
                 <BloqueoCitacion />
                 <BloqueoActividad />
+                <BloqueoSolicitudesJefes />
 
                 {isStandalonePage ? (
                   <main className="flex-grow w-full">{children}</main>

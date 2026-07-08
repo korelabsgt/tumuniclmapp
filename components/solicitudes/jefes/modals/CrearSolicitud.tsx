@@ -76,6 +76,25 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
     updateField('subtareas', current);
   };
 
+  const sendPushNotification = async (titulo: string, mensaje: string, userIds: string[]) => {
+    try {
+      if (userIds.length === 0) return;
+
+      await fetch('/api/push/broadcast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: titulo,
+          message: mensaje,
+          url: '/protected/solicitudes/jefes',
+          targetIds: userIds,
+        }),
+      });
+    } catch (error) {
+      console.error('Error enviando notificación push:', error);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!formData.titulo.trim()) {
       toast.warning('Debe ingresar el título de la solicitud.');
@@ -108,6 +127,13 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
       }
 
       if (res.success) {
+        if (!editData && formData.asignado_a_uid) {
+          sendPushNotification(
+            '📋 Nueva Solicitud',
+            `Te han realizado una solicitud: "${formData.titulo}".`,
+            [formData.asignado_a_uid]
+          );
+        }
         toast.success(editData ? 'Solicitud actualizada correctamente' : 'Solicitud registrada correctamente');
         onSuccess();
         onClose();

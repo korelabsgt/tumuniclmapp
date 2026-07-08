@@ -215,5 +215,46 @@ export const getJefesList = async () => {
       jefeNombre: u.nombre
     }));
 };
+export const obtenerSolicitudPendienteJefe = async () => {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
 
+  if (!user) return { success: false, data: null };
 
+  const { data, error } = await supabase
+    .from('solicitudes_municipales')
+    .select('*')
+    .eq('tipo_solicitud', 'oficinas')
+    .eq('estado', 'pendiente')
+    .eq('asignado_a_uid', user.id)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching pending solicitud de jefe:', error);
+    return { success: false, data: null };
+  }
+
+  if (!data) return { success: true, data: null };
+
+  let creadorNombre = 'Desconocido';
+  if (data.solicitante_uid) {
+    const { data: creadorData } = await supabase
+      .from('info_usuario')
+      .select('nombre')
+      .eq('user_id', data.solicitante_uid)
+      .single();
+    if (creadorData) {
+      creadorNombre = creadorData.nombre;
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      ...data,
+      creador_nombre: creadorNombre,
+    },
+  };
+};

@@ -38,6 +38,9 @@ import { marcarNuevaAsistencia } from "@/lib/asistencia/acciones";
 import useFechaHora from "@/hooks/utility/useFechaHora";
 import { useAsistenciaUsuario } from "@/hooks/asistencia/useAsistenciaUsuario";
 import { usePermisosUsuario } from "@/hooks/asistencia/usePermisosUsuario";
+import { obtenerJustificacionParaDia } from "@/components/permisos/justificaciones";
+import { esTipoAcuerdo } from "@/components/permisos/types";
+import PreviewAcuerdo from "@/components/permisos/acuerdos/modals/PreviewAcuerdo";
 import { useObtenerUbicacion } from "@/hooks/ubicacion/useObtenerUbicacion";
 import {
   getCategoriaIcon,
@@ -48,6 +51,13 @@ import {
   COMISION_TEXT_CLASS,
   COMISION_BADGE_CLASS,
 } from "@/components/permisos/categorias";
+import {
+  getCategoriaAcuerdo,
+  getCategoriaAcuerdoIcon,
+  getCategoriaAcuerdoLabel,
+  getCategoriaAcuerdoJustificacionClass,
+  getCategoriaAcuerdoTextClass,
+} from "@/components/permisos/acuerdos/categorias";
 import {
   useObtenerComisiones,
   type ComisionConFechaYHoraSeparada,
@@ -155,21 +165,21 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
   >(null);
   const [permisoSeleccionadoParaMapa, setPermisoSeleccionadoParaMapa] = useState<PermisoEmpleado | null>(null);
   const [permisoParaPreview, setPermisoParaPreview] = useState<PermisoEmpleado | null>(null);
+  const [acuerdoParaPreview, setAcuerdoParaPreview] = useState<PermisoEmpleado | null>(null);
   const [comisionPreview, setComisionPreview] = useState<ComisionConFechaYHoraSeparada | null>(null);
   const [mapaComisionRegistros, setMapaComisionRegistros] = useState<any>(null);
   const [mapaComisionNombre, setMapaComisionNombre] = useState("");
   const [notasPendientes, setNotasPendientes] = useState("");
 
-  const permisoHoy = useMemo(() => {
+  const justificacionHoy = useMemo(() => {
     if (!permisosEmpleado) return null;
     const hoyStr = format(fechaHoraGt, 'yyyy-MM-dd');
-    return permisosEmpleado.find(p => {
-      if (p.estado !== 'aprobado') return false;
-      const inicioDia = p.inicio.substring(0, 10);
-      const finDia = p.fin.substring(0, 10);
-      return hoyStr >= inicioDia && hoyStr <= finDia;
-    }) || null;
+    return obtenerJustificacionParaDia(permisosEmpleado, hoyStr);
   }, [permisosEmpleado, fechaHoraGt]);
+
+  const permisoHoy = justificacionHoy && !esTipoAcuerdo(justificacionHoy.tipo) ? justificacionHoy : null;
+  const acuerdoHoy = justificacionHoy && esTipoAcuerdo(justificacionHoy.tipo) ? justificacionHoy : null;
+  const justificacionVigente = justificacionHoy;
 
   const comisionHoy = useMemo((): ComisionConFechaYHoraSeparada | null => {
     if (!comisionesEmpleado || comisionesEmpleado.length === 0) return null;
@@ -210,12 +220,12 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       milliseconds: 0,
     });
 
-    if (permisoHoy) {
-      const horaPermiso = new Date(permisoHoy.inicio);
+    if (justificacionVigente) {
+      const horaJustificacion = new Date(justificacionVigente.inicio);
       scheduleSalida = set(fechaHoraGt, {
-        hours: horaPermiso.getHours(),
-        minutes: horaPermiso.getMinutes(),
-        seconds: horaPermiso.getSeconds(),
+        hours: horaJustificacion.getHours(),
+        minutes: horaJustificacion.getMinutes(),
+        seconds: horaJustificacion.getSeconds(),
         milliseconds: 0,
       });
     }
@@ -226,7 +236,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       fechaHoraGt,
       addMinutes(scheduleEntrada, -60),
     );
-    const puedeMarcarSalida = permisoHoy 
+    const puedeMarcarSalida = justificacionVigente 
       ? fechaHoraGt.getTime() >= scheduleSalida.getTime()
       : isAfter(fechaHoraGt, addMinutes(scheduleSalida, -60));
 
@@ -242,7 +252,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       nombre: horario_nombre || "Normal",
       dias: formatScheduleDays(horario_dias),
       entrada: formatScheduleTime(horario_entrada),
-      salida: permisoHoy ? format(scheduleSalida, 'hh:mm aa', { locale: es }) : formatScheduleTime(horario_salida),
+      salida: justificacionVigente ? format(scheduleSalida, 'hh:mm aa', { locale: es }) : formatScheduleTime(horario_salida),
     };
 
     const esHorarioMultiple =
@@ -265,7 +275,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     horario_salida,
     horario_dias,
     horario_nombre,
-    permisoHoy,
+    justificacionVigente,
   ]);
 
   // Determina si la comisión de hoy "toca" la hora de entrada o salida
@@ -471,11 +481,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     
     // Buscar permiso para este día
     const diaString = format(fechaRegistro, 'yyyy-MM-dd');
-    const permiso = permisosEmpleado.find(p => {
-      const inicioDia = p.inicio.substring(0, 10);
-      const finDia = p.fin.substring(0, 10);
-      return diaString >= inicioDia && diaString <= finDia;
-    }) || null;
+    const permiso = obtenerJustificacionParaDia(permisosEmpleado, diaString);
 
     setPermisoSeleccionadoParaMapa(permiso);
     setRegistrosSeleccionadosParaMapa({
@@ -600,12 +606,14 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
 
   const getEntradaTextClass = () => {
     if (permisoHoy) return getCategoriaTextClass(getCategoriaPermiso(permisoHoy));
+    if (acuerdoHoy) return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy));
     if (comisionHoy && comisionTocaEntrada) return COMISION_TEXT_CLASS;
     return "text-red-400";
   };
 
   const getSalidaTextClass = () => {
     if (permisoHoy) return getCategoriaTextClass(getCategoriaPermiso(permisoHoy));
+    if (acuerdoHoy) return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy));
     if (comisionHoy && comisionTocaSalida) return COMISION_TEXT_CLASS;
     return "text-red-400";
   };
@@ -623,6 +631,31 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       Comisión
     </button>
   );
+
+  const renderAcuerdoHoyBtn = (acuerdo: PermisoEmpleado) => {
+    const categoria = getCategoriaAcuerdo(acuerdo);
+    const Icono = getCategoriaAcuerdoIcon(categoria);
+
+    return (
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setAcuerdoParaPreview(acuerdo);
+        }}
+        className={`w-full py-1.5 px-1 rounded font-bold flex items-center justify-center gap-1 text-center transition-colors text-[9px] leading-tight border shadow-sm cursor-pointer ${getCategoriaAcuerdoJustificacionClass(categoria)}`}
+      >
+        <Icono className="w-2.5 h-2.5 flex-shrink-0" />
+        {getCategoriaAcuerdoLabel(categoria)}
+      </button>
+    );
+  };
+
+  const renderJustificacionHoyBtn = () => {
+    if (permisoHoy) return renderPermisoHoyBtn(permisoHoy);
+    if (acuerdoHoy) return renderAcuerdoHoyBtn(acuerdoHoy);
+    if (comisionHoy) return renderComisionHoyBtn();
+    return null;
+  };
 
   const renderPermisoHoyBtn = (permiso: PermisoEmpleado) => {
     const categoria = getCategoriaPermiso(permiso);
@@ -758,11 +791,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                           </div>
 
                           <div className="w-1/4 cursor-pointer">
-                            {permisoHoy ? (
-                              renderPermisoHoyBtn(permisoHoy)
-                            ) : comisionHoy ? (
-                              renderComisionHoyBtn()
-                            ) : registrosHoyMultiple.length >= 2 ? (
+                            {renderJustificacionHoyBtn() ?? (registrosHoyMultiple.length >= 2 ? (
                               <div className="w-full py-1.5 px-1 rounded bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-green-100 dark:border-green-900/30 cursor-default transition-colors shadow-sm">
                                 Correcto
                               </div>
@@ -770,7 +799,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                               <div className="w-full py-1.5 px-1 rounded bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-gray-500 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-gray-200 dark:border-neutral-700 cursor-default transition-colors shadow-sm">
                                 Esperando Asistencia
                               </div>
-                            )}
+                            ))}
                           </div>
                         </div>
                       </>
@@ -778,8 +807,8 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                       <div className="flex flex-col gap-3">
                         <div className="p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-md border border-gray-100 dark:border-neutral-800 text-center">
                           <p className="text-xs lg:text-sm text-gray-500 dark:text-gray-400">
-                            {permisoHoy 
-                              ? "Aún no ha marcado asistencia, pero tiene un permiso vigente."
+                            {justificacionVigente 
+                              ? "Aún no ha marcado asistencia, pero tiene una justificación vigente."
                               : "No ha marcado asistencia el día de hoy."}
                           </p>
                         </div>
@@ -796,11 +825,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                              </span>
                           </div>
                           <div className="w-1/4 cursor-pointer">
-                            {permisoHoy ? (
-                              renderPermisoHoyBtn(permisoHoy)
-                            ) : comisionHoy ? (
-                              renderComisionHoyBtn()
-                            ) : registrosHoyMultiple.length >= 2 ? (
+                            {renderJustificacionHoyBtn() ?? (registrosHoyMultiple.length >= 2 ? (
                               <div className="w-full py-1.5 px-1 rounded bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-green-100 dark:border-green-900/30 cursor-default transition-colors shadow-sm">
                                 Correcto
                               </div>
@@ -808,7 +833,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                               <div className="w-full py-1.5 px-1 rounded bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-gray-500 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-gray-200 dark:border-neutral-700 cursor-default transition-colors shadow-sm">
                                 Esperando Asistencia
                               </div>
-                            )}
+                            ))}
                           </div>
                         </div>
                       </div>
@@ -861,6 +886,12 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
         isOpen={!!permisoParaPreview}
         onClose={() => setPermisoParaPreview(null)}
         permiso={permisoParaPreview}
+      />
+
+      <PreviewAcuerdo
+        isOpen={!!acuerdoParaPreview}
+        onClose={() => setAcuerdoParaPreview(null)}
+        acuerdo={acuerdoParaPreview}
       />
 
       {comisionPreview && (

@@ -16,6 +16,7 @@ import DevBanner from "@/components/dev/DevBanner";
 import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
 import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
+import BloqueoPermisoMensaje from "@/components/permisos/BloqueoPermisoMensaje";
 
 export const metadata: Metadata = {
   title: "SIGEM -CLM-",
@@ -72,6 +73,7 @@ export default async function RootLayout({
                 <DevBanner />
                 <BloqueoCitacion />
                 <BloqueoActividad />
+                <BloqueoPermisoMensaje />
                 <BloqueoSolicitudesJefes />
 
                 {isStandalonePage ? (

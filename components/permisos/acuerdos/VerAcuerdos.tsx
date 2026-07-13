@@ -1,15 +1,7 @@
 "use client";
 
-import React, { Fragment, useMemo } from "react";
-import {
-  format,
-  parseISO,
-  isSameDay,
-  isSameMonth,
-  differenceInDays,
-  eachDayOfInterval,
-  isWeekend,
-} from "date-fns";
+import React, { useMemo } from "react";
+import { format, parseISO, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   ChevronDown,
@@ -17,41 +9,41 @@ import {
   Plus,
   Trash2,
   CalendarDays,
-  Clock,
   FileText,
   User,
   Briefcase,
   Eye,
-  Upload,
   Pencil,
-  PartyPopper,
   ChevronsUpDown,
-  AlertCircle,
   ArrowRight,
   ArrowUpDown,
   Calendar,
-  Shield,
-  Umbrella,
-  GraduationCap,
-  type LucideIcon,
+  CalendarClock,
 } from "lucide-react";
-import PreviewPermiso from "./modals/PreviewPermiso";
-import JustificacionPermiso from "./modals/JustificacionPermiso";
-import GestionAsueto from "./modals/GestionAsueto";
-import { PermisoEmpleado } from "./types";
+import PreviewAcuerdo from "./modals/PreviewAcuerdo";
+import ElegirDiasSemanaAcuerdo from "./modals/ElegirDiasSemanaAcuerdo";
+import JustificacionAcuerdo from "./modals/JustificacionAcuerdo";
+import { AcuerdoEmpleado } from "./types";
 import { Button } from "@/components/ui/button";
 import Cargando from "@/components/ui/animations/Cargando";
-import CrearEditarPermiso from "./modals/CrearEditarPermiso";
+import CrearEditarAcuerdo from "./modals/CrearEditarAcuerdo";
 import { motion, AnimatePresence } from "framer-motion";
-import { usePermisos, TipoVistaPermisos } from "./hooks";
+import { useAcuerdos, TipoVistaAcuerdos } from "./hooks";
+import { type PerfilUsuario } from "@/components/permisos/acciones";
 import { cn } from "@/lib/utils";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import Calendario from "@/components/ui/Calendario";
-import PermisosNav from "./PermisosNav";
+import PermisosNav from "../PermisosNav";
+import {
+  CategoriaAcuerdo,
+  getCategoriaAcuerdo,
+  getCategoriaAcuerdoIcon,
+  getCategoriaAcuerdoLabel,
+  getCategoriaAcuerdoBorderClass,
+  getCategoriaAcuerdoBadgeClass,
+} from "./categorias";
+import { formatearDiasSemana } from "./utilidades";
+import { getModalidadAcuerdo, parseDiasAcuerdo } from "./dias-acuerdo";
 
 function getSemanasDelMes(yyyyMM: string) {
   const [year, month] = yyyyMM.split("-").map(Number);
@@ -69,11 +61,7 @@ function getSemanasDelMes(yyyyMM: string) {
 
     const labelInicio = format(current, "EE d", { locale: es });
     const labelFin = format(weekEnd, "EE d", { locale: es });
-    const label =
-      `${labelInicio.charAt(0).toUpperCase() + labelInicio.slice(1)} - ${labelFin.charAt(0).toUpperCase() + labelFin.slice(1)}`.replace(
-        /\./g,
-        "",
-      );
+    const label = `${labelInicio.charAt(0).toUpperCase() + labelInicio.slice(1)} - ${labelFin.charAt(0).toUpperCase() + labelFin.slice(1)}`.replace(/\./g, "");
 
     semanas.push({
       inicio: format(current, "yyyy-MM-dd"),
@@ -87,29 +75,22 @@ function getSemanasDelMes(yyyyMM: string) {
   return semanas;
 }
 
-type CategoriaPermiso =
-  | "igss"
-  | "vacaciones"
-  | "academicas"
-  | "extras"
-  | "permisos";
-
-const CATEGORIA_ORDEN: Record<CategoriaPermiso, number> = {
-  extras: 0,
-  igss: 1,
-  academicas: 2,
-  vacaciones: 3,
-  permisos: 4,
+const CATEGORIA_ORDEN: Record<CategoriaAcuerdo, number> = {
+  suspension_igss: 0,
+  vacaciones: 1,
+  permiso_especial: 2,
+  licencia_goce: 3,
+  licencia_sin_goce: 4,
 };
 
 interface Props {
-  tipoVista: TipoVistaPermisos;
+  tipoVista: TipoVistaAcuerdos;
 }
 
-export default function VerPermisos({ tipoVista }: Props) {
-  const { state, actions } = usePermisos(tipoVista);
+export default function VerAcuerdos({ tipoVista }: Props) {
+  const { state, actions } = useAcuerdos(tipoVista);
   const {
-    loadingPermisos,
+    loadingAcuerdos,
     searchTerm,
     filtroEstado,
     fechaSeleccionada,
@@ -117,7 +98,7 @@ export default function VerPermisos({ tipoVista }: Props) {
     fechaInicio,
     fechaFin,
     modalAbierto,
-    permisoParaEditar,
+    acuerdoParaEditar,
     perfilUsuario,
     oficinasAbiertas,
     todosAbiertos,
@@ -137,32 +118,25 @@ export default function VerPermisos({ tipoVista }: Props) {
     toggleOficina,
     toggleTodos,
     cargarDatos,
-    handleNuevoPermiso,
+    handleNuevoAcuerdo,
     handleClickFila,
-    handleEliminarPermiso,
+    handleEliminarAcuerdo,
   } = actions;
 
   const [modalPreviewAbierto, setModalPreviewAbierto] = React.useState(false);
-  const [permisoParaImagen, setPermisoParaImagen] =
-    React.useState<PermisoEmpleado | null>(null);
-  const [modalJustificacionAbierto, setModalJustificacionAbierto] =
-    React.useState(false);
-  const [permisoParaJustificar, setPermisoParaJustificar] =
-    React.useState<PermisoEmpleado | null>(null);
-  const [modalAsuetoAbierto, setModalAsuetoAbierto] = React.useState(false);
+  const [acuerdoParaImagen, setAcuerdoParaImagen] = React.useState<AcuerdoEmpleado | null>(null);
+  const [modalJustificacionAbierto, setModalJustificacionAbierto] = React.useState(false);
+  const [acuerdoParaJustificar, setAcuerdoParaJustificar] = React.useState<AcuerdoEmpleado | null>(null);
+  const [justificacionSoloLectura, setJustificacionSoloLectura] = React.useState(true);
+  const [modalElegirDiasAbierto, setModalElegirDiasAbierto] = React.useState(false);
+  const [acuerdoParaElegirDias, setAcuerdoParaElegirDias] = React.useState<AcuerdoEmpleado | null>(null);
   const [calendarOpen, setCalendarOpen] = React.useState(false);
   const [calendarSemanaOpen, setCalendarSemanaOpen] = React.useState(false);
   const [calendarInicioOpen, setCalendarInicioOpen] = React.useState(false);
   const [calendarFinOpen, setCalendarFinOpen] = React.useState(false);
-  const mesInputRef = React.useRef<HTMLInputElement>(null);
 
-  const [mesSemanas, setMesSemanas] = React.useState(
-    format(new Date(), "yyyy-MM"),
-  );
-  const semanasDisponibles = useMemo(
-    () => getSemanasDelMes(mesSemanas),
-    [mesSemanas],
-  );
+  const [mesSemanas, setMesSemanas] = React.useState(format(new Date(), "yyyy-MM"));
+  const semanasDisponibles = useMemo(() => getSemanasDelMes(mesSemanas), [mesSemanas]);
 
   React.useEffect(() => {
     if (modoFiltro === "semana" && semanasDisponibles.length > 0) {
@@ -183,23 +157,15 @@ export default function VerPermisos({ tipoVista }: Props) {
         }
       }
     }
-  }, [
-    modoFiltro,
-    semanasDisponibles,
-    fechaInicio,
-    fechaFin,
-    setFechaInicio,
-    setFechaFin,
-  ]);
+  }, [modoFiltro, semanasDisponibles, fechaInicio, fechaFin, setFechaInicio, setFechaFin]);
 
   const formatFechaCorta = (fecha: string) => {
     const d = new Date(fecha + "T00:00:00");
-    let str = format(d, "EEE, d MMM yyyy", { locale: es });
-    // Capitalizar y quitar puntos si los hay (ej: "lun." -> "Lun")
+    const str = format(d, "EEE, d MMM yyyy", { locale: es });
     return str
       .split(" ")
       .map((word) => {
-        let cleaned = word.replace(".", "");
+        const cleaned = word.replace(".", "");
         return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
       })
       .join(" ");
@@ -207,7 +173,7 @@ export default function VerPermisos({ tipoVista }: Props) {
 
   const formatFechaCompacta = (fecha: string) => {
     const d = new Date(fecha + "T00:00:00");
-    let str = format(d, "d MMM yy", { locale: es });
+    const str = format(d, "d MMM yy", { locale: es });
     return str
       .split(" ")
       .map((word) => {
@@ -219,37 +185,45 @@ export default function VerPermisos({ tipoVista }: Props) {
 
   const formatMes = (mesYear: string) => {
     const d = parseISO(mesYear + "-01");
-    let str = format(d, "MMMM yyyy", { locale: es });
+    const str = format(d, "MMMM yyyy", { locale: es });
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
-  const handleVerPreview = (e: React.MouseEvent, permiso: PermisoEmpleado) => {
+  const handleVerPreview = (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => {
     e.stopPropagation();
-    setPermisoParaImagen(permiso);
+    setAcuerdoParaImagen(acuerdo);
     setModalPreviewAbierto(true);
   };
 
-  const handleAbrirJustificacion = (
-    e: React.MouseEvent,
-    permiso: PermisoEmpleado,
-  ) => {
+  const handleAbrirJustificacion = (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => {
     e.stopPropagation();
-    setPermisoParaJustificar(permiso);
+    setAcuerdoParaJustificar(acuerdo);
+    setJustificacionSoloLectura(tipoVista !== "gestion_rrhh");
     setModalJustificacionAbierto(true);
   };
 
-  // FILTRO VISUAL
+  const handleElegirDiasSemana = (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => {
+    e.stopPropagation();
+    setAcuerdoParaElegirDias(acuerdo);
+    setModalElegirDiasAbierto(true);
+  };
+
+  const abrirElegirDiasDesdePreview = (acuerdo: AcuerdoEmpleado) => {
+    setAcuerdoParaElegirDias(acuerdo);
+    setModalElegirDiasAbierto(true);
+  };
+
   const gruposConDatos = useMemo(() => {
-    return datosAgrupados.filter((grupo) => grupo.permisos.length > 0);
+    return datosAgrupados.filter((grupo) => grupo.acuerdos.length > 0);
   }, [datosAgrupados]);
 
   const tituloPagina = useMemo(() => {
-    if (tipoVista === "mis_permisos") return "Mis Solicitudes";
+    if (tipoVista === "mis_acuerdos") return "Mis Acuerdos";
     if (tipoVista === "gestion_rrhh")
-      return "Administración de Permisos y Acuerdos (RRHH)";
+      return "Administración de Acuerdos (RRHH)";
     if (tipoVista === "gestion_jefe")
-      return "Administración de Permisos y Acuerdos (JEFE)";
-    return "Permisos";
+      return "Acuerdos del equipo";
+    return "Acuerdos";
   }, [tipoVista]);
 
   const getEstadoBadge = (estado: string) => {
@@ -262,14 +236,14 @@ export default function VerPermisos({ tipoVista }: Props) {
         );
       case "aprobado_jefe":
         return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
-            Preaprobado Jefe
+          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
+            Pendiente RRHH
           </span>
         );
       case "rechazado_jefe":
         return (
           <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
-            Rechazado Jefe
+            Rechazado
           </span>
         );
       case "rechazado_rrhh":
@@ -287,139 +261,14 @@ export default function VerPermisos({ tipoVista }: Props) {
       default:
         return (
           <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
-            Pendiente Jefe
+            Pendiente RRHH
           </span>
         );
     }
   };
 
-  const esAcademicasTexto = (t: string, d: string) =>
-    t.includes("académ") ||
-    t.includes("academ") ||
-    d.includes("académ") ||
-    d.includes("academ");
-
-  const getCategoriaFromTexto = (t: string, d: string): CategoriaPermiso => {
-    if (t.includes("igss") || d.includes("igss")) return "igss";
-    if (t.includes("vacaciones") || d.includes("vacaciones"))
-      return "vacaciones";
-    if (esAcademicasTexto(t, d)) return "academicas";
-    if (
-      t.includes("reposicion") ||
-      t.includes("reposición") ||
-      t.includes("horas") ||
-      t.includes("extra") ||
-      d.includes("reposicion") ||
-      d.includes("reposición") ||
-      d.includes("horas") ||
-      d.includes("extra")
-    )
-      return "extras";
-    return "permisos";
-  };
-
-  const getCategoriaBorderClass = (
-    tipo: string,
-    descripcion: string | null,
-  ) => {
-    const t = tipo.toLowerCase();
-    const d = (descripcion || "").toLowerCase();
-    const cat = getCategoriaFromTexto(t, d);
-
-    if (cat === "igss") return "border-l-4 border-l-yellow-500";
-    if (cat === "vacaciones") return "border-l-4 border-l-purple-500";
-    if (cat === "academicas") return "border-l-4 border-l-green-500";
-    if (cat === "extras") return "border-l-4 border-l-slate-500";
-    return "border-l-4 border-l-blue-500";
-  };
-
-  const getCategoria = (p: PermisoEmpleado): CategoriaPermiso => {
-    const t = p.tipo.toLowerCase();
-    const d = (p.descripcion || "").toLowerCase();
-    return getCategoriaFromTexto(t, d);
-  };
-
-  const getCategoriaIcon = (cat: CategoriaPermiso): LucideIcon => {
-    switch (cat) {
-      case "igss":
-        return Shield;
-      case "vacaciones":
-        return Umbrella;
-      case "academicas":
-        return GraduationCap;
-      case "extras":
-        return Clock;
-      default:
-        return FileText;
-    }
-  };
-
-  const getCategoriaBadgeClass = (cat: CategoriaPermiso) => {
-    switch (cat) {
-      case "igss":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400";
-      case "vacaciones":
-        return "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400";
-      case "academicas":
-        return "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400";
-      case "extras":
-        return "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-400";
-      default:
-        return "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400";
-    }
-  };
-
-  // Calcula horas laborales (jornada 8AM-4PM = 8h)
-  const getHorasTrabajo = (start: Date, end: Date): number => {
-    const WORK_START = 8;
-    const WORK_END = 16;
-    const HOURS_PER_DAY = 8;
-    try {
-      const allDays = eachDayOfInterval({ start, end });
-      const weekdays = allDays.filter((day) => !isWeekend(day));
-      if (weekdays.length === 0) return 0;
-
-      if (isSameDay(start, end)) {
-        const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-        return Math.min(Math.max(hours, 0), HOURS_PER_DAY);
-      }
-
-      let totalHours = 0;
-      for (const day of weekdays) {
-        if (isSameDay(day, start)) {
-          const startHour = start.getHours() + start.getMinutes() / 60;
-          totalHours += Math.max(
-            0,
-            Math.min(WORK_END - Math.max(startHour, WORK_START), HOURS_PER_DAY),
-          );
-        } else if (isSameDay(day, end)) {
-          const endHour = end.getHours() + end.getMinutes() / 60;
-          totalHours += Math.max(
-            0,
-            Math.min(endHour - WORK_START, HOURS_PER_DAY),
-          );
-        } else {
-          totalHours += HOURS_PER_DAY;
-        }
-      }
-      return totalHours;
-    } catch {
-      return 0;
-    }
-  };
-
-  // Formatea horas acumuladas como días (8h = 1d)
-  const formatHorasLabel = (horas: number): string => {
-    if (horas <= 0) return "";
-    const dias = Math.floor(horas / 8);
-    const horasRestantes = Math.round(horas % 8);
-    if (dias === 0) return `${horasRestantes}h`;
-    if (horasRestantes === 0) return `${dias}d`;
-    return `${dias}d ${horasRestantes}h`;
-  };
-
   const navTipoVista =
-    tipoVista === "mis_permisos"
+    tipoVista === "mis_acuerdos"
       ? "mis"
       : tipoVista === "gestion_jefe"
         ? "jefe"
@@ -440,31 +289,19 @@ export default function VerPermisos({ tipoVista }: Props) {
               </h2>
 
               <div className="flex flex-wrap gap-2 items-center">
-                {(tipoVista === "mis_permisos" ||
-                  tipoVista === "gestion_rrhh") && (
-                  <Button
-                    size="sm"
-                    onClick={handleNuevoPermiso}
-                    className="h-8 lg:h-12 text-xs lg:text-base bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm gap-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5 lg:w-5 lg:h-5" /> Nuevo Permiso
-                  </Button>
-                )}
                 {tipoVista === "gestion_rrhh" && (
                   <Button
                     size="sm"
-                    onClick={() => setModalAsuetoAbierto(true)}
-                    className="h-8 lg:h-12 text-xs lg:text-base bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1.5"
+                    onClick={handleNuevoAcuerdo}
+                    className="h-8 lg:h-12 text-xs lg:text-base bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm gap-1.5"
                   >
-                    <PartyPopper className="w-3 h-3 lg:w-5 lg:h-5" /> Gestionar
-                    Asuetos
+                    <Plus className="w-3.5 h-3.5 lg:w-5 lg:h-5" /> Nuevo Acuerdo
                   </Button>
                 )}
               </div>
             </div>
 
             <div className="flex flex-col gap-2 sm:gap-3 bg-gray-50/50 dark:bg-neutral-900/30 p-2 sm:p-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
-              {/* Buscador + Ocultar */}
               <div className="flex items-center gap-2 w-full">
                 <div className="relative flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
@@ -482,16 +319,11 @@ export default function VerPermisos({ tipoVista }: Props) {
                   className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
                 >
                   <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">
-                    {todosAbiertos ? "Ocultar Todos" : "Ver Todos"}
-                  </span>
-                  <span className="sm:hidden">
-                    {todosAbiertos ? "Ocultar" : "Ver"}
-                  </span>
+                  <span className="hidden sm:inline">{todosAbiertos ? "Ocultar Todos" : "Ver Todos"}</span>
+                  <span className="sm:hidden">{todosAbiertos ? "Ocultar" : "Ver"}</span>
                 </Button>
               </div>
 
-              {/* Switch: distribución pareja (flex-1) según opciones visibles */}
               <div className="flex items-stretch h-11 w-full bg-gray-200/50 dark:bg-neutral-800 p-1 rounded-lg gap-1">
                 <button
                   onClick={() => {
@@ -513,9 +345,9 @@ export default function VerPermisos({ tipoVista }: Props) {
                     setFiltroEstado("todos");
                     setMesSemanas(format(new Date(), "yyyy-MM"));
                     const hoy = format(new Date(), "yyyy-MM-dd");
-                    const semActual = getSemanasDelMes(
-                      format(new Date(), "yyyy-MM"),
-                    ).find((s) => s.inicio <= hoy && s.fin >= hoy);
+                    const semActual = getSemanasDelMes(format(new Date(), "yyyy-MM")).find(
+                      (s) => s.inicio <= hoy && s.fin >= hoy,
+                    );
                     if (semActual) {
                       setFechaInicio(semActual.inicio);
                       setFechaFin(semActual.fin);
@@ -544,71 +376,8 @@ export default function VerPermisos({ tipoVista }: Props) {
                 >
                   Rango
                 </button>
-
-                {(tipoVista === "gestion_jefe" ||
-                  tipoVista === "gestion_rrhh") &&
-                  conteosPendientes.pendientes > 0 && (
-                    <button
-                      onClick={() => {
-                        if (
-                          filtroEstado === "pendiente" &&
-                          modoFiltro === "pendientes"
-                        ) {
-                          setFiltroEstado("todos");
-                          setModoFiltro("dia");
-                        } else {
-                          setFiltroEstado("pendiente");
-                          setModoFiltro("pendientes");
-                        }
-                      }}
-                      className={cn(
-                        "flex-1 min-w-0 basis-0 h-full flex items-center justify-center gap-1 text-sm sm:text-base font-bold rounded-md transition-all",
-                        modoFiltro === "pendientes" &&
-                          filtroEstado === "pendiente"
-                          ? "bg-white dark:bg-neutral-700 text-amber-600 dark:text-amber-400 shadow-sm"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                      )}
-                    >
-                      <span className="truncate">P. Jefe</span>
-                      <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-600 text-[10px] font-bold text-amber-600 dark:text-amber-400 px-1">
-                        {conteosPendientes.pendientes}
-                      </span>
-                    </button>
-                  )}
-
-                {(tipoVista === "gestion_jefe" ||
-                  tipoVista === "gestion_rrhh") &&
-                  conteosPendientes.avalados > 0 && (
-                    <button
-                      onClick={() => {
-                        if (
-                          filtroEstado === "aprobado_jefe" &&
-                          modoFiltro === "pendientes"
-                        ) {
-                          setFiltroEstado("todos");
-                          setModoFiltro("dia");
-                        } else {
-                          setFiltroEstado("aprobado_jefe");
-                          setModoFiltro("pendientes");
-                        }
-                      }}
-                      className={cn(
-                        "flex-1 min-w-0 basis-0 h-full flex items-center justify-center gap-1 text-sm sm:text-base font-bold rounded-md transition-all",
-                        modoFiltro === "pendientes" &&
-                          filtroEstado === "aprobado_jefe"
-                          ? "bg-white dark:bg-neutral-700 text-purple-600 dark:text-purple-400 shadow-sm"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                      )}
-                    >
-                      <span className="truncate">P. RRHH</span>
-                      <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-600 text-[10px] font-bold text-purple-600 dark:text-purple-400 px-1">
-                        {conteosPendientes.avalados}
-                      </span>
-                    </button>
-                  )}
               </div>
 
-              {/* Fecha + Apr/Rech */}
               <div
                 className={cn(
                   "flex gap-2",
@@ -623,10 +392,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                       <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
                         Seleccione un día para mostrar
                       </span>
-                      <Popover
-                        open={calendarOpen}
-                        onOpenChange={setCalendarOpen}
-                      >
+                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                         <PopoverTrigger asChild>
                           <button className="flex items-center gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm">
                             <Calendar className="w-4 h-4 text-blue-500" />
@@ -665,8 +431,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                             }
                           }}
                           value={semanasDisponibles.findIndex(
-                            (s) =>
-                              s.inicio === fechaInicio && s.fin === fechaFin,
+                            (s) => s.inicio === fechaInicio && s.fin === fechaFin,
                           )}
                         >
                           <option value="-1" disabled>
@@ -678,30 +443,20 @@ export default function VerPermisos({ tipoVista }: Props) {
                             </option>
                           ))}
                         </select>
-                        <Popover
-                          open={calendarSemanaOpen}
-                          onOpenChange={setCalendarSemanaOpen}
-                        >
+                        <Popover open={calendarSemanaOpen} onOpenChange={setCalendarSemanaOpen}>
                           <PopoverTrigger asChild>
                             <button className="flex items-center gap-1.5 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold hover:border-blue-400 transition-all shadow-sm min-w-0 sm:min-w-[120px]">
                               <Calendar className="w-4 h-4 text-blue-500" />
-                              <span className="dark:text-gray-200">
-                                {formatMes(mesSemanas)}
-                              </span>
+                              <span className="dark:text-gray-200">{formatMes(mesSemanas)}</span>
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="end">
                             <Calendario
                               modo="mes"
-                              fechaSeleccionada={
-                                fechaInicio || format(new Date(), "yyyy-MM-dd")
-                              }
+                              fechaSeleccionada={fechaInicio || format(new Date(), "yyyy-MM-dd")}
                               onSelectDate={(date) => {
-                                // Extraemos el yyyy-MM
                                 const newMes = date.substring(0, 7);
                                 setMesSemanas(newMes);
-
-                                // Al elegir un mes, seleccionamos la primera semana de ese mes
                                 const semanasDelMes = getSemanasDelMes(newMes);
                                 if (semanasDelMes.length > 0) {
                                   setFechaInicio(semanasDelMes[0].inicio);
@@ -722,10 +477,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                         Selecciona las fechas que deseas ver
                       </span>
                       <div className="flex items-center gap-1 sm:gap-2 flex-nowrap w-full min-w-0">
-                        <Popover
-                          open={calendarInicioOpen}
-                          onOpenChange={setCalendarInicioOpen}
-                        >
+                        <Popover open={calendarInicioOpen} onOpenChange={setCalendarInicioOpen}>
                           <PopoverTrigger asChild>
                             <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-emerald-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
                               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
@@ -748,10 +500,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                           </PopoverContent>
                         </Popover>
                         <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
-                        <Popover
-                          open={calendarFinOpen}
-                          onOpenChange={setCalendarFinOpen}
-                        >
+                        <Popover open={calendarFinOpen} onOpenChange={setCalendarFinOpen}>
                           <PopoverTrigger asChild>
                             <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-red-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
                               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
@@ -824,8 +573,8 @@ export default function VerPermisos({ tipoVista }: Props) {
           </div>
 
           <div className="border-t border-gray-100 dark:border-neutral-800 pt-3 sm:pt-4">
-            {loadingPermisos ? (
-              <Cargando texto="Cargando permisos..." />
+            {loadingAcuerdos ? (
+              <Cargando texto="Cargando acuerdos..." />
             ) : gruposConDatos.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400 text-xs py-8">
                 No hay información disponible.
@@ -833,8 +582,7 @@ export default function VerPermisos({ tipoVista }: Props) {
             ) : (
               <div className="flex flex-col gap-3">
                 {gruposConDatos.map((grupo) => {
-                  const estaAbierta =
-                    oficinasAbiertas[grupo.oficina_nombre] || false;
+                  const estaAbierta = oficinasAbiertas[grupo.oficina_nombre] || false;
                   return (
                     <div
                       key={grupo.oficina_nombre}
@@ -848,7 +596,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                           <span>
                             {grupo.oficina_nombre}{" "}
                             <span className="text-gray-400 text-xs ml-1 font-normal">
-                              ({grupo.permisos.length})
+                              ({grupo.acuerdos.length})
                             </span>
                           </span>
                         </div>
@@ -871,49 +619,37 @@ export default function VerPermisos({ tipoVista }: Props) {
                           >
                             <div className="p-3 flex flex-col gap-4">
                               {Object.values(
-                                grupo.permisos.reduce(
-                                  (acc, p) => {
-                                    const uid = p.user_id;
+                                grupo.acuerdos.reduce(
+                                  (acc, a) => {
+                                    const uid = a.user_id;
                                     if (!acc[uid])
                                       acc[uid] = {
-                                        usuario: p.usuario,
-                                        permisos: [],
+                                        usuario: a.usuario,
+                                        acuerdos: [],
                                       };
-                                    acc[uid].permisos.push(p);
+                                    acc[uid].acuerdos.push(a);
                                     return acc;
                                   },
                                   {} as Record<
                                     string,
                                     {
-                                      usuario: any;
-                                      permisos: PermisoEmpleado[];
+                                      usuario: AcuerdoEmpleado["usuario"];
+                                      acuerdos: AcuerdoEmpleado[];
                                     }
                                   >,
                                 ),
                               ).map((usuarioGrupo) => (
-                                <UsuarioGrupoPermisos
-                                  key={
-                                    usuarioGrupo.usuario?.id || Math.random()
-                                  }
+                                <UsuarioGrupoAcuerdos
+                                  key={usuarioGrupo.usuario?.id || Math.random()}
                                   usuarioGrupo={usuarioGrupo}
                                   tipoVista={tipoVista}
+                                  perfilUsuario={perfilUsuario}
                                   handleVerPreview={handleVerPreview}
-                                  handleAbrirJustificacion={
-                                    handleAbrirJustificacion
-                                  }
+                                  handleAbrirJustificacion={handleAbrirJustificacion}
+                                  handleElegirDiasSemana={handleElegirDiasSemana}
                                   handleClickFila={handleClickFila}
-                                  handleEliminarPermiso={handleEliminarPermiso}
-                                  getCategoriaBorderClass={
-                                    getCategoriaBorderClass
-                                  }
-                                  getCategoria={getCategoria}
-                                  getCategoriaIcon={getCategoriaIcon}
-                                  getCategoriaBadgeClass={
-                                    getCategoriaBadgeClass
-                                  }
+                                  handleEliminarAcuerdo={handleEliminarAcuerdo}
                                   getEstadoBadge={getEstadoBadge}
-                                  getHorasTrabajo={getHorasTrabajo}
-                                  formatHorasLabel={formatHorasLabel}
                                 />
                               ))}
                             </div>
@@ -929,123 +665,96 @@ export default function VerPermisos({ tipoVista }: Props) {
         </div>
       </div>
 
-      <PreviewPermiso
+      <PreviewAcuerdo
         isOpen={modalPreviewAbierto}
         onClose={() => setModalPreviewAbierto(false)}
-        permiso={permisoParaImagen}
+        acuerdo={acuerdoParaImagen}
+        tipoVista={tipoVista}
+        perfilUsuario={perfilUsuario}
+        onElegirDias={abrirElegirDiasDesdePreview}
       />
-      <JustificacionPermiso
+      <JustificacionAcuerdo
         isOpen={modalJustificacionAbierto}
         onClose={() => setModalJustificacionAbierto(false)}
-        permiso={permisoParaJustificar}
+        acuerdo={acuerdoParaJustificar}
         onSaved={cargarDatos}
+        soloLectura={justificacionSoloLectura}
       />
-      <CrearEditarPermiso
+      <CrearEditarAcuerdo
         isOpen={modalAbierto}
         onClose={() => setModalAbierto(false)}
-        permisoAEditar={permisoParaEditar}
+        acuerdoAEditar={acuerdoParaEditar}
         onSuccess={cargarDatos}
         perfilUsuario={perfilUsuario}
         tipoVista={tipoVista}
         usuariosParaModal={usuariosParaModal}
       />
-      <GestionAsueto
-        isOpen={modalAsuetoAbierto}
-        onClose={() => setModalAsuetoAbierto(false)}
+      <ElegirDiasSemanaAcuerdo
+        isOpen={modalElegirDiasAbierto}
+        onClose={() => setModalElegirDiasAbierto(false)}
+        acuerdo={acuerdoParaElegirDias}
+        onSuccess={cargarDatos}
       />
     </>
   );
 }
 
-// Subcomponente para cada grupo de usuario con filtro propio
-function UsuarioGrupoPermisos({
+function UsuarioGrupoAcuerdos({
   usuarioGrupo,
   tipoVista,
+  perfilUsuario,
   handleVerPreview,
   handleAbrirJustificacion,
+  handleElegirDiasSemana,
   handleClickFila,
-  handleEliminarPermiso,
-  getCategoriaBorderClass,
-  getCategoria,
-  getCategoriaIcon,
-  getCategoriaBadgeClass,
+  handleEliminarAcuerdo,
   getEstadoBadge,
-  getHorasTrabajo,
-  formatHorasLabel,
 }: {
-  usuarioGrupo: { usuario: any; permisos: PermisoEmpleado[] };
-  tipoVista: TipoVistaPermisos;
-  handleVerPreview: (e: React.MouseEvent, p: PermisoEmpleado) => void;
-  handleAbrirJustificacion: (e: React.MouseEvent, p: PermisoEmpleado) => void;
-  handleClickFila: (p: PermisoEmpleado) => void;
-  handleEliminarPermiso: (e: React.MouseEvent, id: string) => void;
-  getCategoriaBorderClass: (t: string, d: string | null) => string;
-  getCategoria: (p: PermisoEmpleado) => CategoriaPermiso;
-  getCategoriaIcon: (cat: CategoriaPermiso) => LucideIcon;
-  getCategoriaBadgeClass: (cat: CategoriaPermiso) => string;
+  usuarioGrupo: {
+    usuario: AcuerdoEmpleado["usuario"];
+    acuerdos: AcuerdoEmpleado[];
+  };
+  tipoVista: TipoVistaAcuerdos;
+  perfilUsuario: PerfilUsuario | null;
+  handleVerPreview: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
+  handleAbrirJustificacion: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
+  handleElegirDiasSemana: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
+  handleClickFila: (a: AcuerdoEmpleado) => void;
+  handleEliminarAcuerdo: (e: React.MouseEvent, id: string) => void;
   getEstadoBadge: (e: string) => React.ReactNode;
-  getHorasTrabajo: (start: Date, end: Date) => number;
-  formatHorasLabel: (horas: number) => string;
 }) {
-  const [filtro, setFiltro] = React.useState<
-    "todos" | "extras" | "vacaciones" | "permisos" | "igss" | "academicas"
-  >("todos");
+  const [filtro, setFiltro] = React.useState<CategoriaAcuerdo | "todos">("todos");
   const [orden, setOrden] = React.useState<"fecha" | "tipo">("fecha");
 
   const stats = React.useMemo(() => {
-    return usuarioGrupo.permisos.reduce(
-      (acc, p) => {
-        const cat = getCategoria(p);
-        const d = getHorasTrabajo(parseISO(p.inicio), parseISO(p.fin));
-        if (cat === "igss") {
-          acc.i++;
-          acc.id += d;
-          acc.td += d;
-        } else if (cat === "vacaciones") {
-          acc.v++;
-          acc.vd += d;
-          acc.td += d;
-        } else if (cat === "academicas") {
-          acc.a++;
-          acc.ad += d;
-          acc.td += d;
-        } else if (cat === "extras") {
-          acc.e++;
-          acc.ed += d;
-          acc.td += d;
-        } else {
-          acc.o++;
-          acc.od += d;
-          acc.td += d;
-        }
+    return usuarioGrupo.acuerdos.reduce(
+      (acc, a) => {
+        const cat = getCategoriaAcuerdo(a);
+        acc[cat]++;
+        acc.total++;
         return acc;
       },
       {
-        v: 0,
-        vd: 0,
-        e: 0,
-        ed: 0,
-        i: 0,
-        id: 0,
-        a: 0,
-        ad: 0,
-        o: 0,
-        od: 0,
-        td: 0,
-      },
+        vacaciones: 0,
+        permiso_especial: 0,
+        licencia_goce: 0,
+        licencia_sin_goce: 0,
+        suspension_igss: 0,
+        total: 0,
+      } as Record<CategoriaAcuerdo | "total", number>,
     );
-  }, [usuarioGrupo.permisos, getCategoria, getHorasTrabajo]);
+  }, [usuarioGrupo.acuerdos]);
 
-  const permisosFiltrados = React.useMemo(() => {
+  const acuerdosFiltrados = React.useMemo(() => {
     const lista =
       filtro === "todos"
-        ? [...usuarioGrupo.permisos]
-        : usuarioGrupo.permisos.filter((p) => getCategoria(p) === filtro);
+        ? [...usuarioGrupo.acuerdos]
+        : usuarioGrupo.acuerdos.filter((a) => getCategoriaAcuerdo(a) === filtro);
 
     if (orden === "tipo") {
       return lista.sort((a, b) => {
-        const catA = CATEGORIA_ORDEN[getCategoria(a)];
-        const catB = CATEGORIA_ORDEN[getCategoria(b)];
+        const catA = CATEGORIA_ORDEN[getCategoriaAcuerdo(a)];
+        const catB = CATEGORIA_ORDEN[getCategoriaAcuerdo(b)];
         if (catA !== catB) return catA - catB;
         return parseISO(a.inicio).getTime() - parseISO(b.inicio).getTime();
       });
@@ -1054,11 +763,14 @@ function UsuarioGrupoPermisos({
     return lista.sort(
       (a, b) => parseISO(a.inicio).getTime() - parseISO(b.inicio).getTime(),
     );
-  }, [filtro, orden, usuarioGrupo.permisos, getCategoria]);
+  }, [filtro, orden, usuarioGrupo.acuerdos]);
+
+  const categoriasConDatos = (
+    Object.entries(stats) as [CategoriaAcuerdo | "total", number][]
+  ).filter(([key, count]) => key !== "total" && count > 0) as [CategoriaAcuerdo, number][];
 
   return (
     <div className="flex flex-col gap-2">
-      {/* Encabezado de Usuario Agrupado con Filtros Interactivos */}
       <div className="flex flex-col md:flex-row md:items-center justify-between px-2 py-1 bg-slate-100/50 dark:bg-neutral-800/50 rounded-md border border-slate-200 dark:border-neutral-700">
         <div className="flex items-center gap-2">
           <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
@@ -1076,84 +788,31 @@ function UsuarioGrupoPermisos({
         </div>
 
         <div className="mt-1 md:mt-0 flex items-center gap-1.5 flex-wrap">
-          {stats.e > 0 && (
-            <button
-              onClick={() =>
-                setFiltro(filtro === "extras" ? "todos" : "extras")
-              }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "extras"
-                  ? "bg-slate-600 text-white border-slate-700 scale-105"
-                  : "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-200",
-              )}
-            >
-              <Clock className="w-3 h-3 shrink-0" />
-              {stats.e} Ext {stats.ed > 0 && `= ${formatHorasLabel(stats.ed)}`}
-            </button>
-          )}
-          {stats.i > 0 && (
-            <button
-              onClick={() => setFiltro(filtro === "igss" ? "todos" : "igss")}
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "igss"
-                  ? "bg-yellow-500 text-yellow-950 border-yellow-600 scale-105"
-                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800 hover:bg-yellow-200",
-              )}
-            >
-              <Shield className="w-3 h-3 shrink-0" />
-              {stats.i} IGSS {stats.id > 0 && `= ${formatHorasLabel(stats.id)}`}
-            </button>
-          )}
-          {stats.a > 0 && (
-            <button
-              onClick={() =>
-                setFiltro(filtro === "academicas" ? "todos" : "academicas")
-              }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "academicas"
-                  ? "bg-green-600 text-white border-green-700 scale-105"
-                  : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-200",
-              )}
-            >
-              <GraduationCap className="w-3 h-3 shrink-0" />
-              {stats.a} Educ {stats.ad > 0 && `= ${formatHorasLabel(stats.ad)}`}
-            </button>
-          )}
-          {stats.v > 0 && (
-            <button
-              onClick={() =>
-                setFiltro(filtro === "vacaciones" ? "todos" : "vacaciones")
-              }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "vacaciones"
-                  ? "bg-purple-600 text-white border-purple-700 scale-105"
-                  : "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border-purple-200 dark:border-purple-800 hover:bg-purple-200",
-              )}
-            >
-              <Umbrella className="w-3 h-3 shrink-0" />
-              {stats.v} Vac {stats.vd > 0 && `= ${formatHorasLabel(stats.vd)}`}
-            </button>
-          )}
-          {stats.o > 0 && (
-            <button
-              onClick={() =>
-                setFiltro(filtro === "permisos" ? "todos" : "permisos")
-              }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "permisos"
-                  ? "bg-blue-600 text-white border-blue-700 scale-105"
-                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-200",
-              )}
-            >
-              <FileText className="w-3 h-3 shrink-0" />
-              {stats.o} Perm {stats.od > 0 && `= ${formatHorasLabel(stats.od)}`}
-            </button>
-          )}
+          {categoriasConDatos.map(([cat, count]) => {
+            const CatIcon = getCategoriaAcuerdoIcon(cat);
+            const label = getCategoriaAcuerdoLabel(cat);
+            const badgeClass = getCategoriaAcuerdoBadgeClass(cat);
+            return (
+              <button
+                key={cat}
+                onClick={() => setFiltro(filtro === cat ? "todos" : cat)}
+                className={cn(
+                  "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
+                  filtro === cat
+                    ? "scale-105 text-white border-transparent"
+                    : cn(badgeClass, "hover:opacity-80"),
+                  filtro === cat && cat === "vacaciones" && "bg-purple-600 border-purple-700",
+                  filtro === cat && cat === "permiso_especial" && "bg-blue-600 border-blue-700",
+                  filtro === cat && cat === "licencia_goce" && "bg-emerald-600 border-emerald-700",
+                  filtro === cat && cat === "licencia_sin_goce" && "bg-slate-600 border-slate-700",
+                  filtro === cat && cat === "suspension_igss" && "bg-yellow-500 text-yellow-950 border-yellow-600",
+                )}
+              >
+                <CatIcon className="w-3 h-3 shrink-0" />
+                {count} {label}
+              </button>
+            );
+          })}
           <button
             onClick={() => setFiltro("todos")}
             className={cn(
@@ -1163,7 +822,7 @@ function UsuarioGrupoPermisos({
                 : "bg-white text-slate-500 border-slate-100 dark:bg-neutral-900 dark:border-neutral-800 hover:bg-slate-50",
             )}
           >
-            Total: {stats.td > 0 ? formatHorasLabel(stats.td) : "0h"}
+            Total: {stats.total}
           </button>
           <button
             type="button"
@@ -1193,20 +852,22 @@ function UsuarioGrupoPermisos({
         </div>
       </div>
 
-      {/* Listado de permisos para este usuario (Filtrado) */}
       <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 pl-2 md:pl-4 border-l-2 border-slate-100 dark:border-neutral-800 ml-3">
         <AnimatePresence mode="popLayout">
-          {permisosFiltrados.map((permiso) => {
-            const esPendiente = permiso.estado === "pendiente";
-            const puedeEliminar =
-              tipoVista === "gestion_rrhh" ||
-              (tipoVista === "mis_permisos" && esPendiente);
-            const puedeEditar = tipoVista === "gestion_rrhh" || esPendiente;
-            // Fecha completa con hora real (para mostrar el horario)
-            const fechaInicioConHora = parseISO(permiso.inicio);
-            const fechaFinConHora = parseISO(permiso.fin);
-            // Fecha sin hora (para comparación de días) - extraemos componentes LOCALES
-            // para evitar desfase UTC (ej: UTC 2026-06-02T00:00Z = local 2026-06-01T18:00 en GT)
+          {acuerdosFiltrados.map((acuerdo) => {
+            const esSemanalFlexible =
+              getModalidadAcuerdo(parseDiasAcuerdo(acuerdo.dias)) === "semanal";
+            const puedeElegirDias =
+              esSemanalFlexible &&
+              acuerdo.estado === "aprobado" &&
+              tipoVista === "mis_acuerdos";
+            const puedeEditar = tipoVista === "gestion_rrhh";
+            const puedeEliminar = tipoVista === "gestion_rrhh";
+            const mostrarJustificacion =
+              !!acuerdo.comprobante_url || tipoVista === "gestion_rrhh";
+
+            const fechaInicioConHora = parseISO(acuerdo.inicio);
+            const fechaFinConHora = parseISO(acuerdo.fin);
             const fechaInicio = new Date(
               fechaInicioConHora.getFullYear(),
               fechaInicioConHora.getMonth(),
@@ -1220,11 +881,11 @@ function UsuarioGrupoPermisos({
             const esMismoDia = isSameDay(fechaInicio, fechaFin);
 
             const formatCustom = (date: Date) => {
-              let str = format(date, "eee d MMM", { locale: es });
+              const str = format(date, "eee d MMM", { locale: es });
               return str
                 .split(" ")
                 .map((word) => {
-                  let cleaned = word.replace(".", "");
+                  const cleaned = word.replace(".", "");
                   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
                 })
                 .join(" ");
@@ -1233,11 +894,11 @@ function UsuarioGrupoPermisos({
             const textoFecha = esMismoDia
               ? formatCustom(fechaInicio)
               : `Del ${formatCustom(fechaInicio)} al ${formatCustom(fechaFin)}`;
-            const textoHora = `${format(fechaInicioConHora, "h:mm a", { locale: es })} - ${format(fechaFinConHora, "h:mm a", { locale: es })}`;
-            const borderClass = getCategoriaBorderClass(
-              permiso.tipo,
-              permiso.descripcion,
-            );
+
+            const cat = getCategoriaAcuerdo(acuerdo);
+            const CatIcon = getCategoriaAcuerdoIcon(cat);
+            const borderClass = getCategoriaAcuerdoBorderClass(cat);
+            const diasTexto = formatearDiasSemana(acuerdo.dias);
 
             return (
               <motion.div
@@ -1245,33 +906,27 @@ function UsuarioGrupoPermisos({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                key={permiso.id}
+                key={acuerdo.id}
                 className={cn(
                   "group relative flex flex-col justify-between bg-white dark:bg-neutral-900 rounded-lg p-3 shadow-sm hover:shadow-md transition-all w-full border border-gray-200 dark:border-neutral-800",
                   borderClass,
                 )}
               >
                 <div className="flex justify-between items-start mb-2">
-                  {(() => {
-                    const cat = getCategoria(permiso);
-                    const CatIcon = getCategoriaIcon(cat);
-                    return (
-                      <span
-                        className={cn(
-                          "inline-flex items-center gap-1 text-[10px] lg:text-sm px-2 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider",
-                          getCategoriaBadgeClass(cat),
-                        )}
-                      >
-                        <CatIcon className="w-3 h-3 lg:w-3.5 lg:h-3.5 shrink-0" />
-                        Cód:{" "}
-                        <span className="font-black">
-                          {`${permiso.id.substring(0, 3)}-${permiso.id.substring(3, 6)}`.toUpperCase()}
-                        </span>
-                      </span>
-                    );
-                  })()}
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 text-[10px] lg:text-sm px-2 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider",
+                      getCategoriaAcuerdoBadgeClass(cat),
+                    )}
+                  >
+                    <CatIcon className="w-3 h-3 lg:w-3.5 lg:h-3.5 shrink-0" />
+                    Cód:{" "}
+                    <span className="font-black">
+                      {`${acuerdo.id.substring(0, 3)}-${acuerdo.id.substring(3, 6)}`.toUpperCase()}
+                    </span>
+                  </span>
                   <span className="text-[9px] lg:text-xs text-gray-400 font-medium">
-                    {format(parseISO(permiso.created_at), "d MMM yy", {
+                    {format(parseISO(acuerdo.created_at), "d MMM yy", {
                       locale: es,
                     })}
                   </span>
@@ -1280,41 +935,23 @@ function UsuarioGrupoPermisos({
                 <div className="space-y-2 mb-3">
                   <div className="bg-slate-50 dark:bg-neutral-800/50 p-2 rounded">
                     <p className="text-xs lg:text-lg font-bold text-slate-700 dark:text-slate-300 capitalize mb-1">
-                      {permiso.tipo.replace("_", " ")}
+                      {acuerdo.tipo}
                     </p>
                     <div className="flex flex-col gap-1 text-[10px] lg:text-sm text-slate-600 dark:text-slate-400">
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1">
-                          <CalendarDays className="w-3 h-3 lg:w-4 lg:h-4 text-blue-500/70" />
-                          <span className="font-medium capitalize">
-                            {textoFecha}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                          <span>
-                            {(() => {
-                              const cat = getCategoria(permiso);
-                              if (cat === "extras") return null;
-                              const h = getHorasTrabajo(
-                                fechaInicioConHora,
-                                fechaFinConHora,
-                              );
-                              if (h <= 0) return null;
-                              return `• ${formatHorasLabel(h)}`;
-                            })()}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3 lg:w-4 lg:h-4 text-blue-500/70" />
+                        <span className="font-medium capitalize">{textoFecha}</span>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-orange-500/70" />
-                        <span>{textoHora}</span>
+                        <FileText className="w-3 h-3 lg:w-4 lg:h-4 text-indigo-500/70" />
+                        <span className="font-medium">{diasTexto}</span>
                       </div>
                     </div>
                   </div>
-                  {permiso.descripcion && (
+                  {acuerdo.descripcion && (
                     <div className="p-1.5 rounded bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-900/20">
                       <p className="text-[10px] lg:text-sm text-gray-600 dark:text-gray-400 italic line-clamp-2">
-                        {permiso.descripcion}
+                        {acuerdo.descripcion}
                       </p>
                     </div>
                   )}
@@ -1322,65 +959,63 @@ function UsuarioGrupoPermisos({
 
                 <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-neutral-800 md:flex-row md:items-center md:justify-between md:gap-3">
                   <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
-                    {getEstadoBadge(permiso.estado)}
-                    {permiso.estado === "aprobado" &&
-                      permiso.remunerado !== null && (
-                        <span
-                          className={cn(
-                            "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2.5 py-0.5 lg:py-1 rounded border inline-flex items-center shrink-0",
-                            permiso.remunerado
-                              ? "text-emerald-700 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800"
-                              : "text-gray-600 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-neutral-800 dark:border-neutral-700",
-                          )}
-                        >
-                          {permiso.remunerado ? "REMUNERADO" : "NO REM"}
-                        </span>
-                      )}
+                    {getEstadoBadge(acuerdo.estado)}
+                    {acuerdo.estado === "aprobado" && acuerdo.remunerado !== null && (
+                      <span
+                        className={cn(
+                          "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2.5 py-0.5 lg:py-1 rounded border inline-flex items-center shrink-0",
+                          acuerdo.remunerado
+                            ? "text-emerald-700 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800"
+                            : "text-gray-600 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-neutral-800 dark:border-neutral-700",
+                        )}
+                      >
+                        {acuerdo.remunerado ? "REMUNERADO" : "NO REM"}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 flex-wrap">
+                    {puedeElegirDias && (
+                      <button
+                        onClick={(e) => handleElegirDiasSemana(e, acuerdo)}
+                        className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 text-[10px] lg:text-sm font-bold text-white bg-violet-600 hover:bg-violet-700 rounded-md border border-violet-500 shadow-sm"
+                      >
+                        <CalendarClock className="w-3.5 h-3.5 shrink-0" />
+                        Elegir mis días
+                      </button>
+                    )}
+
                     <button
-                      onClick={(e) => handleVerPreview(e, permiso)}
+                      onClick={(e) => handleVerPreview(e, acuerdo)}
                       className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border border-blue-100 dark:border-blue-800"
                     >
                       <Eye className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
                       Ver
                     </button>
 
-                    <button
-                      onClick={(e) => handleAbrirJustificacion(e, permiso)}
-                      className={cn(
-                        "flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold rounded-md transition-colors border",
-                        permiso.comprobante_url
-                          ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800"
-                          : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-100 dark:border-indigo-800",
-                      )}
-                      title={
-                        permiso.comprobante_url
-                          ? "Ver comprobante"
-                          : "Subir comprobante"
-                      }
-                    >
-                      {permiso.comprobante_url ? (
+                    {mostrarJustificacion && (
+                      <button
+                        onClick={(e) => handleAbrirJustificacion(e, acuerdo)}
+                        className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-md transition-colors border border-emerald-200 dark:border-emerald-800"
+                        title="Ver comprobante"
+                      >
                         <Eye className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                      ) : (
-                        <Upload className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                      )}
-                      Justificación
-                    </button>
+                        Comprobante
+                      </button>
+                    )}
 
                     {puedeEditar && (
                       <button
-                        onClick={() => handleClickFila(permiso)}
+                        onClick={() => handleClickFila(acuerdo)}
                         className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border border-amber-100 dark:border-amber-800"
                       >
                         <Pencil className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                        Editar / Aprobar
+                        Editar
                       </button>
                     )}
 
                     {puedeEliminar && (
                       <button
-                        onClick={(e) => handleEliminarPermiso(e, permiso.id)}
+                        onClick={(e) => handleEliminarAcuerdo(e, acuerdo.id)}
                         className="flex items-center justify-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border border-red-100 dark:border-red-800"
                         title="Borrar"
                         aria-label="Borrar"

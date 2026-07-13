@@ -24,7 +24,32 @@ export type PermisoEmpleado = {
   aprobado_rrhh_nombre: string | null
   aprobado_rrhh_at: string | null
   comprobante_url: string | null
+  dias: unknown
   usuario?: UsuarioConJerarquia
+}
+
+export const TIPOS_ACUERDO = [
+  "Acuerdo de vacaciones",
+  "Permiso especial",
+  "Licencia con goce de salario",
+  "Licencia sin goce de salario",
+  "Suspensión IGSS",
+] as const;
+
+export type TipoAcuerdo = (typeof TIPOS_ACUERDO)[number];
+
+export const DIAS_SEMANA = [
+  { valor: 0, etiqueta: "Dom" },
+  { valor: 1, etiqueta: "Lun" },
+  { valor: 2, etiqueta: "Mar" },
+  { valor: 3, etiqueta: "Mié" },
+  { valor: 4, etiqueta: "Jue" },
+  { valor: 5, etiqueta: "Vie" },
+  { valor: 6, etiqueta: "Sáb" },
+] as const;
+
+export function esTipoAcuerdo(tipo: string): boolean {
+  return TIPOS_ACUERDO.some((t) => t.toLowerCase() === tipo.toLowerCase());
 }
 
 export type PermisosPorOficina = {

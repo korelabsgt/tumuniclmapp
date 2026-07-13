@@ -11,7 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PermisoEmpleado } from "../types";
+import { PermisoEmpleado, UsuarioConJerarquia } from "../types";
 import { guardarPermiso, PerfilUsuario, gestionarPermiso } from "../acciones";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
@@ -61,6 +61,7 @@ interface Props {
   onSuccess: () => void;
   perfilUsuario: PerfilUsuario | null;
   tipoVista: TipoVistaPermisos;
+  usuariosParaModal?: UsuarioConJerarquia[];
 }
 
 export default function CrearEditarPermiso({
@@ -70,10 +71,13 @@ export default function CrearEditarPermiso({
   onSuccess,
   perfilUsuario,
   tipoVista,
+  usuariosParaModal = [],
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [selectedTipo, setSelectedTipo] = useState<string>("");
   const [openComboboxTipo, setOpenComboboxTipo] = useState(false);
+  const [openComboboxEmpleado, setOpenComboboxEmpleado] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
   const [otroTipoManual, setOtroTipoManual] = useState<string>("");
   const [esRemunerado, setEsRemunerado] = useState(false);
   const [descripcion, setDescripcion] = useState("");
@@ -108,9 +112,22 @@ export default function CrearEditarPermiso({
     (!!permisoAEditar && !esRRHH && !puedeGestionar) || // Empleado normal no edita lo enviado
     (contieneBloqueo && !esRRHH); // Si está finalizado, solo RRHH puede tocar
 
+  const puedeElegirEmpleado =
+    tipoVista === "gestion_rrhh" && !permisoAEditar && esRRHH;
+
+  const empleadoSeleccionado = useMemo(() => {
+    if (permisoAEditar?.usuario) return permisoAEditar.usuario;
+    if (selectedUserId) {
+      return usuariosParaModal.find((u) => u.id === selectedUserId);
+    }
+    return undefined;
+  }, [permisoAEditar, selectedUserId, usuariosParaModal]);
+
   const nombreEmpleado =
-    permisoAEditar?.usuario?.nombre || perfilUsuario?.nombre || "";
-  const userId = permisoAEditar?.user_id || perfilUsuario?.id || "";
+    empleadoSeleccionado?.nombre || perfilUsuario?.nombre || "";
+  const userId =
+    permisoAEditar?.user_id ||
+    (puedeElegirEmpleado ? selectedUserId : perfilUsuario?.id || "");
   const requiereDescripcion =
     selectedTipo === "IGSS" ||
     selectedTipo === "Asuntos Personales" ||
@@ -140,6 +157,8 @@ export default function CrearEditarPermiso({
         setOtroTipoManual("");
         setEsRemunerado(false);
         setDescripcion("");
+        setSelectedUserId("");
+        setOpenComboboxEmpleado(false);
       }
     }
   }, [isOpen, permisoAEditar]);
@@ -192,6 +211,9 @@ export default function CrearEditarPermiso({
     if (contieneBloqueo && !esRRHH) return;
 
     if (!selectedTipo) return toast.error("Selecciona un tipo.");
+    if (puedeElegirEmpleado && !selectedUserId) {
+      return toast.error("Selecciona el empleado.");
+    }
     if (selectedTipo === "Vacaciones" && !esRRHH)
       return toast.error("No tiene permiso para solicitar vacaciones.");
     if (selectedTipo === "Otros" && !otroTipoManual.trim())
@@ -250,6 +272,8 @@ export default function CrearEditarPermiso({
 
     if (permisoAEditar?.estado) {
       formData.set("estado", permisoAEditar.estado);
+    } else if (puedeElegirEmpleado) {
+      formData.set("crear_aprobado_rrhh", "on");
     }
 
     try {
@@ -300,12 +324,68 @@ export default function CrearEditarPermiso({
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Empleado
             </label>
-            <input
-              type="text"
-              readOnly
-              value={nombreEmpleado}
-              className="p-2 text-sm rounded-md border border-gray-300 bg-gray-100 dark:bg-neutral-900 dark:border-neutral-800 text-gray-500 dark:text-gray-400 w-full outline-none cursor-default"
-            />
+            {puedeElegirEmpleado ? (
+              <Popover
+                open={openComboboxEmpleado}
+                onOpenChange={setOpenComboboxEmpleado}
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    className="w-full justify-between font-normal h-auto py-2"
+                  >
+                    {nombreEmpleado || "Buscar empleado..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="z-[110] w-[var(--radix-popover-trigger-width)] p-0">
+                  <Command>
+                    <CommandInput placeholder="Buscar por nombre u oficina..." />
+                    <CommandList className="max-h-[250px]">
+                      <CommandEmpty>No se encontraron empleados.</CommandEmpty>
+                      <CommandGroup>
+                        {usuariosParaModal.map((u) => (
+                          <CommandItem
+                            key={u.id}
+                            value={`${u.nombre} ${u.oficina_nombre || ""}`}
+                            onSelect={() => {
+                              setSelectedUserId(u.id);
+                              setOpenComboboxEmpleado(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                selectedUserId === u.id
+                                  ? "opacity-100"
+                                  : "opacity-0",
+                              )}
+                            />
+                            <div className="flex flex-col min-w-0">
+                              <span className="truncate">{u.nombre}</span>
+                              {u.oficina_nombre && (
+                                <span className="text-[10px] text-muted-foreground truncate">
+                                  {u.oficina_nombre}
+                                </span>
+                              )}
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <input
+                type="text"
+                readOnly
+                value={nombreEmpleado}
+                className="p-2 text-sm rounded-md border border-gray-300 bg-gray-100 dark:bg-neutral-900 dark:border-neutral-800 text-gray-500 dark:text-gray-400 w-full outline-none cursor-default"
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">

@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { format } from 'date-fns';
 import Swal from 'sweetalert2';
-import { PermisoEmpleado, PermisosPorOficina, UsuarioConJerarquia, EstadoPermiso } from '@/components/permisos/types';
+import { PermisoEmpleado, PermisosPorOficina, UsuarioConJerarquia, EstadoPermiso, esTipoAcuerdo } from '@/components/permisos/types';
 import { obtenerPermisosPorFecha, obtenerPermisosPorRango, obtenerTodosPendientes, eliminarPermiso, obtenerPerfilUsuario, PerfilUsuario } from '@/components/permisos/acciones';
 import { useListaUsuarios } from '@/hooks/usuarios/useListarUsuarios';
 
@@ -61,7 +61,7 @@ export const usePermisos = (tipoVista: TipoVistaPermisos) => {
       let permisosFiltrados = todos.map(permiso => {
          const usuarioEncontrado = usuariosAdaptados.find(u => u.id === permiso.user_id);
          return { ...permiso, usuario: usuarioEncontrado };
-      });
+      }).filter(p => !esTipoAcuerdo(p.tipo));
 
       const esRRHH = ['RRHH', 'SUPER', 'SECRETARIO'].includes(perfil.rol || '');
       const idsOficinasJefe = perfil.oficinasACargo.map(o => o.id);
@@ -262,6 +262,8 @@ export const usePermisos = (tipoVista: TipoVistaPermisos) => {
 
   const registrosFinales = useMemo(() => {
     return permisosVisibles.filter(r => {
+      if (esTipoAcuerdo(r.tipo)) return false;
+
       const nombreEmpleado = r.usuario?.nombre?.toLowerCase() || '';
       const nombreOficina = r.usuario?.oficina_nombre?.toLowerCase() || '';
       const codigoBase = r.id.substring(0, 6).toLowerCase();

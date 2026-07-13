@@ -4,12 +4,14 @@ import { useEffect } from 'react'
 import Swal from 'sweetalert2'
 
 export const ACTIVIDAD_PENDIENTE_REFRESH = 'actividad-pendiente-refresh'
+export const PERMISO_MENSAJE_REFRESH = 'permiso-mensaje-refresh'
 
 function navegar(url: string) {
   const path = url.startsWith('http') ? new URL(url).pathname : url
 
   if (window.location.pathname === path) {
     window.dispatchEvent(new CustomEvent(ACTIVIDAD_PENDIENTE_REFRESH))
+    window.dispatchEvent(new CustomEvent(PERMISO_MENSAJE_REFRESH))
     return
   }
 

@@ -4,6 +4,7 @@ import { es } from 'date-fns/locale';
 import { List, FileCheck, AlertCircle } from 'lucide-react';
 import { RegistrosAgrupadosPorUsuario, RegistrosAgrupadosDiarios, AsistenciaEnriquecida } from './types';
 import { PermisoEmpleado } from '@/components/permisos/types';
+import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
 import { getMensajeSinMarcaje } from '@/components/permisos/categorias';
 
 interface ListaAsistenciasProps {
@@ -35,11 +36,7 @@ const ListaAsistencias: React.FC<ListaAsistenciasProps> = ({
 
     const getPermisoParaDia = (userId: string, diaString: string): PermisoEmpleado | null => {
         const permisos = permisosMap[userId] || [];
-        return permisos.find(p => {
-            const ini = p.inicio.substring(0, 10);
-            const fin = p.fin.substring(0, 10);
-            return diaString >= ini && diaString <= fin;
-        }) || null;
+        return permisos.find(p => permisoAplicaEnDia(p, diaString)) || null;
     };
 
     const hayDatos = vista === 'nombre'

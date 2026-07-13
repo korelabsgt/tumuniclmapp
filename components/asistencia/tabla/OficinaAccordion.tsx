@@ -6,6 +6,7 @@ import { ChevronDown, AlertCircle, LogIn, LogOut, PartyPopper, Clock, CheckCircl
 import { format, parseISO, isAfter, isToday, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PermisoEmpleado } from '@/components/permisos/types';
+import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
 import {
   getMensajeSinMarcaje,
   getCategoriaPermiso,
@@ -70,13 +71,7 @@ export default function OficinaAccordion({
 
   const getPermisoParaDia = (userId: string, diaString: string): PermisoEmpleado | null => {
     const permisos = permisosMap[userId] || [];
-    return permisos.find(p => {
-      // Solo mostrar permisos aprobados por RRHH
-      if (p.estado !== 'aprobado') return false;
-      const ini = p.inicio.substring(0, 10);
-      const fin = p.fin.substring(0, 10);
-      return diaString >= ini && diaString <= fin;
-    }) || null;
+    return permisos.find(p => permisoAplicaEnDia(p, diaString)) || null;
   };
 
   /** Botón de justificación con íconos */
@@ -281,10 +276,9 @@ export default function OficinaAccordion({
                         // Excluir si tiene cualquier justificación
                         const tieneComision = (comisionesMap[usuario.userId] || []).some(c => c.fecha_hora.startsWith(a.diaString));
                         if (tieneComision) return false;
-                        const tienePermiso = (permisosMap[usuario.userId] || []).some(p => {
-                          if (p.estado !== 'aprobado') return false;
-                          return a.diaString >= p.inicio.substring(0, 10) && a.diaString <= p.fin.substring(0, 10);
-                        });
+                        const tienePermiso = (permisosMap[usuario.userId] || []).some(p =>
+                          permisoAplicaEnDia(p, a.diaString),
+                        );
                         if (tienePermiso) return false;
                         const tieneAsueto = !!getAsuetoPorFecha(asuetos, a.diaString);
                         return !tieneAsueto;

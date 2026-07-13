@@ -1,4 +1,4 @@
-import { Shield, Umbrella, GraduationCap, FileCheck, Clock, type LucideIcon } from "lucide-react";
+import { Heart, Umbrella, GraduationCap, FileCheck, Clock, type LucideIcon } from "lucide-react";
 import { PermisoEmpleado } from "./types";
 
 export type CategoriaPermiso =
@@ -48,7 +48,7 @@ export const getCategoriaPermiso = (p: PermisoEmpleado): CategoriaPermiso =>
 export const getCategoriaIcon = (cat: CategoriaPermiso): LucideIcon => {
   switch (cat) {
     case "igss":
-      return Shield;
+      return Heart;
     case "vacaciones":
       return Umbrella;
     case "academicas":
@@ -82,7 +82,7 @@ export const getCategoriaLabel = (cat: CategoriaPermiso): string => {
 export const getCategoriaJustificacionClass = (cat: CategoriaPermiso): string => {
   switch (cat) {
     case "igss":
-      return "bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-300 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 border-yellow-200 dark:border-yellow-900/40";
+      return "bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-300 hover:bg-pink-100 dark:hover:bg-pink-900/40 border-pink-200 dark:border-pink-900/40";
     case "vacaciones":
       return "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 border-purple-100 dark:border-purple-900/30";
     case "academicas":
@@ -98,8 +98,7 @@ export const getCategoriaJustificacionClass = (cat: CategoriaPermiso): string =>
  * Solo color de texto (para mostrar --:-- cuando hay permiso/vacaciones/etc).
  */
 /** Texto formal cuando la inasistencia está justificada (permiso o asueto). */
-export const MENSAJE_JUSTIFICACION_INASISTENCIA =
-  "Justificación de inasistencia";
+export const MENSAJE_JUSTIFICACION_INASISTENCIA = "Justificación";
 
 // Comisión — siempre azul (igual que el default de "permisos")
 export const COMISION_TEXT_CLASS = "text-blue-500 dark:text-blue-400";
@@ -139,7 +138,7 @@ export const getMensajeSinMarcaje = (opts: {
 export const getCategoriaTextClass = (cat: CategoriaPermiso): string => {
   switch (cat) {
     case "igss":
-      return "text-yellow-600 dark:text-yellow-400";
+      return "text-pink-500 dark:text-pink-400";
     case "vacaciones":
       return "text-purple-500 dark:text-purple-400";
     case "academicas":

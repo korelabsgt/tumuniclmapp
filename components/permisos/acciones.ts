@@ -1,8 +1,23 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
-import { PermisoEmpleado, EstadoPermiso } from "./types";
+import { PermisoEmpleado, EstadoPermiso, esTipoAcuerdo } from "./types";
 import { revalidatePath } from "next/cache";
+import {
+  parseDiasAcuerdo,
+  construirDiasRecurrente,
+  construirDiasSemanal,
+  actualizarSemanaAcuerdo,
+  esDiaLaboral,
+  validarSeleccionSemanaAcuerdo,
+  type DiasAcuerdoSemanal,
+} from "./acuerdos/dias-acuerdo";
+import {
+  notificarCreacionPermiso,
+  notificarModificacionPermiso,
+  notificarGestionPermiso,
+  notificarEliminacionPermiso,
+} from "./lib/notificaciones";
 
 export type OficinaInfo = { id: string; nombre: string };
 export type PerfilUsuario = {
@@ -130,7 +145,7 @@ export async function gestionarPermiso(
 
   const { data: permisoActual } = await supabase
     .from("permisos_empleado")
-    .select("estado")
+    .select("estado, user_id, tipo")
     .eq("id", permisoId)
     .single();
   if (!permisoActual) throw new Error("Permiso no encontrado");
@@ -171,7 +186,21 @@ export async function gestionarPermiso(
       .eq("id", permisoId);
     if (error) throw new Error(error.message);
 
+    try {
+      await notificarGestionPermiso({
+        supabase,
+        perfil,
+        permisoId,
+        empleadoId: permisoActual.user_id,
+        tipo: permisoActual.tipo,
+        nuevoEstado,
+      });
+    } catch (e) {
+      console.error("Error notificando gestión permiso:", e);
+    }
+
     revalidatePath("/protected/permisos");
+    revalidatePath("/protected/permisos/acuerdos");
     return true;
   }
 
@@ -182,6 +211,9 @@ export async function gestionarPermiso(
 
 export async function guardarPermiso(formData: FormData, id?: string) {
   const supabase = await createClient();
+  const perfil = await obtenerPerfilUsuario();
+  if (!perfil) throw new Error("No autorizado");
+
   const tipo = formData.get("tipo") as string;
   const inicio = formData.get("inicio") as string;
   const fin = formData.get("fin") as string;
@@ -189,20 +221,128 @@ export async function guardarPermiso(formData: FormData, id?: string) {
   const userIdSeleccionado = formData.get("user_id") as string;
   const estado = formData.get("estado") as string;
   const remunerado = formData.get("remunerado") === "on";
-  const datos: any = {
+  const diasRaw = formData.get("dias") as string | null;
+  const modoAcuerdo = formData.get("modo_acuerdo") as string | null;
+  const cupoSemanalInput = Math.min(
+    5,
+    Math.max(1, Number(formData.get("cupo_semanal")) || 2),
+  );
+  const crearAprobadoRRHH = formData.get("crear_aprobado_rrhh") === "on";
+  const esRRHH = ["RRHH", "SUPER", "SECRETARIO"].includes(perfil.rol || "");
+
+  if (!userIdSeleccionado?.trim()) {
+    throw new Error("Debe seleccionar un empleado.");
+  }
+
+  if (crearAprobadoRRHH && !esRRHH) {
+    throw new Error("No autorizado para crear registros aprobados.");
+  }
+
+  let dias: unknown = null;
+  let diasParsed = null;
+
+  if (diasRaw && diasRaw !== "null") {
+    try {
+      diasParsed = parseDiasAcuerdo(JSON.parse(diasRaw) as unknown);
+    } catch {
+      dias = null;
+      diasParsed = null;
+    }
+  }
+
+  if (esTipoAcuerdo(tipo) && modoAcuerdo) {
+    if (modoAcuerdo === "semanal") {
+      if (id) {
+        const { data: actual } = await supabase
+          .from("permisos_empleado")
+          .select("dias")
+          .eq("id", id)
+          .single();
+        const existente = parseDiasAcuerdo(actual?.dias);
+        if (
+          existente &&
+          typeof existente === "object" &&
+          !Array.isArray(existente) &&
+          existente.modo === "semanal"
+        ) {
+          dias = {
+            ...existente,
+            cupoSemanal: cupoSemanalInput,
+          };
+        } else {
+          dias = construirDiasSemanal(cupoSemanalInput);
+        }
+      } else {
+        dias = construirDiasSemanal(cupoSemanalInput);
+      }
+    } else if (modoAcuerdo === "todos") {
+      dias = null;
+    } else if (
+      modoAcuerdo === "recurrente" &&
+      diasParsed &&
+      typeof diasParsed === "object" &&
+      !Array.isArray(diasParsed) &&
+      diasParsed.modo === "recurrente"
+    ) {
+      dias = construirDiasRecurrente(inicio, fin, diasParsed.diasSemana);
+    }
+  }
+
+  if (dias === null && diasParsed) {
+    if (
+      typeof diasParsed === "object" &&
+      !Array.isArray(diasParsed) &&
+      diasParsed.modo === "recurrente" &&
+      esTipoAcuerdo(tipo)
+    ) {
+      dias = construirDiasRecurrente(inicio, fin, diasParsed.diasSemana);
+    } else if (
+      typeof diasParsed === "object" &&
+      !Array.isArray(diasParsed) &&
+      diasParsed.modo === "semanal" &&
+      esTipoAcuerdo(tipo)
+    ) {
+      dias = {
+        modo: "semanal",
+        cupoSemanal: cupoSemanalInput,
+        semanas: diasParsed.semanas ?? {},
+        historial: diasParsed.historial ?? [],
+      };
+    } else {
+      dias = diasParsed;
+    }
+  }
+
+  const datos: Record<string, unknown> = {
     tipo,
     inicio,
     fin,
     descripcion,
     user_id: userIdSeleccionado,
     remunerado: remunerado,
+    dias,
   };
 
-  if (estado) {
+  if (crearAprobadoRRHH && !id) {
+    const ahora = new Date().toISOString();
+    const nombreAprobador = perfil.nombre || "--";
+    datos.estado = "aprobado";
+    if (esTipoAcuerdo(tipo)) {
+      datos.aprobado_rrhh_nombre = nombreAprobador;
+      datos.aprobado_rrhh_at = ahora;
+    } else {
+      datos.aprobado_jefe_nombre = nombreAprobador;
+      datos.aprobado_jefe_at = ahora;
+      datos.aprobado_rrhh_nombre = nombreAprobador;
+      datos.aprobado_rrhh_at = ahora;
+    }
+  } else if (estado) {
     datos.estado = estado;
   } else if (!id) {
     datos.estado = "pendiente";
   }
+
+  let permisoId = id;
 
   if (id) {
     const { error } = await supabase
@@ -211,19 +351,80 @@ export async function guardarPermiso(formData: FormData, id?: string) {
       .eq("id", id);
 
     if (error) throw new Error(error.message);
+
+    try {
+      await notificarModificacionPermiso({
+        supabase,
+        perfil,
+        permisoId: id,
+        empleadoId: userIdSeleccionado,
+        tipo,
+      });
+    } catch (e) {
+      console.error("Error notificando modificación permiso:", e);
+    }
   } else {
-    const { error } = await supabase.from("permisos_empleado").insert(datos);
+    const { data: inserted, error } = await supabase
+      .from("permisos_empleado")
+      .insert(datos)
+      .select("id")
+      .single();
 
     if (error) throw new Error(error.message);
+    permisoId = inserted.id;
+
+    try {
+      await notificarCreacionPermiso({
+        supabase,
+        perfil,
+        permisoId: inserted.id,
+        empleadoId: userIdSeleccionado,
+        tipo,
+        crearAprobadoRRHH,
+      });
+    } catch (e) {
+      console.error("Error notificando creación permiso:", e);
+    }
   }
 
   revalidatePath("/protected/permisos");
+  revalidatePath("/protected/permisos/acuerdos");
+  return permisoId;
 }
 
 export async function eliminarPermiso(id: string) {
   const supabase = await createClient();
-  await supabase.from("permisos_empleado").delete().eq("id", id);
+  const perfil = await obtenerPerfilUsuario();
+
+  const { data: registro } = await supabase
+    .from("permisos_empleado")
+    .select("user_id, tipo")
+    .eq("id", id)
+    .maybeSingle();
+
+  const { error } = await supabase
+    .from("permisos_empleado")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+
+  if (perfil && registro) {
+    try {
+      await notificarEliminacionPermiso({
+        supabase,
+        perfil,
+        permisoId: id,
+        empleadoId: registro.user_id,
+        tipo: registro.tipo,
+      });
+    } catch (e) {
+      console.error("Error notificando eliminación permiso:", e);
+    }
+  }
+
   revalidatePath("/protected/permisos");
+  revalidatePath("/protected/permisos/acuerdos");
 }
 
 export async function actualizarComprobantePermiso(
@@ -242,6 +443,7 @@ export async function actualizarComprobantePermiso(
   }
 
   revalidatePath("/protected/permisos");
+  revalidatePath("/protected/permisos/acuerdos");
   return { path };
 }
 
@@ -298,4 +500,72 @@ export async function obtenerPermisosDelUsuario(userId: string): Promise<Permiso
   } : undefined;
 
   return data.map(p => ({ ...p, usuario: usuarioInfo })) as unknown as PermisoEmpleado[];
+}
+
+export async function actualizarDiasSemanaAcuerdo(
+  acuerdoId: string,
+  semanaKey: string,
+  fechas: string[],
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("No autorizado");
+
+  const { data: registro, error: fetchError } = await supabase
+    .from("permisos_empleado")
+    .select("id, user_id, tipo, dias, estado")
+    .eq("id", acuerdoId)
+    .single();
+
+  if (fetchError || !registro) throw new Error("Acuerdo no encontrado");
+  if (!esTipoAcuerdo(registro.tipo)) throw new Error("No es un acuerdo municipal");
+  if (registro.user_id !== user.id) {
+    throw new Error("Solo el empleado del acuerdo puede elegir los días");
+  }
+  if (registro.estado !== "aprobado") {
+    throw new Error("El acuerdo debe estar aprobado");
+  }
+
+  const diasParsed = parseDiasAcuerdo(registro.dias);
+  if (
+    !diasParsed ||
+    typeof diasParsed !== "object" ||
+    Array.isArray(diasParsed) ||
+    diasParsed.modo !== "semanal"
+  ) {
+    throw new Error("Este acuerdo no usa modalidad semanal flexible");
+  }
+
+  if (fechas.length > diasParsed.cupoSemanal) {
+    throw new Error(`Solo puede elegir ${diasParsed.cupoSemanal} días por semana`);
+  }
+
+  if (fechas.some((f) => !esDiaLaboral(f))) {
+    throw new Error("Solo puede elegir días laborales (lun–vie)");
+  }
+
+  const anteriores = diasParsed.semanas[semanaKey] ?? [];
+  validarSeleccionSemanaAcuerdo({
+    fechas,
+    anteriores,
+    cupoSemanal: diasParsed.cupoSemanal,
+  });
+
+  const diasActualizados = actualizarSemanaAcuerdo(
+    diasParsed as DiasAcuerdoSemanal,
+    semanaKey,
+    fechas,
+  );
+
+  const { error } = await supabase
+    .from("permisos_empleado")
+    .update({ dias: diasActualizados })
+    .eq("id", acuerdoId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/protected/permisos/acuerdos");
+  return diasActualizados;
 }

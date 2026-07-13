@@ -14,6 +14,7 @@ import AsistenciaControls from './AsistenciaControls';
 import OficinaAccordion from './OficinaAccordion';
 import PreviewPermiso from '@/components/permisos/modals/PreviewPermiso';
 import { PermisoEmpleado } from '@/components/permisos/types';
+import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
 import { createClient } from '@/utils/supabase/client';
 import { useListaUsuarios } from '@/hooks/usuarios/useListarUsuarios';
 import { useAsuetos, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
@@ -409,10 +410,7 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
     return (userId: string, diaString: string): boolean => {
       const tieneComision = (comisionesMap[userId] || []).some(c => c.fecha_hora.startsWith(diaString));
       if (tieneComision) return true;
-      const tienePermiso = (permisosMap[userId] || []).some(p => {
-        if (p.estado !== 'aprobado') return false;
-        return diaString >= p.inicio.substring(0, 10) && diaString <= p.fin.substring(0, 10);
-      });
+      const tienePermiso = (permisosMap[userId] || []).some(p => permisoAplicaEnDia(p, diaString));
       if (tienePermiso) return true;
       return !!getAsuetoPorFecha(asuetos, diaString);
     };

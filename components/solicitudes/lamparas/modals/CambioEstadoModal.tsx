@@ -98,7 +98,7 @@ export default function CambioEstadoModal({ isOpen, onClose, onSuccess, solicitu
             <div className="p-4 sm:p-10 flex flex-col gap-4 sm:gap-6 items-center justify-center min-h-[300px]">
                 <h3 className="text-base sm:text-lg font-bold text-gray-800 dark:text-white mb-2 text-center">¿Qué acción desea realizar con esta solicitud?</h3>
                 
-                <div className={`grid grid-cols-1 ${isElectricista ? '' : 'sm:grid-cols-2'} gap-3 sm:gap-6 w-full max-w-lg mx-auto`}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-6 w-full max-w-lg mx-auto">
                     <button 
                         onClick={handleCompletar}
                         disabled={loading}
@@ -111,18 +111,16 @@ export default function CambioEstadoModal({ isOpen, onClose, onSuccess, solicitu
                         <span className="text-[10px] sm:text-xs text-emerald-600/70 text-center">Marcar el trabajo como finalizado.</span>
                     </button>
 
-                    {!isElectricista && (
-                        <button 
-                            onClick={() => setStep('rechazar')} 
-                            className="flex flex-col items-center justify-center gap-2 sm:gap-3 p-5 sm:p-8 rounded-xl border-2 border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 hover:border-red-300 transition-all group w-full"
-                        >
-                            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-100 dark:bg-red-800 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                            </div>
-                            <span className="font-bold text-red-700 dark:text-red-300 text-base sm:text-lg text-center">Rechazar Solicitud</span>
-                            <span className="text-[10px] sm:text-xs text-red-600/70 text-center">Denegar la petición y registrar el motivo.</span>
-                        </button>
-                    )}
+                    <button 
+                        onClick={() => setStep('rechazar')} 
+                        className="flex flex-col items-center justify-center gap-2 sm:gap-3 p-5 sm:p-8 rounded-xl border-2 border-red-100 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/30 hover:border-red-300 transition-all group w-full"
+                    >
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-100 dark:bg-red-800 flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </div>
+                        <span className="font-bold text-red-700 dark:text-red-300 text-base sm:text-lg text-center">Rechazar Solicitud</span>
+                        <span className="text-[10px] sm:text-xs text-red-600/70 text-center">Denegar la petición y registrar el motivo.</span>
+                    </button>
                 </div>
             </div>
         )}

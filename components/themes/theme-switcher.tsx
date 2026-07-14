@@ -1,13 +1,13 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
+import { cn } from "@/lib/utils";
 
 const ThemeSwitcher = () => {
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -17,32 +17,19 @@ const ThemeSwitcher = () => {
     return null;
   }
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-
-  const ICON_SIZE = 24;
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <div className="flex items-center gap-3">
-      <Button
-        variant="ghost"
-        size="lg"
-        onClick={toggleTheme}
-        className={`h-12 w-12 p-0 flex items-center justify-center rounded-md transition-colors duration-200 
-          ${theme === "light" 
-            ? "hover:bg-sky-100" 
-            : "hover:bg-gray-800"
-          }
-        `}
-      >
-        {theme === "light" ? (
-          <Sun size={ICON_SIZE} className="text-yellow-500" />
-        ) : (
-          <Moon size={ICON_SIZE} className="text-blue-400" />
-        )}
-      </Button>
-    </div>
+    <AnimatedThemeToggler
+      theme={isDark ? "dark" : "light"}
+      onThemeChange={setTheme}
+      className={cn(
+        "h-12 w-12 flex items-center justify-center rounded-md transition-colors duration-200 cursor-pointer",
+        isDark ? "hover:bg-gray-800" : "hover:bg-sky-100",
+        "[&_svg]:size-6",
+        isDark ? "[&_svg]:text-blue-400" : "[&_svg]:text-yellow-500"
+      )}
+    />
   );
 };
 

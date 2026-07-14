@@ -59,7 +59,7 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
   }
-  
+
   .theme {
     --animate-ripple: ripple var(--duration,2s) ease calc(var(--i, 0)*.2s) infinite;
     --animate-shine: shine var(--duration) infinite linear;
@@ -116,4 +116,8 @@
     opacity: 0;
     }
   }
+}
+  ::view-transition-old(root), ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
 }

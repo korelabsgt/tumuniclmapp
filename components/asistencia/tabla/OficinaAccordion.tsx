@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, AlertCircle, LogIn, LogOut, PartyPopper, Clock, CheckCircle2, XCircle, Briefcase } from 'lucide-react';
 import { format, parseISO, isAfter, isToday, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { PermisoEmpleado } from '@/components/permisos/types';
+import { PermisoEmpleado, esTipoAcuerdo } from '@/components/permisos/types';
 import {
   permisoAplicaEnDia,
 } from '@/components/permisos/utilidades';
@@ -19,6 +19,13 @@ import {
   COMISION_TEXT_CLASS,
   COMISION_BADGE_CLASS,
 } from '@/components/permisos/categorias';
+import {
+  getCategoriaAcuerdo,
+  getCategoriaAcuerdoIcon,
+  getCategoriaAcuerdoLabel,
+  getCategoriaAcuerdoJustificacionClass,
+  getCategoriaAcuerdoTextClass,
+} from '@/components/permisos/acuerdos/categorias';
 import { Asueto, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
 import type { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
 import type { Usuario } from '@/lib/usuarios/esquemas';
@@ -35,6 +42,7 @@ interface OficinaAccordionProps {
   permisosMap?: Record<string, PermisoEmpleado[]>;
   comisionesMap?: Record<string, ComisionInfo[]>;
   onVerPermiso?: (permiso: PermisoEmpleado) => void;
+  onVerAcuerdo?: (acuerdo: PermisoEmpleado) => void;
   onVerComision?: (comision: ComisionInfo) => void;
   asuetos?: Asueto[];
   usuarios?: Usuario[];
@@ -50,6 +58,7 @@ export default function OficinaAccordion({
   permisosMap = {},
   comisionesMap = {},
   onVerPermiso,
+  onVerAcuerdo,
   onVerComision,
   asuetos = [],
 }: OficinaAccordionProps) {
@@ -67,7 +76,7 @@ export default function OficinaAccordion({
       return format(parseISO(iso), 'hh:mm aa', { locale: es });
     }
     const colorClass = permiso
-      ? getCategoriaTextClass(getCategoriaPermiso(permiso))
+      ? getJustificacionTextClass(permiso)
       : comision
         ? COMISION_TEXT_CLASS
         : 'text-red-500';
@@ -84,9 +93,63 @@ export default function OficinaAccordion({
     return permisos.find(p => permisoAplicaEnDia(p, diaString)) || null;
   };
 
+  const getJustificacionTextClass = (justificacion: PermisoEmpleado) => {
+    if (esTipoAcuerdo(justificacion.tipo)) {
+      return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(justificacion));
+    }
+    return getCategoriaTextClass(getCategoriaPermiso(justificacion));
+  };
+
+  const getMensajeDiaSinMarcaje = (
+    justificacion: PermisoEmpleado | null,
+    asueto: Asueto | null,
+    comision: ComisionInfo | null,
+  ) => {
+    if (justificacion && esTipoAcuerdo(justificacion.tipo)) {
+      return {
+        texto: 'Justificación',
+        className: getJustificacionTextClass(justificacion),
+      };
+    }
+    return getMensajeSinMarcaje({
+      asueto: !!asueto,
+      permiso: justificacion,
+      comision: !asueto && !justificacion && !!comision,
+    });
+  };
+
+  const renderEntSalVacio = (
+    justificacion: PermisoEmpleado | null,
+    asueto: Asueto | null,
+    comision: ComisionInfo | null,
+    sizeClass = 'text-[9px] md:text-sm',
+  ) => {
+    const dashClass = justificacion
+      ? getJustificacionTextClass(justificacion)
+      : asueto
+        ? 'text-amber-500 dark:text-amber-400'
+        : comision
+          ? COMISION_TEXT_CLASS
+          : 'text-red-400';
+
+    return (
+      <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
+        <span className={`${sizeClass} text-gray-500 dark:text-gray-400 whitespace-nowrap`}>
+          <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
+          <span className={`${dashClass} font-bold`}>--:--</span>
+        </span>
+        <span className="text-gray-300 dark:text-neutral-700">|</span>
+        <span className={`${sizeClass} text-gray-500 dark:text-gray-400 whitespace-nowrap`}>
+          <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+          <span className={`${dashClass} font-bold`}>--:--</span>
+        </span>
+      </div>
+    );
+  };
+
   /** Botón de justificación con íconos */
-  const JustificacionBtn = ({ permiso, asueto, comision, totalRegistros, fechaStr }: {
-    permiso: PermisoEmpleado | null;
+  const JustificacionBtn = ({ justificacion, asueto, comision, totalRegistros, fechaStr }: {
+    justificacion: PermisoEmpleado | null;
     asueto: Asueto | null;
     comision: ComisionInfo | null;
     totalRegistros: number;
@@ -104,12 +167,25 @@ export default function OficinaAccordion({
       );
     }
 
-    if (permiso) {
-      const categoria = getCategoriaPermiso(permiso);
+    if (justificacion) {
+      if (esTipoAcuerdo(justificacion.tipo)) {
+        const categoria = getCategoriaAcuerdo(justificacion);
+        const Icono = getCategoriaAcuerdoIcon(categoria);
+        return (
+          <button
+            onClick={(e) => { e.stopPropagation(); onVerAcuerdo?.(justificacion); }}
+            className={`w-full py-1 px-1 rounded font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight transition-colors shadow-sm border cursor-pointer ${getCategoriaAcuerdoJustificacionClass(categoria)}`}
+          >
+            <Icono className="w-2.5 h-2.5 flex-shrink-0" />
+            {getCategoriaAcuerdoLabel(categoria)}
+          </button>
+        );
+      }
+      const categoria = getCategoriaPermiso(justificacion);
       const Icono = getCategoriaIcon(categoria);
       return (
         <button
-          onClick={(e) => { e.stopPropagation(); onVerPermiso?.(permiso); }}
+          onClick={(e) => { e.stopPropagation(); onVerPermiso?.(justificacion); }}
           className={`w-full py-1 px-1 rounded font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight transition-colors shadow-sm border cursor-pointer ${getCategoriaJustificacionClass(categoria)}`}
         >
           <Icono className="w-2.5 h-2.5 flex-shrink-0" />
@@ -210,7 +286,7 @@ export default function OficinaAccordion({
                       const comision = !asueto && !permiso ? getComisionParaDia(registro.userId, registro.diaString) : null;
                       const esMultiple = registro.multiple && registro.multiple.length > 0;
                       const totalRegistros = (registro.entrada ? 1 : 0) + (registro.salida ? 1 : 0) + (registro.multiple?.length || 0);
-                      if (isAfter(parseISO(registro.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !permiso && !asueto && !comision) return null;
+                      if (isAfter(parseISO(registro.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
 
                       return (
                         <Fragment key={`${registro.userId}-${registro.diaString}-${index}`}>
@@ -239,39 +315,11 @@ export default function OficinaAccordion({
                                         Ver Asistencia ({totalRegistros})
                                       </div>
                                     ) : esVacio ? (() => {
-                                      const dashClass = permiso
-                                        ? getCategoriaTextClass(getCategoriaPermiso(permiso))
-                                        : asueto ? 'text-amber-500 dark:text-amber-400'
-                                        : comision ? COMISION_TEXT_CLASS : 'text-red-400';
-                                      const horario = permiso
-                                        ? obtenerHorarioAsistenciaEnFecha(permiso, registro.diaString)
-                                        : null;
-                                      if (tieneHorarioAsignadoVisible(horario)) {
-                                        return (
-                                          <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                            <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                              <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                              {formatTime(null, permiso, registro.diaString, 'entrada')}
-                                            </span>
-                                            <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                            <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                              <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                                              {formatTime(null, permiso, registro.diaString, 'salida')}
-                                            </span>
-                                          </div>
-                                        );
-                                      }
-                                      const msg = getMensajeSinMarcaje({
-                                        asueto: !!asueto,
-                                        permiso,
-                                        comision: !asueto && !permiso && !!comision,
-                                      });
+                                      const msg = getMensajeDiaSinMarcaje(permiso, asueto, comision);
                                       return (
-                                      <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
                                         <span className={`text-[9px] md:text-sm font-medium italic whitespace-nowrap ${msg.className}`}>
                                           {msg.texto}
                                         </span>
-                                      </div>
                                       );
                                     })() : (
                                       <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
@@ -290,7 +338,7 @@ export default function OficinaAccordion({
                                     )}
                                   </div>
                                   <div className="w-1/4 flex-shrink-0 cursor-pointer">
-                                    <JustificacionBtn permiso={permiso} asueto={asueto} comision={comision} totalRegistros={totalRegistros} fechaStr={registro.diaString} />
+                                    <JustificacionBtn justificacion={permiso} asueto={asueto} comision={comision} totalRegistros={totalRegistros} fechaStr={registro.diaString} />
                                   </div>
                                 </div>
                               </td>
@@ -352,7 +400,7 @@ export default function OficinaAccordion({
                              const permiso = getPermisoParaDia(usuario.userId, asistencia.diaString);
                              const asueto = getAsuetoPorFecha(asuetos, asistencia.diaString);
                              const comision = !asueto && !permiso ? getComisionParaDia(usuario.userId, asistencia.diaString) : null;
-                             if (isAfter(parseISO(asistencia.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !permiso && !asueto && !comision) return null;
+                             if (isAfter(parseISO(asistencia.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
 
                             return (
                               <tr
@@ -363,14 +411,16 @@ export default function OficinaAccordion({
                                 {(() => {
                                   const ausenciaColor = esAusencia && !asueto
                                     ? permiso
-                                      ? getCategoriaTextClass(getCategoriaPermiso(permiso))
+                                      ? getJustificacionTextClass(permiso)
                                       : comision ? COMISION_TEXT_CLASS : 'text-red-500'
                                     : 'text-slate-700 dark:text-slate-300';
                                   const sinRegistrosLabel = permiso
-                                    ? getCategoriaLabel(getCategoriaPermiso(permiso))
+                                    ? esTipoAcuerdo(permiso.tipo)
+                                      ? getCategoriaAcuerdoLabel(getCategoriaAcuerdo(permiso))
+                                      : getCategoriaLabel(getCategoriaPermiso(permiso))
                                     : comision ? 'Comisión' : 'Sin registros';
                                   const sinRegistrosColor = permiso
-                                    ? getCategoriaTextClass(getCategoriaPermiso(permiso))
+                                    ? getJustificacionTextClass(permiso)
                                     : comision ? COMISION_TEXT_CLASS : 'text-red-500';
                                   return (
                                     <td className={`py-2 px-3 text-xs w-[45%] pl-8 capitalize font-medium ${ausenciaColor}`}>
@@ -392,44 +442,9 @@ export default function OficinaAccordion({
                                       className={`w-3/4 ${!esAusencia ? 'cursor-pointer' : ''}`}
                                       onClick={() => !esAusencia && onAbrirModal(asistencia, usuario.nombre)}
                                     >
-                                      {esAusencia ? (() => {
-                                        const dashClass = permiso
-                                          ? getCategoriaTextClass(getCategoriaPermiso(permiso))
-                                          : asueto ? 'text-amber-500 dark:text-amber-400'
-                                          : comision ? COMISION_TEXT_CLASS : 'text-red-400';
-                                        const horario = permiso
-                                          ? obtenerHorarioAsistenciaEnFecha(permiso, asistencia.diaString)
-                                          : null;
-                                        if (tieneHorarioAsignadoVisible(horario)) {
-                                          return (
-                                            <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                                {formatTime(null, permiso, asistencia.diaString, 'entrada')}
-                                              </span>
-                                              <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                                                {formatTime(null, permiso, asistencia.diaString, 'salida')}
-                                              </span>
-                                            </div>
-                                          );
-                                        }
-                                        const msg = getMensajeSinMarcaje({ asueto: !!asueto, permiso, comision: !asueto && !permiso && !!comision });
-                                        return (
-                                          <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                            <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                              <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                              <span className={`${dashClass} font-bold`}>--:--</span>
-                                            </span>
-                                            <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                            <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                              <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                                              <span className={`${dashClass} font-bold`}>--:--</span>
-                                            </span>
-                                          </div>
-                                        );
-                                      })() : esMultiple || totalRegistros > 2 ? (
+                                      {esAusencia ? (
+                                        renderEntSalVacio(permiso, asueto, comision)
+                                      ) : esMultiple || totalRegistros > 2 ? (
                                         <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
                                           Ver Asistencia ({totalRegistros})
                                         </div>
@@ -450,7 +465,7 @@ export default function OficinaAccordion({
                                       )}
                                     </div>
                                     <div className="w-1/4 flex-shrink-0 cursor-pointer">
-                                      <JustificacionBtn permiso={permiso} asueto={asueto} comision={comision} totalRegistros={totalRegistros} fechaStr={asistencia.diaString} />
+                                      <JustificacionBtn justificacion={permiso} asueto={asueto} comision={comision} totalRegistros={totalRegistros} fechaStr={asistencia.diaString} />
                                     </div>
                                   </div>
                                 </td>

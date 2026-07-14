@@ -54,7 +54,7 @@ export async function obtenerIdsRRHH(
   supabase: Awaited<ReturnType<typeof import("@/utils/supabase/server").createClient>>,
 ): Promise<string[]> {
   const { data, error } = await supabase.rpc("obtener_ids_usuarios_por_rol", {
-    roles_filtro: ["RRHH", "SECRETARIO", "SUPER"],
+    roles_filtro: ["RRHH", "SUPER"],
   });
 
   if (error || !data) return [];

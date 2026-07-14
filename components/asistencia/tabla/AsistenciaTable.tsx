@@ -13,6 +13,7 @@ import { AsistenciaEnriquecida } from '@/hooks/asistencia/useObtenerAsistencias'
 import AsistenciaControls from './AsistenciaControls';
 import OficinaAccordion from './OficinaAccordion';
 import PreviewPermiso from '@/components/permisos/modals/PreviewPermiso';
+import PreviewAcuerdo from '@/components/permisos/acuerdos/modals/PreviewAcuerdo';
 import { PermisoEmpleado } from '@/components/permisos/types';
 import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
 import { createClient } from '@/utils/supabase/client';
@@ -65,6 +66,7 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
   const [registrosSeleccionadosParaMapa, setRegistrosSeleccionadosParaMapa] = useState<{ entrada: any | null, salida: any | null, multiple?: any[] }>({ entrada: null, salida: null });
   const [nombreUsuarioModal, setNombreUsuarioModal] = useState<string>('');
   const [permisoPreview, setPermisoPreview] = useState<PermisoEmpleado | null>(null);
+  const [acuerdoPreview, setAcuerdoPreview] = useState<PermisoEmpleado | null>(null);
   const [permisosMap, setPermisosMap] = useState<Record<string, PermisoEmpleado[]>>({});
   /** userId → lista de comisiones aprobadas en el rango (objetos completos para el modal) */
   const [comisionesMap, setComisionesMap] = useState<Record<string, ComisionConFechaYHoraSeparada[]>>({});
@@ -741,6 +743,7 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
                           permisosMap={permisosMap}
                           comisionesMap={comisionesMap}
                           onVerPermiso={setPermisoPreview}
+                          onVerAcuerdo={setAcuerdoPreview}
                           onVerComision={setComisionPreview}
                           asuetos={asuetos}
                           usuarios={todosLosUsuarios as any}
@@ -776,6 +779,12 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
         isOpen={!!permisoPreview}
         onClose={() => setPermisoPreview(null)}
         permiso={permisoPreview}
+      />
+
+      <PreviewAcuerdo
+        isOpen={!!acuerdoPreview}
+        onClose={() => setAcuerdoPreview(null)}
+        acuerdo={acuerdoPreview}
       />
 
       {/* Modal de detalle de comisión */}

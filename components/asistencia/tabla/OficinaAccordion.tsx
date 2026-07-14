@@ -8,9 +8,6 @@ import { es } from 'date-fns/locale';
 import { PermisoEmpleado } from '@/components/permisos/types';
 import {
   permisoAplicaEnDia,
-  obtenerHorarioAsistenciaEnFecha,
-  formatearHorarioAsistencia12h,
-  tieneHorarioAsignadoVisible,
 } from '@/components/permisos/utilidades';
 import {
   getMensajeSinMarcaje,
@@ -74,20 +71,6 @@ export default function OficinaAccordion({
       : comision
         ? COMISION_TEXT_CLASS
         : 'text-red-500';
-    if (permiso && diaString && tipo) {
-      const horario = obtenerHorarioAsistenciaEnFecha(permiso, diaString);
-      if (tieneHorarioAsignadoVisible(horario)) {
-        const hora = tipo === 'entrada' ? horario.entrada : horario.salida;
-        const texto = formatearHorarioAsistencia12h(hora);
-        if (texto) {
-          return (
-            <span className={`${colorClass} font-bold`} title="Horario asignado">
-              {texto}
-            </span>
-          );
-        }
-      }
-    }
     return <span className={`${colorClass} font-bold`}>--:--</span>;
   };
 

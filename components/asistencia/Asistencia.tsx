@@ -702,22 +702,6 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     return null;
   };
 
-  const renderHorarioAsignadoSlot = (
-    tipo: "entrada" | "salida",
-    textClass: string,
-  ) => {
-    if (!tieneHorarioAsignadoVisible(horarioAsignadoHoy)) return null;
-    const hora =
-      tipo === "entrada" ? horarioAsignadoHoy.entrada : horarioAsignadoHoy.salida;
-    const texto = formatearHorarioAsistencia12h(hora);
-    if (!texto) return null;
-    return (
-      <span className={`${textClass} font-bold`} title="Horario asignado">
-        {texto}
-      </span>
-    );
-  };
-
   const renderPermisoHoyBtn = (permiso: PermisoEmpleado) => {
     const categoria = getCategoriaPermiso(permiso);
     const Icono = getCategoriaIcon(categoria);
@@ -838,7 +822,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                                   <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
                                   {registroEntradaHoy 
                                     ? format(new Date(registroEntradaHoy.created_at), 'hh:mm aa', { locale: es }) 
-                                    : renderHorarioAsignadoSlot("entrada", getEntradaTextClass()) ?? (
+                                    : (
                                       <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
                                     )}
                                 </span>
@@ -847,7 +831,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                                   <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
                                   {registroSalidaHoy 
                                     ? format(new Date(registroSalidaHoy.created_at), 'hh:mm aa', { locale: es }) 
-                                    : renderHorarioAsignadoSlot("salida", getSalidaTextClass()) ?? (
+                                    : (
                                       <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
                                     )}
                                 </span>
@@ -881,16 +865,12 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                           <div className="w-3/4 flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left px-2">
                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                               {renderHorarioAsignadoSlot("entrada", getEntradaTextClass()) ?? (
-                                 <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
-                               )}
+                               <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
                              </span>
                              <span className="text-gray-300 dark:text-neutral-700">|</span>
                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                               {renderHorarioAsignadoSlot("salida", getSalidaTextClass()) ?? (
-                                 <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
-                               )}
+                               <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
                              </span>
                           </div>
                           <div className="w-1/4 cursor-pointer">

@@ -29,11 +29,6 @@ import { esTipoAcuerdo } from '@/components/permisos/types';
 import PreviewPermiso from '@/components/permisos/modals/PreviewPermiso';
 import PreviewAcuerdo from '@/components/permisos/acuerdos/modals/PreviewAcuerdo';
 import { obtenerJustificacionParaDia } from '@/components/permisos/justificaciones';
-import {
-  obtenerHorarioAsistenciaEnFecha,
-  formatearHorarioAsistencia12h,
-  tieneHorarioAsignadoVisible,
-} from '@/components/permisos/utilidades';
 import VerComision from '@/components/comisiones/VerComision';
 import Mapa from '@/components/ui/modals/Mapa';
 import { useAsuetos, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
@@ -249,61 +244,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
   const getJustificacionParaDia = (diaString: string): PermisoEmpleado | null =>
     obtenerJustificacionParaDia(permisosEmpleado, diaString);
 
-  const getHorarioEmpleadoRef = () => ({
-    entrada: horarioEntrada,
-    salida: horarioSalida,
-  });
-
-  const getHorarioAsignado = (
-    justificacion: PermisoEmpleado | null,
-    diaString: string,
-  ) => {
-    if (!justificacion) return null;
-    return obtenerHorarioAsistenciaEnFecha(
-      justificacion,
-      diaString,
-      getHorarioEmpleadoRef(),
-    );
-  };
-
-  const renderHorarioAsignado = (
-    hora24: string | null | undefined,
-    textClass: string,
-  ) => {
-    const texto = formatearHorarioAsistencia12h(hora24);
-    if (!texto) return null;
-    return (
-      <span className={`${textClass} font-bold`} title="Horario asignado">
-        {texto}
-      </span>
-    );
-  };
-
-  const renderEntSalAsignados = (
-    justificacion: PermisoEmpleado | null,
-    diaString: string,
-    textClass: string,
-  ) => {
-    const horario = getHorarioAsignado(justificacion, diaString);
-    if (!tieneHorarioAsignadoVisible(horario)) return null;
-    return (
-      <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left">
-        <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-          <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-          {renderHorarioAsignado(horario.entrada, textClass) ?? (
-            <span className={`${textClass} font-bold`}>--:--</span>
-          )}
-        </span>
-        <span className="text-gray-300 dark:text-neutral-700">|</span>
-        <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-          <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-          {renderHorarioAsignado(horario.salida, textClass) ?? (
-            <span className={`${textClass} font-bold`}>--:--</span>
-          )}
-        </span>
-      </div>
-    );
-  };
 
   const getJustificacionTextClass = (permiso: PermisoEmpleado) => {
     if (esTipoAcuerdo(permiso.tipo)) {
@@ -580,8 +520,8 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                 const esAsueto = !!asuetoDelDia;
                 const comisionDelDia = getComisionParaDia(diaString);
 
-                // Ocultar días futuros sin datos (salvo que haya asueto o comisión)
-                if (esFuturo && usuariosDelDia.length === 0 && !justificacionDelDia && !esAsueto && !comisionDelDia) {
+                // Ocultar días futuros sin registros reales (salvo asueto o comisión)
+                if (esFuturo && usuariosDelDia.length === 0 && !asuetoDelDia && !comisionDelDia) {
                   return null;
                 }
 
@@ -628,13 +568,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                       : comisionDelDia && comisionTocaEntradaDia(comisionDelDia)
                                         ? COMISION_TEXT_CLASS
                                         : 'text-red-400';
-                                    const horarioAsignado = renderEntSalAsignados(
-                                      justificacionDelDia,
-                                      diaString,
-                                      textClass,
-                                    );
-                                    if (horarioAsignado) return horarioAsignado;
-
                                     const msg = getMensajeSinMarcaje({
                                       asueto: esAsueto,
                                       permiso: justificacionDelDia && !esTipoAcuerdo(justificacionDelDia.tipo) ? justificacionDelDia : undefined,
@@ -666,7 +599,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                             : (comisionDelDia && comisionTocaEntradaDia(comisionDelDia))
                                               ? COMISION_TEXT_CLASS
                                               : 'text-red-400';
-                                        const horario = getHorarioAsignado(justificacionDelDia, diaString);
                                         return (
                                           <>
                                       <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -675,9 +607,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                           ? format(new Date(usuario.entrada.created_at), 'hh:mm aa', { locale: es }) 
                                           : esperandoJustificaciones
                                             ? <TiempoSkeleton />
-                                            : tieneHorarioAsignadoVisible(horario) && horario.entrada
-                                              ? renderHorarioAsignado(horario.entrada, textClass)
-                                              : <span className={`${textClass} font-bold`}>--:--</span>}
+                                            : <span className={`${textClass} font-bold`}>--:--</span>}
                                       </span>
                                       <span className="text-gray-300 dark:text-neutral-700">|</span>
                                       <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -686,9 +616,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                           ? format(new Date(usuario.salida.created_at), 'hh:mm aa', { locale: es }) 
                                           : esperandoJustificaciones
                                             ? <TiempoSkeleton />
-                                            : tieneHorarioAsignadoVisible(horario) && horario.salida
-                                              ? renderHorarioAsignado(horario.salida, textClass)
-                                              : <span className={`${textClass} font-bold`}>--:--</span>}
+                                            : <span className={`${textClass} font-bold`}>--:--</span>}
                                       </span>
                                           </>
                                         );
@@ -727,13 +655,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                 const textClass = esTipoAcuerdo(justificacionDelDia.tipo)
                                   ? getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(justificacionDelDia))
                                   : getCategoriaTextClass(getCategoriaPermiso(justificacionDelDia));
-                                const horarioAsignado = renderEntSalAsignados(
-                                  justificacionDelDia,
-                                  diaString,
-                                  textClass,
-                                );
-                                if (horarioAsignado) return horarioAsignado;
-
                                 const msg = !esTipoAcuerdo(justificacionDelDia.tipo)
                                   ? getMensajeSinMarcaje({ permiso: justificacionDelDia })
                                   : { texto: 'Justificación', className: textClass };

@@ -57,7 +57,7 @@ export default function ModulesView({
         )
           return esjefe;
         if (m.id === "SOLICITUDES_JEFE") {
-          return esjefe || esAtencionVecino || rol === "SECRETARIO" || rol === "SUPER";
+          return esjefe || esAtencionVecino || ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol);
         }
         if (
           [
@@ -98,13 +98,13 @@ export default function ModulesView({
           );
         }
         if (m.id === "SOLICITUDES_LAMARAS") {
-          return rol === "SECRETARIO" || rol === "SUPER" || esAtencionVecino || esElectricista;
+          return ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino || esElectricista;
         }
         if (m.id === "SOLICITUDES_MOBILIARIO") {
-          return rol === "SECRETARIO" || rol === "SUPER" || esAtencionVecino;
+          return ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino;
         }
         if (m.id === "RECEPCION_DOCS") {
-          return rol === "SECRETARIO" || rol === "SUPER" || esAtencionVecino;
+          return ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino;
         }
         return modulos.includes(m.permiso);
       }),
@@ -142,7 +142,7 @@ export default function ModulesView({
     [rol, modulos],
   );
   const showRecepcionAccordion = useMemo(
-    () => rol === "SECRETARIO" || rol === "SUPER" || esAtencionVecino || esElectricista,
+    () => ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino || esElectricista,
     [rol, esAtencionVecino, esElectricista],
   );
 

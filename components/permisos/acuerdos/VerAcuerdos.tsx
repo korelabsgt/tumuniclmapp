@@ -158,15 +158,6 @@ export default function VerAcuerdos({ tipoVista }: Props) {
     return datosAgrupados.filter((grupo) => grupo.acuerdos.length > 0);
   }, [datosAgrupados]);
 
-  const tituloPagina = useMemo(() => {
-    if (tipoVista === "mis_acuerdos") return "Mis Acuerdos";
-    if (tipoVista === "gestion_rrhh")
-      return "Administración de Acuerdos (RRHH)";
-    if (tipoVista === "gestion_jefe")
-      return "Acuerdos del equipo";
-    return "Acuerdos";
-  }, [tipoVista]);
-
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case "aprobado":
@@ -233,12 +224,6 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                 </button>
               )}
             </div>
-            <h2
-              className="text-lg lg:text-4xl font-bold text-gray-800 dark:text-gray-200 truncate max-w-2xl"
-              title={tituloPagina}
-            >
-              {tituloPagina}
-            </h2>
 
             <div className="flex flex-col gap-2 sm:gap-3 bg-gray-50/50 dark:bg-neutral-900/30 p-2 sm:p-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
               <div className="flex items-center gap-2 w-full">
@@ -703,7 +688,7 @@ function UsuarioGrupoAcuerdos({
           </div>
         </div>
 
-        <div className="mt-1 md:mt-0 flex items-center gap-1.5 flex-wrap">
+        <div className="mt-1 md:mt-0 flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
           {categoriasConDatos.map(([cat, count]) => {
             const CatIcon = getCategoriaAcuerdoIcon(cat);
             const label = getCategoriaAcuerdoLabel(cat);
@@ -834,15 +819,6 @@ function UsuarioGrupoAcuerdos({
                     <span className="text-[9px] lg:text-xs text-gray-400 font-medium whitespace-nowrap">
                       {formatearFechaTarjetaDesdeISO(acuerdo.created_at)}
                     </span>
-                    {puedeAsignarDias && (
-                      <button
-                        onClick={(e) => handleElegirDiasSemana(e, acuerdo)}
-                        className="flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/40 rounded-md transition-colors border-2 border-violet-600 dark:border-violet-400 cursor-pointer"
-                      >
-                        <CalendarClock className="w-3 h-3 shrink-0" />
-                        <span className="hidden sm:inline">Asignar días</span>
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -856,9 +832,20 @@ function UsuarioGrupoAcuerdos({
                         <CalendarDays className="w-3 h-3 lg:w-4 lg:h-4 text-blue-500/70" />
                         <span className="font-medium">{textoFecha}</span>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <FileText className="w-3 h-3 lg:w-4 lg:h-4 text-indigo-500/70" />
-                        <span className="font-medium">{diasTexto}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <FileText className="w-3 h-3 lg:w-4 lg:h-4 text-indigo-500/70 shrink-0" />
+                          <span className="font-medium">{diasTexto}</span>
+                        </div>
+                        {puedeAsignarDias && (
+                          <button
+                            onClick={(e) => handleElegirDiasSemana(e, acuerdo)}
+                            className="flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20 hover:bg-violet-100 dark:hover:bg-violet-900/40 rounded-md transition-colors border-2 border-violet-600 dark:border-violet-400 cursor-pointer shrink-0"
+                          >
+                            <CalendarClock className="w-3 h-3 shrink-0" />
+                            <span className="hidden sm:inline">Asignar días</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -869,10 +856,20 @@ function UsuarioGrupoAcuerdos({
                       </p>
                     </div>
                   )}
+                  {acuerdo.aprobado_rrhh_nombre && (
+                    <div className="flex flex-col gap-0.5 text-[10px] lg:text-xs text-slate-600 dark:text-slate-400">
+                      <p>
+                        <span className="font-bold text-slate-500 dark:text-slate-500">
+                          Aprobado por:
+                        </span>{" "}
+                        {acuerdo.aprobado_rrhh_nombre}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-neutral-800 md:flex-row md:items-center md:justify-between md:gap-3">
-                  <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
+                  <div className="flex items-center justify-center md:justify-start gap-1.5 flex-nowrap overflow-x-auto">
                     {getEstadoBadge(acuerdo.estado)}
                     {acuerdo.estado === "aprobado" && acuerdo.remunerado !== null && (
                       <span
@@ -887,7 +884,7 @@ function UsuarioGrupoAcuerdos({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
                     <button
                       onClick={(e) => handleVerPreview(e, acuerdo)}
                       className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"

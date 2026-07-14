@@ -7,6 +7,10 @@ import {
   obtenerTodosPendientes,
   obtenerPerfilUsuario,
 } from "@/components/permisos/acciones";
+import {
+  obtenerLecturasNotificaciones,
+  type TipoVistaLecturas,
+} from "@/components/permisos/lib/mensajes";
 import { PERMISOS_QUERY_ROOT, permisosQueryKeys } from "./query-keys";
 import type { PermisoEmpleado } from "@/components/permisos/types";
 
@@ -75,4 +79,12 @@ export function useInvalidarPermisos() {
   return async () => {
     await queryClient.invalidateQueries({ queryKey: PERMISOS_QUERY_ROOT });
   };
+}
+
+export function useLecturasNotificaciones(tipoVista: TipoVistaLecturas) {
+  return useQuery({
+    queryKey: permisosQueryKeys.lecturas(tipoVista),
+    queryFn: () => obtenerLecturasNotificaciones(tipoVista),
+    staleTime: STALE_MS,
+  });
 }

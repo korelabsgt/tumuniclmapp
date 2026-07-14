@@ -57,3 +57,22 @@ export type PermisosPorOficina = {
   path_orden: string
   permisos: PermisoEmpleado[]
 }
+
+export type LecturaNotificacion = {
+  id: string
+  permiso_id: string
+  user_id: string
+  evento: string
+  titulo: string
+  mensaje: string
+  created_at: string
+  leido_at: string | null
+  permiso_tipo: string | null
+  permiso_empleado_user_id: string | null
+}
+
+export type LecturasPorOficina = {
+  oficina_nombre: string
+  path_orden: string
+  lecturas: LecturaNotificacion[]
+}

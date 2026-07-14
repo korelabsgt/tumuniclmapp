@@ -190,15 +190,6 @@ export default function VerPermisos({ tipoVista }: Props) {
     return datosAgrupados.filter((grupo) => grupo.permisos.length > 0);
   }, [datosAgrupados]);
 
-  const tituloPagina = useMemo(() => {
-    if (tipoVista === "mis_permisos") return "Mis Solicitudes";
-    if (tipoVista === "gestion_rrhh")
-      return "Administración de Permisos (RRHH)";
-    if (tipoVista === "gestion_jefe")
-      return "Administración de Permisos (JEFE)";
-    return "Permisos";
-  }, [tipoVista]);
-
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case "aprobado":
@@ -403,12 +394,6 @@ export default function VerPermisos({ tipoVista }: Props) {
                 )}
               </div>
             </div>
-            <h2
-              className="text-lg lg:text-4xl font-bold text-gray-800 dark:text-gray-200 truncate max-w-2xl"
-              title={tituloPagina}
-            >
-              {tituloPagina}
-            </h2>
 
             <div className="flex flex-col gap-2 sm:gap-3 bg-gray-50/50 dark:bg-neutral-900/30 p-2 sm:p-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
               {/* Buscador + Ocultar */}
@@ -1015,7 +1000,7 @@ function UsuarioGrupoPermisos({
           </div>
         </div>
 
-        <div className="mt-1 md:mt-0 flex items-center gap-1.5 flex-wrap">
+        <div className="mt-1 md:mt-0 flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
           {stats.e > 0 && (
             <button
               onClick={() =>
@@ -1205,28 +1190,6 @@ function UsuarioGrupoPermisos({
                     <span className="text-[9px] lg:text-xs text-gray-400 font-medium whitespace-nowrap">
                       {formatearFechaTarjetaDesdeISO(permiso.created_at)}
                     </span>
-                    <button
-                      type="button"
-                      onClick={(e) => handleAbrirJustificacion(e, permiso)}
-                      className={cn(
-                        "flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold rounded-md transition-colors border-2 cursor-pointer",
-                        permiso.comprobante_url
-                          ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-600 dark:border-emerald-400"
-                          : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-600 dark:border-indigo-400",
-                      )}
-                      title={
-                        permiso.comprobante_url
-                          ? "Ver comprobante"
-                          : "Subir comprobante"
-                      }
-                    >
-                      {permiso.comprobante_url ? (
-                        <Eye className="w-3 h-3 shrink-0" />
-                      ) : (
-                        <Upload className="w-3 h-3 shrink-0" />
-                      )}
-                      <span className="hidden sm:inline">Justificación</span>
-                    </button>
                   </div>
                 </div>
 
@@ -1256,9 +1219,33 @@ function UsuarioGrupoPermisos({
                           </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-orange-500/70" />
-                        <span>{textoHora}</span>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1 min-w-0">
+                          <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-orange-500/70 shrink-0" />
+                          <span>{textoHora}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleAbrirJustificacion(e, permiso)}
+                          className={cn(
+                            "flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold rounded-md transition-colors border-2 cursor-pointer shrink-0",
+                            permiso.comprobante_url
+                              ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-600 dark:border-emerald-400"
+                              : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-600 dark:border-indigo-400",
+                          )}
+                          title={
+                            permiso.comprobante_url
+                              ? "Ver comprobante"
+                              : "Subir comprobante"
+                          }
+                        >
+                          {permiso.comprobante_url ? (
+                            <Eye className="w-3 h-3 shrink-0" />
+                          ) : (
+                            <Upload className="w-3 h-3 shrink-0" />
+                          )}
+                          <span className="hidden sm:inline">Justificación</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -1269,10 +1256,30 @@ function UsuarioGrupoPermisos({
                       </p>
                     </div>
                   )}
+                  {(permiso.aprobado_jefe_nombre || permiso.aprobado_rrhh_nombre) && (
+                    <div className="flex flex-col gap-0.5 text-[10px] lg:text-xs text-slate-600 dark:text-slate-400">
+                      {permiso.aprobado_jefe_nombre && (
+                        <p>
+                          <span className="font-bold text-slate-500 dark:text-slate-500">
+                            Preaprobado por:
+                          </span>{" "}
+                          {permiso.aprobado_jefe_nombre}
+                        </p>
+                      )}
+                      {permiso.aprobado_rrhh_nombre && (
+                        <p>
+                          <span className="font-bold text-slate-500 dark:text-slate-500">
+                            Aprobado por:
+                          </span>{" "}
+                          {permiso.aprobado_rrhh_nombre}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-neutral-800 md:flex-row md:items-center md:justify-between md:gap-3">
-                  <div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto">
+                  <div className="flex items-center justify-center md:justify-start gap-1.5 flex-nowrap overflow-x-auto">
                     {getEstadoBadge(permiso.estado)}
                     {permiso.estado === "aprobado" &&
                       permiso.remunerado !== null && (
@@ -1288,7 +1295,7 @@ function UsuarioGrupoPermisos({
                         </span>
                       )}
                   </div>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <div className="flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
                     <button
                       onClick={(e) => handleVerPreview(e, permiso)}
                       className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"

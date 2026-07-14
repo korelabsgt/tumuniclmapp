@@ -242,7 +242,7 @@ export default function ElegirDiasSemanaAcuerdo({
             <p className="text-xs text-muted-foreground mt-0.5">
               {cupo} día{cupo > 1 ? "s" : ""} laboral{cupo > 1 ? "es" : ""}/semana (lun–vie)
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">{acuerdo.tipo}</p>
+            <p className="text-xs text-muted-foreground mt-0.5 font-bold">{acuerdo.tipo}</p>
             {acuerdo.usuario?.nombre && (
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
                 {acuerdo.usuario.nombre}
@@ -258,52 +258,55 @@ export default function ElegirDiasSemanaAcuerdo({
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 p-4 flex flex-col gap-4 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              disabled={semanaIdx <= 0}
-              onClick={() => setSemanaIdx((i) => Math.max(0, i - 1))}
-              className="flex items-center justify-center p-2 rounded-md border-2 border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-bold text-center flex-1">
-              {etiquetaSemana}
-            </span>
-            <button
-              type="button"
-              disabled={semanaIdx >= semanas.length - 1}
-              onClick={() =>
-                setSemanaIdx((i) => Math.min(semanas.length - 1, i + 1))
-              }
-              className="flex items-center justify-center p-2 rounded-md border-2 border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+        <div className="flex-1 min-h-0 p-4 flex flex-col gap-4 overflow-hidden">
+          <div className="shrink-0 flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                disabled={semanaIdx <= 0}
+                onClick={() => setSemanaIdx((i) => Math.max(0, i - 1))}
+                className="flex items-center justify-center p-2 rounded-md border-2 border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <span className="text-sm font-bold text-center flex-1">
+                {etiquetaSemana}
+              </span>
+              <button
+                type="button"
+                disabled={semanaIdx >= semanas.length - 1}
+                onClick={() =>
+                  setSemanaIdx((i) => Math.min(semanas.length - 1, i + 1))
+                }
+                className="flex items-center justify-center p-2 rounded-md border-2 border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {asignadoPor && asignadoPor !== "—" && (
+              <p className="text-xs text-muted-foreground">
+                Última asignación por:{" "}
+                <span className="font-semibold text-foreground">{asignadoPor}</span>
+              </p>
+            )}
+
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+              {semanaEditable
+                ? `Asigne ${cupo} día${cupo > 1 ? "s" : ""} con horario (${activos.length}/${cupo})`
+                : "Esta semana ya finalizó. Solo puede consultar la asignación."}
+            </p>
           </div>
 
-          {asignadoPor && asignadoPor !== "—" && (
-            <p className="text-xs text-muted-foreground">
-              Última asignación por:{" "}
-              <span className="font-semibold text-foreground">{asignadoPor}</span>
-            </p>
-          )}
-
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-            {semanaEditable
-              ? `Asigne ${cupo} día${cupo > 1 ? "s" : ""} con horario (${activos.length}/${cupo})`
-              : "Esta semana ya finalizó. Solo puede consultar la asignación."}
-          </p>
-
-          <div className="flex justify-center overflow-x-hidden">
-            <div className="rounded-lg border border-gray-200 dark:border-neutral-700 overflow-hidden w-fit max-w-full">
-            <div className="grid grid-cols-[6.25rem_4.5rem_4.5rem] gap-2 px-3 py-2 bg-slate-50 dark:bg-neutral-800/80 text-[10px] font-bold uppercase tracking-wide text-muted-foreground justify-items-center">
-              <span className="text-center">Día</span>
-              <span className="text-center">Entrada</span>
-              <span className="text-center">Salida</span>
-            </div>
-            <div className="divide-y divide-gray-100 dark:divide-neutral-800">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
+            <div className="flex justify-center overflow-x-hidden pb-1">
+              <div className="rounded-lg border border-gray-200 dark:border-neutral-700 overflow-hidden w-fit max-w-full">
+                <div className="grid grid-cols-[6.25rem_4.5rem_4.5rem] gap-2 px-3 py-2 bg-slate-50 dark:bg-neutral-800/80 text-[10px] font-bold uppercase tracking-wide text-muted-foreground justify-items-center sticky top-0 z-10">
+                  <span className="text-center">Día</span>
+                  <span className="text-center">Entrada</span>
+                  <span className="text-center">Salida</span>
+                </div>
+                <div className="divide-y divide-gray-100 dark:divide-neutral-800">
               {filas.map((fila) => {
                 const pasada = esFechaPasada(fila.fecha, hoy);
                 const bloqueada = pasada || !semanaEditable;
@@ -373,6 +376,7 @@ export default function ElegirDiasSemanaAcuerdo({
                 );
               })}
             </div>
+          </div>
           </div>
           </div>
         </div>

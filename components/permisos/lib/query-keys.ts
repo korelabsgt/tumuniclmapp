@@ -7,4 +7,6 @@ export const permisosQueryKeys = {
     [...PERMISOS_QUERY_ROOT, "fecha", fecha] as const,
   porRango: (inicio: string, fin: string) =>
     [...PERMISOS_QUERY_ROOT, "rango", inicio, fin] as const,
+  lecturas: (tipoVista: string) =>
+    [...PERMISOS_QUERY_ROOT, "lecturas", tipoVista] as const,
 };

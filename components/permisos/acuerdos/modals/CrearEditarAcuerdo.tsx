@@ -35,12 +35,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/Switch";
 import {
   parseDiasAcuerdo,
   getModalidadAcuerdo,
   construirDiasRecurrente,
   construirDiasSemanal,
+  construirDiasTodos,
   DIAS_SEMANA_LABORALES,
+  HORA_ENTRADA_DEFECTO,
+  HORA_SALIDA_DEFECTO,
+  PASO_MINUTOS_HORARIO,
+  redondearHorarioACincoMinutos,
   type ModalidadAcuerdo,
 } from "../dias-acuerdo";
 
@@ -71,6 +77,10 @@ export default function CrearEditarAcuerdo({
   const [descripcion, setDescripcion] = useState("");
   const [modalidad, setModalidad] = useState<ModalidadAcuerdo>("todos");
   const [diasSemanaFijos, setDiasSemanaFijos] = useState<number[]>([]);
+  const [horaEntradaLaboral, setHoraEntradaLaboral] =
+    useState(HORA_ENTRADA_DEFECTO);
+  const [horaSalidaLaboral, setHoraSalidaLaboral] =
+    useState(HORA_SALIDA_DEFECTO);
   const [cupoSemanal, setCupoSemanal] = useState(2);
 
   const esRRHH = ["RRHH", "SUPER", "SECRETARIO"].includes(
@@ -105,14 +115,45 @@ export default function CrearEditarAcuerdo({
         const parsed = parseDiasAcuerdo(acuerdoAEditar.dias);
         const mod = getModalidadAcuerdo(parsed);
         setModalidad(mod);
-        if (mod === "recurrente") {
+        if (mod === "todos") {
+          setDiasSemanaFijos([]);
+          if (parsed && !Array.isArray(parsed) && parsed.modo === "todos") {
+            setHoraEntradaLaboral(
+              redondearHorarioACincoMinutos(
+                parsed.entrada ?? HORA_ENTRADA_DEFECTO,
+              ),
+            );
+            setHoraSalidaLaboral(
+              redondearHorarioACincoMinutos(
+                parsed.salida ?? HORA_SALIDA_DEFECTO,
+              ),
+            );
+          } else {
+            setHoraEntradaLaboral(HORA_ENTRADA_DEFECTO);
+            setHoraSalidaLaboral(HORA_SALIDA_DEFECTO);
+          }
+        } else if (mod === "recurrente") {
           if (Array.isArray(parsed)) {
             setDiasSemanaFijos(parsed);
+            setHoraEntradaLaboral(HORA_ENTRADA_DEFECTO);
+            setHoraSalidaLaboral(HORA_SALIDA_DEFECTO);
           } else if (parsed && !Array.isArray(parsed) && parsed.modo === "recurrente") {
             setDiasSemanaFijos(parsed.diasSemana);
+            setHoraEntradaLaboral(
+              redondearHorarioACincoMinutos(
+                parsed.entrada ?? HORA_ENTRADA_DEFECTO,
+              ),
+            );
+            setHoraSalidaLaboral(
+              redondearHorarioACincoMinutos(
+                parsed.salida ?? HORA_SALIDA_DEFECTO,
+              ),
+            );
           }
         } else {
           setDiasSemanaFijos([]);
+          setHoraEntradaLaboral(HORA_ENTRADA_DEFECTO);
+          setHoraSalidaLaboral(HORA_SALIDA_DEFECTO);
         }
         if (parsed && !Array.isArray(parsed) && parsed.modo === "semanal") {
           setCupoSemanal(parsed.cupoSemanal);
@@ -125,12 +166,23 @@ export default function CrearEditarAcuerdo({
         setDescripcion("");
         setModalidad("todos");
         setDiasSemanaFijos([]);
+        setHoraEntradaLaboral(HORA_ENTRADA_DEFECTO);
+        setHoraSalidaLaboral(HORA_SALIDA_DEFECTO);
         setCupoSemanal(2);
         setSelectedUserId("");
         setOpenComboboxEmpleado(false);
       }
     }
   }, [isOpen, acuerdoAEditar]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
   if (!isOpen || !puedeCrearEditar) return null;
 
@@ -142,13 +194,23 @@ export default function CrearEditarAcuerdo({
   };
 
   const serializarDias = (inicio: string, fin: string): string | null => {
-    if (modalidad === "todos") return null;
+    if (modalidad === "todos") {
+      return JSON.stringify(
+        construirDiasTodos({
+          entrada: redondearHorarioACincoMinutos(horaEntradaLaboral),
+          salida: redondearHorarioACincoMinutos(horaSalidaLaboral),
+        }),
+      );
+    }
     if (modalidad === "recurrente") {
       if (diasSemanaFijos.length === 0) {
         return null;
       }
       return JSON.stringify(
-        construirDiasRecurrente(inicio, fin, diasSemanaFijos),
+        construirDiasRecurrente(inicio, fin, diasSemanaFijos, {
+          entrada: redondearHorarioACincoMinutos(horaEntradaLaboral),
+          salida: redondearHorarioACincoMinutos(horaSalidaLaboral),
+        }),
       );
     }
     if (modalidad === "semanal") {
@@ -205,6 +267,14 @@ export default function CrearEditarAcuerdo({
 
     if (finDate <= inicioDate) {
       return toast.error("La fecha de fin debe ser posterior a la de inicio.");
+    }
+
+    if (
+      (modalidad === "recurrente" || modalidad === "todos") &&
+      redondearHorarioACincoMinutos(horaEntradaLaboral) >=
+        redondearHorarioACincoMinutos(horaSalidaLaboral)
+    ) {
+      return toast.error("La hora de entrada debe ser anterior a la de salida.");
     }
 
     if (modalidad === "recurrente" && diasSemanaFijos.length === 0) {
@@ -269,20 +339,22 @@ export default function CrearEditarAcuerdo({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-neutral-800 flex flex-col max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-neutral-800">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-neutral-800 flex flex-col max-h-[90vh] overflow-hidden overscroll-x-none">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-neutral-800 shrink-0">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
             {acuerdoAEditar ? "Editar Acuerdo" : "Nuevo Acuerdo Municipal"}
           </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="p-4 flex flex-col gap-4 overflow-y-auto overflow-x-hidden min-w-0"
+          className="flex flex-col flex-1 min-h-0 overflow-hidden overscroll-x-none"
         >
+          <div className="p-4 overflow-y-auto overflow-x-hidden overscroll-x-none min-w-0 max-w-full flex-1 [scrollbar-width:thin]">
+          <div className="flex flex-col gap-4 w-full min-w-0 max-w-full overflow-x-hidden">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Empleado
@@ -371,25 +443,25 @@ export default function CrearEditarAcuerdo({
             )}
           </div>
 
-          <div className="flex flex-col gap-4 min-w-0">
-            <div className="flex flex-col gap-1.5">
+          <div className="flex flex-col gap-4 min-w-0 max-w-full">
+            <div className="flex flex-col gap-1.5 min-w-0 max-w-full overflow-hidden">
               <label className="text-xs text-gray-600 dark:text-gray-400">Vigencia desde</label>
               <input
                 type="datetime-local"
                 name="inicio"
                 readOnly={esSoloLectura}
                 defaultValue={defaultInicio}
-                className="p-2 text-sm rounded-md border w-full"
+                className="p-2 text-sm rounded-md border w-full min-w-0 max-w-full box-border appearance-none"
               />
             </div>
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1.5 min-w-0 max-w-full overflow-hidden">
               <label className="text-xs text-gray-600 dark:text-gray-400">Vigencia hasta</label>
               <input
                 type="datetime-local"
                 name="fin"
                 readOnly={esSoloLectura}
                 defaultValue={defaultFin}
-                className="p-2 text-sm rounded-md border w-full"
+                className="p-2 text-sm rounded-md border w-full min-w-0 max-w-full box-border appearance-none"
               />
             </div>
           </div>
@@ -406,7 +478,7 @@ export default function CrearEditarAcuerdo({
                   modalidad === "recurrente"
                     ? "Días fijos cada semana (lun–vie)"
                     : modalidad === "semanal"
-                      ? "Elegir días por semana (flexible)"
+                      ? "Asignación de días flexible"
                       : "Todos los días del rango (lun–vie)"
                 }
                 className="p-2 text-sm rounded-md border bg-gray-100 w-full"
@@ -419,10 +491,56 @@ export default function CrearEditarAcuerdo({
               >
                 <option value="todos">Todos los días del rango (lun–vie)</option>
                 <option value="recurrente">Días fijos cada semana (automático)</option>
-                <option value="semanal">Elegir días por semana (flexible)</option>
+                <option value="semanal">Asignación de días flexible</option>
               </select>
             )}
           </div>
+
+          {modalidad === "todos" && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Horario laboral (lun–vie)
+              </label>
+              <div className="flex items-end gap-2 shrink-0">
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                    Entrada
+                  </span>
+                  <input
+                    type="time"
+                    step={PASO_MINUTOS_HORARIO * 60}
+                    value={horaEntradaLaboral}
+                    readOnly={esSoloLectura}
+                    onChange={(e) => setHoraEntradaLaboral(e.target.value)}
+                    onBlur={(e) =>
+                      setHoraEntradaLaboral(
+                        redondearHorarioACincoMinutos(e.target.value),
+                      )
+                    }
+                    className="p-1.5 text-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 w-[5.5rem] box-border"
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                    Salida
+                  </span>
+                  <input
+                    type="time"
+                    step={PASO_MINUTOS_HORARIO * 60}
+                    value={horaSalidaLaboral}
+                    readOnly={esSoloLectura}
+                    onChange={(e) => setHoraSalidaLaboral(e.target.value)}
+                    onBlur={(e) =>
+                      setHoraSalidaLaboral(
+                        redondearHorarioACincoMinutos(e.target.value),
+                      )
+                    }
+                    className="p-1.5 text-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 w-[5.5rem] box-border"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {modalidad === "recurrente" && (
             <div className="flex flex-col gap-1.5">
@@ -432,23 +550,63 @@ export default function CrearEditarAcuerdo({
                   (se generan todas las fechas del rango)
                 </span>
               </label>
-              <div className="flex flex-wrap gap-1.5">
-                {DIAS_SEMANA_LABORALES.map(({ valor, etiqueta }) => (
-                  <button
-                    key={valor}
-                    type="button"
-                    onClick={() => toggleDiaFijo(valor)}
-                    disabled={esSoloLectura}
-                    className={cn(
-                      "px-2.5 py-1 text-xs font-bold rounded-md border",
-                      diasSemanaFijos.includes(valor)
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white dark:bg-neutral-950 border-gray-200",
-                    )}
-                  >
-                    {etiqueta}
-                  </button>
-                ))}
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex flex-wrap gap-1.5">
+                  {DIAS_SEMANA_LABORALES.map(({ valor, etiqueta }) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => toggleDiaFijo(valor)}
+                      disabled={esSoloLectura}
+                      className={cn(
+                        "px-2.5 py-1 text-xs font-bold rounded-md border-2",
+                        diasSemanaFijos.includes(valor)
+                          ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 border-blue-600 dark:border-blue-400"
+                          : "bg-white dark:bg-neutral-950 border-gray-200 dark:border-neutral-700",
+                      )}
+                    >
+                      {etiqueta}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex items-end gap-2 shrink-0">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                      Entrada
+                    </span>
+                    <input
+                      type="time"
+                      step={PASO_MINUTOS_HORARIO * 60}
+                      value={horaEntradaLaboral}
+                      readOnly={esSoloLectura}
+                      onChange={(e) => setHoraEntradaLaboral(e.target.value)}
+                      onBlur={(e) =>
+                        setHoraEntradaLaboral(
+                          redondearHorarioACincoMinutos(e.target.value),
+                        )
+                      }
+                      className="p-1.5 text-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 w-[5.5rem] box-border"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400">
+                      Salida
+                    </span>
+                    <input
+                      type="time"
+                      step={PASO_MINUTOS_HORARIO * 60}
+                      value={horaSalidaLaboral}
+                      readOnly={esSoloLectura}
+                      onChange={(e) => setHoraSalidaLaboral(e.target.value)}
+                      onBlur={(e) =>
+                        setHoraSalidaLaboral(
+                          redondearHorarioACincoMinutos(e.target.value),
+                        )
+                      }
+                      className="p-1.5 text-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 w-[5.5rem] box-border"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -485,34 +643,51 @@ export default function CrearEditarAcuerdo({
               className="p-2 text-sm rounded-md border w-full min-h-[80px] resize-none"
             />
           </div>
+          </div>
+          </div>
 
-          {mostrarOpcionRemunerado && (
-            <div className="flex items-center space-x-2 py-1">
-              <input
-                type="checkbox"
-                id="remunerado"
-                checked={esRemunerado}
-                onChange={(e) => setEsRemunerado(e.target.checked)}
-                className="h-4 w-4 cursor-pointer"
-              />
-              <label htmlFor="remunerado" className="text-xs font-medium cursor-pointer">
-                Remunerado
-              </label>
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 p-4 border-t border-gray-100 dark:border-neutral-800 min-w-0 max-w-full overflow-x-hidden">
+            {mostrarOpcionRemunerado ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <Switch
+                  id="remunerado-acuerdo"
+                  checked={esRemunerado}
+                  onCheckedChange={setEsRemunerado}
+                  disabled={loading}
+                  className="data-[state=checked]:bg-emerald-600"
+                />
+                <label
+                  htmlFor="remunerado-acuerdo"
+                  className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+                >
+                  Remunerado
+                </label>
+              </div>
+            ) : (
+              <span />
+            )}
+
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 ml-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-zinc-600 bg-zinc-50 dark:text-zinc-300 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors border-2 border-zinc-500 dark:border-zinc-400 cursor-pointer"
+              >
+                Cerrar
+              </button>
+              <button
+                type="submit"
+                className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
+                {acuerdoAEditar ? "Actualizar" : "Guardar"}
+              </button>
             </div>
-          )}
-
-          <div className="flex justify-end gap-3 mt-4 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cerrar
-            </Button>
-            <Button type="submit" className="bg-blue-600 text-white" disabled={loading}>
-              {loading ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              {acuerdoAEditar ? "Actualizar" : "Guardar"}
-            </Button>
           </div>
         </form>
       </div>

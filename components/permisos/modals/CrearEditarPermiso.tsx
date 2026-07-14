@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { TipoVistaPermisos } from "@/components/permisos/hooks";
+import { Switch } from "@/components/ui/Switch";
 
 const TIPOS_GENERAL = [
   "Vacaciones",
@@ -162,6 +163,15 @@ export default function CrearEditarPermiso({
       }
     }
   }, [isOpen, permisoAEditar]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -297,16 +307,18 @@ export default function CrearEditarPermiso({
     ? format(new Date(permisoAEditar.fin), "yyyy-MM-dd'T'HH:mm")
     : `${todayStr}T16:00`;
 
+  const tituloModal = puedeGestionar
+    ? "Gestionar Solicitud"
+    : permisoAEditar
+      ? "Detalles / Editar"
+      : "Nuevo Permiso";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-neutral-800 flex flex-col max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-neutral-800">
+      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-neutral-800 flex flex-col max-h-[90vh] overflow-hidden overscroll-x-none">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-neutral-800 shrink-0">
           <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-            {puedeGestionar
-              ? "Gestionar Solicitud"
-              : permisoAEditar
-                ? "Detalles / Editar"
-                : "Nueva Solicitud"}
+            {tituloModal}
           </h3>
           <button
             onClick={onClose}
@@ -318,8 +330,10 @@ export default function CrearEditarPermiso({
 
         <form
           onSubmit={handleSubmit}
-          className="p-4 flex flex-col gap-4 overflow-y-auto overflow-x-hidden min-w-0"
+          className="flex flex-col flex-1 min-h-0 overflow-hidden overscroll-x-none"
         >
+          <div className="p-4 overflow-y-auto overflow-x-hidden overscroll-x-none min-w-0 max-w-full flex-1 [scrollbar-width:thin]">
+          <div className="flex flex-col gap-4 w-full min-w-0 max-w-full overflow-x-hidden">
           <div className="flex flex-col gap-1.5">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
               Empleado
@@ -496,8 +510,8 @@ export default function CrearEditarPermiso({
             )}
           </div>
 
-          <div className="flex flex-col gap-4 min-w-0">
-            <div className="flex flex-col gap-1.5 min-w-0">
+          <div className="flex flex-col gap-4 min-w-0 max-w-full">
+            <div className="flex flex-col gap-1.5 min-w-0 max-w-full overflow-hidden">
               <label className="text-xs text-gray-600 dark:text-gray-400">
                 Inicio
               </label>
@@ -507,14 +521,14 @@ export default function CrearEditarPermiso({
                 readOnly={esSoloLectura}
                 defaultValue={defaultInicio}
                 className={cn(
-                  "p-2 px-1.5 sm:px-2 text-xs sm:text-sm rounded-md border outline-none w-full min-w-0 max-w-full box-border",
+                  "p-2 px-1.5 sm:px-2 text-xs sm:text-sm rounded-md border outline-none w-full min-w-0 max-w-full box-border appearance-none",
                   esSoloLectura
                     ? "border-gray-300 bg-gray-100 text-gray-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-gray-400"
                     : "border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 dark:text-gray-200 focus:ring-1 focus:ring-blue-500",
                 )}
               />
             </div>
-            <div className="flex flex-col gap-1.5 min-w-0">
+            <div className="flex flex-col gap-1.5 min-w-0 max-w-full overflow-hidden">
               <label className="text-xs text-gray-600 dark:text-gray-400">
                 Fin
               </label>
@@ -524,7 +538,7 @@ export default function CrearEditarPermiso({
                 readOnly={esSoloLectura}
                 defaultValue={defaultFin}
                 className={cn(
-                  "p-2 px-1.5 sm:px-2 text-xs sm:text-sm rounded-md border outline-none w-full min-w-0 max-w-full box-border",
+                  "p-2 px-1.5 sm:px-2 text-xs sm:text-sm rounded-md border outline-none w-full min-w-0 max-w-full box-border appearance-none",
                   esSoloLectura
                     ? "border-gray-300 bg-gray-100 text-gray-500 dark:bg-neutral-900 dark:border-neutral-800 dark:text-gray-400"
                     : "border-gray-300 dark:border-neutral-700 bg-white dark:bg-neutral-950 dark:text-gray-200 focus:ring-1 focus:ring-blue-500",
@@ -568,84 +582,86 @@ export default function CrearEditarPermiso({
               )}
             />
           </div>
+          </div>
+          </div>
 
-          {mostrarOpcionRemunerado && (
-            <div className="flex items-center space-x-2 py-1">
-              <input
-                type="checkbox"
-                id="remunerado"
-                name="remunerado"
-                checked={esRemunerado}
-                onChange={(e) => setEsRemunerado(e.target.checked)}
-                disabled={loading} // CORRECCIÓN 3: Desbloqueado para RRHH siempre
-                className="h-4 w-4 border-gray-300 dark:border-neutral-700 rounded bg-white dark:bg-neutral-900 cursor-pointer"
-              />
-              <label
-                htmlFor="remunerado"
-                className="text-xs font-medium text-gray-700 dark:text-gray-300 cursor-pointer"
-              >
-                Remunerado
-              </label>
-            </div>
-          )}
+          <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 p-4 border-t border-gray-100 dark:border-neutral-800 min-w-0 max-w-full overflow-x-hidden">
+            {mostrarOpcionRemunerado ? (
+              <div className="flex items-center gap-2 shrink-0">
+                <Switch
+                  id="remunerado"
+                  checked={esRemunerado}
+                  onCheckedChange={setEsRemunerado}
+                  disabled={loading}
+                  className="data-[state=checked]:bg-emerald-600"
+                />
+                <label
+                  htmlFor="remunerado"
+                  className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer select-none"
+                >
+                  Remunerado
+                </label>
+              </div>
+            ) : (
+              <span />
+            )}
 
-          <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
+            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 ml-auto">
             {puedeGestionar ? (
               <>
-                <Button
+                <button
                   type="button"
                   onClick={() => handleGestion("rechazar")}
-                  className="bg-red-600 hover:bg-red-700 text-white h-10 px-4"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <XCircle className="w-4 h-4 mr-2" />
-                  )}{" "}
+                    <XCircle className="w-4 h-4" />
+                  )}
                   Rechazar
-                </Button>
-                <Button
+                </button>
+                <button
                   type="button"
                   onClick={() => handleGestion("aprobar")}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-10 px-4"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-md transition-colors border-2 border-emerald-600 dark:border-emerald-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    <CheckCircle2 className="w-4 h-4" />
                   )}
                   {esFaseJefe ? "Aprobar como jefe" : "Aprobar como RRHH"}
-                </Button>
+                </button>
               </>
             ) : (
               <>
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={onClose}
-                  className="h-10 dark:bg-transparent dark:border-neutral-700 dark:text-gray-300"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-zinc-600 bg-zinc-50 dark:text-zinc-300 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors border-2 border-zinc-500 dark:border-zinc-400 cursor-pointer"
                 >
                   Cerrar
-                </Button>
-                {/* CORRECCIÓN 4: Botón Guardar visible si no es solo lectura O si es RRHH (incluso si está bloqueado) */}
+                </button>
                 {(!esSoloLectura || (esRRHH && contieneBloqueo)) && (
-                  <Button
+                  <button
                     type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white h-10"
+                    className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={loading}
                   >
                     {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <Save className="w-4 h-4 mr-2" />
+                      <Save className="w-4 h-4" />
                     )}
                     {contieneBloqueo ? "Actualizar Datos" : "Guardar"}
-                  </Button>
+                  </button>
                 )}
               </>
             )}
+            </div>
           </div>
         </form>
       </div>

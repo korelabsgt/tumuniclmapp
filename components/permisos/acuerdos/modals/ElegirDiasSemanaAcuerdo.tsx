@@ -1,24 +1,38 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { X, Save, Loader2, ChevronLeft, ChevronRight, History } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { X, Save, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { AcuerdoEmpleado } from "../types";
 import { actualizarDiasSemanaAcuerdo } from "@/components/permisos/acciones";
 import { toast } from "react-toastify";
 import { cn } from "@/lib/utils";
 import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
+import { formatearRangoSemana } from "@/components/permisos/lib/fechas";
 import {
   parseDiasAcuerdo,
   getSemanaKey,
   obtenerFechasDeSemana,
   listarSemanasEnRango,
-  formatearFechaCorta,
   esFechaPasada,
   fechaHoyLocal,
+  obtenerSemanaRegistro,
+  HORA_ENTRADA_DEFECTO,
+  HORA_SALIDA_DEFECTO,
+  PASO_MINUTOS_HORARIO,
+  redondearHorarioACincoMinutos,
   type DiasAcuerdoSemanal,
 } from "../dias-acuerdo";
+
+const claseInputHorario =
+  "w-[4.5rem] max-w-[4.5rem] shrink-0 text-[10px] font-medium rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-950 text-gray-800 dark:text-gray-200 px-0.5 py-1 text-center disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500/20 [color-scheme:light] dark:[color-scheme:dark]";
+
+interface FilaDia {
+  fecha: string;
+  activo: boolean;
+  entrada: string;
+  salida: string;
+}
 
 interface Props {
   isOpen: boolean;
@@ -35,7 +49,8 @@ export default function ElegirDiasSemanaAcuerdo({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [semanaIdx, setSemanaIdx] = useState(0);
-  const [seleccion, setSeleccion] = useState<string[]>([]);
+  const [filas, setFilas] = useState<FilaDia[]>([]);
+  const [asignadoPor, setAsignadoPor] = useState("");
 
   const diasData = useMemo(() => {
     if (!acuerdo) return null;
@@ -64,8 +79,24 @@ export default function ElegirDiasSemanaAcuerdo({
 
   useEffect(() => {
     if (!isOpen || !diasData || !semanaActual) return;
-    setSeleccion(diasData.semanas[semanaActual] ?? []);
-  }, [isOpen, diasData, semanaActual]);
+    const registro = obtenerSemanaRegistro(diasData, semanaActual);
+    setAsignadoPor(registro?.asignadoPor ?? "");
+    setFilas(
+      fechasSemana.map((fecha) => {
+        const existente = registro?.dias.find((d) => d.fecha === fecha);
+        return {
+          fecha,
+          activo: !!existente,
+          entrada: redondearHorarioACincoMinutos(
+            existente?.entrada ?? HORA_ENTRADA_DEFECTO,
+          ),
+          salida: redondearHorarioACincoMinutos(
+            existente?.salida ?? HORA_SALIDA_DEFECTO,
+          ),
+        };
+      }),
+    );
+  }, [isOpen, diasData, semanaActual, fechasSemana]);
 
   useEffect(() => {
     if (!isOpen || !acuerdo) return;
@@ -74,20 +105,33 @@ export default function ElegirDiasSemanaAcuerdo({
     setSemanaIdx(idx >= 0 ? idx : 0);
   }, [isOpen, acuerdo, semanas]);
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
   if (!isOpen || !acuerdo || !diasData) return null;
 
   const cupo = diasData.cupoSemanal;
   const hoy = fechaHoyLocal();
   const semanaEditable = fechasSemana.some((f) => !esFechaPasada(f, hoy));
+  const activos = filas.filter((f) => f.activo);
 
   const toastOpts = { position: "top-center" as const };
 
   const etiquetaSemana =
     fechasSemana.length > 0
-      ? `${formatearFechaCorta(fechasSemana[0])} - ${formatearFechaCorta(fechasSemana[fechasSemana.length - 1])} · ${parseISO(fechasSemana[0]).getFullYear()}`
+      ? formatearRangoSemana(
+          fechasSemana[0],
+          fechasSemana[fechasSemana.length - 1],
+        )
       : "";
 
-  const toggleFecha = (fecha: string) => {
+  const toggleFila = (fecha: string) => {
     if (esFechaPasada(fecha, hoy)) {
       toast.warn("No puede modificar un día que ya pasó", toastOpts);
       return;
@@ -96,15 +140,56 @@ export default function ElegirDiasSemanaAcuerdo({
       toast.warn("Esta semana ya finalizó y no admite cambios", toastOpts);
       return;
     }
-    if (seleccion.includes(fecha)) {
-      setSeleccion((prev) => prev.filter((f) => f !== fecha));
+
+    const fila = filas.find((f) => f.fecha === fecha);
+    if (!fila) return;
+
+    if (fila.activo) {
+      setFilas((prev) =>
+        prev.map((f) =>
+          f.fecha === fecha ? { ...f, activo: false } : f,
+        ),
+      );
       return;
     }
-    if (seleccion.length >= cupo) {
-      toast.warn(`Solo puede elegir ${cupo} días esta semana`, toastOpts);
+
+    const activosCount = filas.filter((f) => f.activo).length;
+    if (activosCount >= cupo) {
+      toast.warn(`Solo puede asignar ${cupo} días esta semana`, toastOpts);
       return;
     }
-    setSeleccion((prev) => [...prev, fecha].sort());
+
+    setFilas((prev) =>
+      prev.map((f) =>
+        f.fecha === fecha
+          ? {
+              ...f,
+              activo: true,
+              entrada: redondearHorarioACincoMinutos(
+                f.entrada || HORA_ENTRADA_DEFECTO,
+              ),
+              salida: redondearHorarioACincoMinutos(
+                f.salida || HORA_SALIDA_DEFECTO,
+              ),
+            }
+          : f,
+      ),
+    );
+  };
+
+  const actualizarHorario = (
+    fecha: string,
+    campo: "entrada" | "salida",
+    valor: string,
+    redondear = false,
+  ) => {
+    if (esFechaPasada(fecha, hoy)) return;
+    const horario = redondear ? redondearHorarioACincoMinutos(valor) : valor;
+    setFilas((prev) =>
+      prev.map((f) =>
+        f.fecha === fecha ? { ...f, [campo]: horario } : f,
+      ),
+    );
   };
 
   const handleGuardar = async () => {
@@ -112,18 +197,31 @@ export default function ElegirDiasSemanaAcuerdo({
       toast.warn("Esta semana ya finalizó y no admite cambios", toastOpts);
       return;
     }
-    if (seleccion.length === 0) {
-      toast.warn("Seleccione al menos un día", toastOpts);
+    if (activos.length === 0) {
+      toast.warn("Asigne al menos un día", toastOpts);
       return;
     }
-    if (seleccion.length > cupo) {
+    if (activos.length > cupo) {
       toast.warn(`Máximo ${cupo} días por semana`, toastOpts);
       return;
     }
+    if (activos.some((f) => f.entrada >= f.salida)) {
+      toast.warn("La hora de entrada debe ser anterior a la de salida", toastOpts);
+      return;
+    }
+
     setLoading(true);
     try {
-      await actualizarDiasSemanaAcuerdo(acuerdo.id, semanaActual, seleccion);
-      toast.success("Días de la semana guardados", toastOpts);
+      await actualizarDiasSemanaAcuerdo(
+        acuerdo.id,
+        semanaActual,
+        activos.map((f) => ({
+          fecha: f.fecha,
+          entrada: redondearHorarioACincoMinutos(f.entrada),
+          salida: redondearHorarioACincoMinutos(f.salida),
+        })),
+      );
+      toast.success("Días asignados correctamente", toastOpts);
       onSuccess();
       onClose();
     } catch (err: unknown) {
@@ -133,34 +231,40 @@ export default function ElegirDiasSemanaAcuerdo({
     }
   };
 
-  const historialSemana = diasData.historial.filter(
-    (h) => h.semana === semanaActual,
-  );
-
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl w-full max-w-md border border-gray-200 dark:border-neutral-800 flex flex-col max-h-[90vh] overflow-hidden">
-        <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-neutral-800">
-          <div>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-sm overscroll-none">
+      <div className="bg-white dark:bg-neutral-900 rounded-none sm:rounded-lg shadow-xl w-full sm:w-fit sm:max-w-[calc(100vw-2rem)] border border-gray-200 dark:border-neutral-800 flex flex-col max-h-[100dvh] sm:max-h-[90vh] overflow-hidden overscroll-none">
+        <div className="shrink-0 flex items-start justify-between gap-3 p-4 border-b border-gray-100 dark:border-neutral-800">
+          <div className="min-w-0">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-              Elegir días de la semana
+              Asignar días de la semana
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {cupo} día{cupo > 1 ? "s" : ""} laboral{cupo > 1 ? "es" : ""}/semana (lun–vie) · {acuerdo.tipo}
+              {cupo} día{cupo > 1 ? "s" : ""} laboral{cupo > 1 ? "es" : ""}/semana (lun–vie)
             </p>
+            <p className="text-xs text-muted-foreground mt-0.5">{acuerdo.tipo}</p>
+            {acuerdo.usuario?.nombre && (
+              <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5 font-medium">
+                {acuerdo.usuario.nombre}
+              </p>
+            )}
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 cursor-pointer p-1"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="p-4 flex flex-col gap-4 overflow-y-auto">
+        <div className="flex-1 min-h-0 p-4 flex flex-col gap-4 overflow-y-auto overscroll-contain [scrollbar-width:thin]">
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               disabled={semanaIdx <= 0}
               onClick={() => setSemanaIdx((i) => Math.max(0, i - 1))}
-              className="p-2 rounded-md border border-gray-200 dark:border-neutral-700 disabled:opacity-40"
+              className="flex items-center justify-center p-2 rounded-md border-2 border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -173,92 +277,127 @@ export default function ElegirDiasSemanaAcuerdo({
               onClick={() =>
                 setSemanaIdx((i) => Math.min(semanas.length - 1, i + 1))
               }
-              className="p-2 rounded-md border border-gray-200 dark:border-neutral-700 disabled:opacity-40"
+              className="flex items-center justify-center p-2 rounded-md border-2 border-zinc-400 dark:border-zinc-500 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
 
+          {asignadoPor && asignadoPor !== "—" && (
+            <p className="text-xs text-muted-foreground">
+              Última asignación por:{" "}
+              <span className="font-semibold text-foreground">{asignadoPor}</span>
+            </p>
+          )}
+
           <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
             {semanaEditable
-              ? `Seleccione ${cupo} día${cupo > 1 ? "s" : ""} laboral${cupo > 1 ? "es" : ""} (lun–vie) (${seleccion.length}/${cupo})`
-              : "Esta semana ya finalizó. Solo puede consultar su selección e historial."}
+              ? `Asigne ${cupo} día${cupo > 1 ? "s" : ""} con horario (${activos.length}/${cupo})`
+              : "Esta semana ya finalizó. Solo puede consultar la asignación."}
           </p>
 
-          <div className="grid grid-cols-2 gap-2">
-            {fechasSemana.map((fecha) => {
-              const d = parseISO(fecha);
-              const activo = seleccion.includes(fecha);
-              const pasada = esFechaPasada(fecha, hoy);
-              const bloqueada = pasada;
-              const label = format(d, "EEE d MMM", { locale: es });
-              return (
-                <button
-                  key={fecha}
-                  type="button"
-                  disabled={bloqueada}
-                  onClick={() => toggleFecha(fecha)}
-                  className={cn(
-                    "py-2.5 px-2 text-xs font-bold rounded-lg border transition-all capitalize",
-                    bloqueada && "cursor-not-allowed opacity-50",
-                    activo
-                      ? bloqueada
-                        ? "bg-blue-600/70 text-white border-blue-600/70"
-                        : "bg-blue-600 text-white border-blue-600"
-                      : "bg-white dark:bg-neutral-950 border-gray-200 dark:border-neutral-700 hover:border-blue-400",
-                    bloqueada && !activo && "hover:border-gray-200 dark:hover:border-neutral-700",
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-
-          {historialSemana.length > 0 && (
-            <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-900/10 p-3">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-amber-800 dark:text-amber-300 mb-2">
-                <History className="w-3.5 h-3.5" />
-                Historial de cambios de esta semana
-              </div>
-              <ul className="grid grid-cols-3 gap-2">
-                {historialSemana.map((h, i) => (
-                  <li
-                    key={`${h.guardadoAt}-${i}`}
-                    className="text-[10px] leading-snug text-amber-700 dark:text-amber-400 rounded-md border border-amber-200/60 dark:border-amber-800/40 bg-white/60 dark:bg-neutral-950/40 p-2"
-                  >
-                    <span className="block font-semibold">
-                      {h.fechas.map(formatearFechaCorta).join(", ")}
-                    </span>
-                    <span className="block text-amber-500/90 mt-0.5">
-                      {format(parseISO(h.guardadoAt.substring(0, 10)), "d MMM", {
-                        locale: es,
-                      })}
-                    </span>
-                  </li>
-                ))}
-              </ul>
+          <div className="flex justify-center overflow-x-hidden">
+            <div className="rounded-lg border border-gray-200 dark:border-neutral-700 overflow-hidden w-fit max-w-full">
+            <div className="grid grid-cols-[6.25rem_4.5rem_4.5rem] gap-2 px-3 py-2 bg-slate-50 dark:bg-neutral-800/80 text-[10px] font-bold uppercase tracking-wide text-muted-foreground justify-items-center">
+              <span className="text-center">Día</span>
+              <span className="text-center">Entrada</span>
+              <span className="text-center">Salida</span>
             </div>
-          )}
+            <div className="divide-y divide-gray-100 dark:divide-neutral-800">
+              {filas.map((fila) => {
+                const pasada = esFechaPasada(fila.fecha, hoy);
+                const bloqueada = pasada || !semanaEditable;
+                const label = format(parseISO(fila.fecha), "EEE d MMM", {
+                  locale: es,
+                });
+                return (
+                  <div
+                    key={fila.fecha}
+                    className={cn(
+                      "grid grid-cols-[6.25rem_4.5rem_4.5rem] gap-2 px-3 py-2 items-center justify-items-center",
+                      fila.activo && "bg-blue-50/50 dark:bg-blue-950/20",
+                      bloqueada && "opacity-60",
+                    )}
+                  >
+                    <button
+                      type="button"
+                      disabled={bloqueada}
+                      onClick={() => toggleFila(fila.fecha)}
+                      className={cn(
+                        "w-[6.25rem] shrink-0 text-center text-xs font-bold capitalize rounded-md border-2 px-2 py-1.5 transition-colors cursor-pointer whitespace-nowrap",
+                        fila.activo
+                          ? "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 border-blue-600 dark:border-blue-400"
+                          : "text-gray-600 bg-white dark:text-gray-300 dark:bg-neutral-950 border-gray-200 dark:border-neutral-700 hover:border-blue-400 dark:hover:border-blue-400",
+                        bloqueada && "cursor-not-allowed",
+                      )}
+                    >
+                      {label}
+                    </button>
+                    <input
+                      type="time"
+                      step={PASO_MINUTOS_HORARIO * 60}
+                      value={fila.entrada}
+                      disabled={!fila.activo || bloqueada}
+                      onChange={(e) =>
+                        actualizarHorario(fila.fecha, "entrada", e.target.value)
+                      }
+                      onBlur={(e) =>
+                        actualizarHorario(
+                          fila.fecha,
+                          "entrada",
+                          e.target.value,
+                          true,
+                        )
+                      }
+                      className={claseInputHorario}
+                    />
+                    <input
+                      type="time"
+                      step={PASO_MINUTOS_HORARIO * 60}
+                      value={fila.salida}
+                      disabled={!fila.activo || bloqueada}
+                      onChange={(e) =>
+                        actualizarHorario(fila.fecha, "salida", e.target.value)
+                      }
+                      onBlur={(e) =>
+                        actualizarHorario(
+                          fila.fecha,
+                          "salida",
+                          e.target.value,
+                          true,
+                        )
+                      }
+                      className={claseInputHorario}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          </div>
         </div>
 
-        <div className="flex justify-end gap-3 p-4 border-t border-gray-100 dark:border-neutral-800">
-          <Button type="button" variant="outline" onClick={onClose}>
+        <div className="shrink-0 flex flex-wrap items-center justify-end gap-2 p-4 border-t border-gray-100 dark:border-neutral-800">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-zinc-600 bg-zinc-50 dark:text-zinc-300 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors border-2 border-zinc-500 dark:border-zinc-400 cursor-pointer"
+          >
             Cerrar
-          </Button>
-          <Button
+          </button>
+          <button
             type="button"
             onClick={handleGuardar}
             disabled={loading || !semanaEditable}
-            className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+            className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
           >
             {loading ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="w-4 h-4" />
             )}
-            Guardar semana
-          </Button>
+            Guardar asignación
+          </button>
         </div>
       </div>
     </div>

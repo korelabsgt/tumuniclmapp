@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, FileText } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -37,7 +36,6 @@ const formatearFechaHora = (fechaISO: string) => {
 };
 
 export default function BloqueoPermisoMensaje() {
-  const pathname = usePathname();
   const { resolvedTheme } = useTheme();
   const [mensaje, setMensaje] = useState<MensajePendiente | null>(null);
   const [loading, setLoading] = useState(true);
@@ -61,12 +59,6 @@ export default function BloqueoPermisoMensaje() {
   useEffect(() => {
     fetchMensaje();
   }, [fetchMensaje]);
-
-  useEffect(() => {
-    if (pathname?.startsWith("/protected/permisos")) {
-      fetchMensaje(true);
-    }
-  }, [pathname, fetchMensaje]);
 
   useEffect(() => {
     const onRefresh = () => fetchMensaje(true);

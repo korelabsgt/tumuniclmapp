@@ -7,17 +7,19 @@ import {
   EstadoAcuerdo,
   esTipoAcuerdo,
 } from "@/components/permisos/acuerdos/types";
-import {
-  obtenerPermisosPorFecha,
-  obtenerPermisosPorRango,
-  obtenerTodosPendientes,
-  eliminarPermiso,
-  obtenerPerfilUsuario,
-  type PerfilUsuario,
-} from "@/components/permisos/acciones";
+import { eliminarPermiso } from "@/components/permisos/acciones";
 import { UsuarioConJerarquia } from "@/components/permisos/types";
 import { useListaUsuarios } from "@/hooks/usuarios/useListarUsuarios";
 import { parseDiasAcuerdo } from "@/components/permisos/acuerdos/dias-acuerdo";
+import { calcularConteosPendientes } from "@/components/permisos/lib/conteos";
+import {
+  usePerfilPermisos,
+  useRegistrosPermisos,
+  usePendientesPermisos,
+  useInvalidarPermisos,
+  EMPTY_PERMISOS,
+  type ModoFiltroPermisos,
+} from "@/components/permisos/lib/hooks-queries";
 
 export type TipoVistaAcuerdos =
   | "mis_acuerdos"
@@ -25,29 +27,15 @@ export type TipoVistaAcuerdos =
   | "gestion_rrhh";
 
 export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
-  const [registrosRaw, setRegistrosRaw] = useState<AcuerdoEmpleado[]>([]);
-  const [loadingAcuerdos, setLoadingAcuerdos] = useState(true);
-  const [perfilUsuario, setPerfilUsuario] = useState<PerfilUsuario | null>(
-    null,
-  );
-  const [conteosPendientes, setConteosPendientes] = useState<{
-    pendientes: number;
-    avalados: number;
-  }>({ pendientes: 0, avalados: 0 });
-
   const [searchTerm, setSearchTerm] = useState("");
   const [oficinasAbiertas, setOficinasAbiertas] = useState<
     Record<string, boolean>
   >({});
   const [todosAbiertos, setTodosAbiertos] = useState(true);
-
   const [filtroEstado, setFiltroEstado] = useState<"todos" | EstadoAcuerdo>(
     "todos",
   );
-
-  const [modoFiltro, setModoFiltro] = useState<
-    "dia" | "semana" | "rango" | "pendientes"
-  >("semana");
+  const [modoFiltro, setModoFiltro] = useState<ModoFiltroPermisos>("semana");
   const [fechaSeleccionada, setFechaSeleccionada] = useState<string>(
     format(new Date(), "yyyy-MM-dd"),
   );
@@ -57,144 +45,78 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
   const [fechaFin, setFechaFin] = useState<string>(
     format(new Date(), "yyyy-MM-dd"),
   );
-
   const [modalAbierto, setModalAbierto] = useState(false);
   const [acuerdoParaEditar, setAcuerdoParaEditar] =
     useState<AcuerdoEmpleado | null>(null);
 
   const { usuarios: usuariosHook } = useListaUsuarios();
-
-  const usuariosAdaptados = useMemo(() => {
-    return usuariosHook as unknown as UsuarioConJerarquia[];
-  }, [usuariosHook]);
-
-  const actualizarConteosPendientes = useCallback(
-    async (perfilActual?: PerfilUsuario | null) => {
-      try {
-        const perfil = perfilActual || perfilUsuario;
-        if (!perfil) return;
-        const todos = await obtenerTodosPendientes();
-
-        let acuerdosFiltrados = todos
-          .filter((a) => esTipoAcuerdo(a.tipo))
-          .map((acuerdo) => {
-          const usuarioEncontrado = usuariosAdaptados.find(
-            (u) => u.id === acuerdo.user_id,
-          );
-          return { ...acuerdo, usuario: usuarioEncontrado };
-        });
-
-        const esRRHH = ["RRHH", "SUPER", "SECRETARIO"].includes(
-          perfil.rol || "",
-        );
-        const idsOficinasJefe = perfil.oficinasACargo.map((o) => o.id);
-        const nombresOficinasJefe = perfil.oficinasACargo.map((o) =>
-          o.nombre.toLowerCase().trim(),
-        );
-
-        if (tipoVista === "gestion_jefe") {
-          if (idsOficinasJefe.length > 0) {
-            acuerdosFiltrados = acuerdosFiltrados.filter((a) => {
-              const depId = a.usuario?.dependencia_id;
-              const depNombre = a.usuario?.oficina_nombre
-                ?.toLowerCase()
-                .trim();
-              return (
-                (depId && idsOficinasJefe.includes(depId)) ||
-                (depNombre && nombresOficinasJefe.includes(depNombre))
-              );
-            });
-          } else {
-            acuerdosFiltrados = [];
-          }
-        } else if (tipoVista === "gestion_rrhh") {
-          if (!esRRHH) acuerdosFiltrados = [];
-        } else if (tipoVista === "mis_acuerdos") {
-          acuerdosFiltrados = [];
-        }
-
-        let pend = 0;
-        let aval = 0;
-        acuerdosFiltrados.forEach((r) => {
-          if (r.estado === "pendiente") pend++;
-          if (r.estado === "aprobado_jefe") aval++;
-        });
-        setConteosPendientes({ pendientes: pend, avalados: aval });
-      } catch {
-        // silently fail
-      }
-    },
-    [perfilUsuario, tipoVista, usuariosAdaptados],
+  const usuariosAdaptados = useMemo(
+    () => usuariosHook as unknown as UsuarioConJerarquia[],
+    [usuariosHook],
   );
 
-  const cargarDatos = useCallback(async () => {
-    try {
-      let data: AcuerdoEmpleado[];
-      if (modoFiltro === "pendientes") {
-        data = (await obtenerTodosPendientes()).filter((a) =>
-          esTipoAcuerdo(a.tipo),
-        );
-      } else if (modoFiltro === "rango" || modoFiltro === "semana") {
-        data = (await obtenerPermisosPorRango(fechaInicio, fechaFin)).filter(
-          (a) => esTipoAcuerdo(a.tipo),
-        );
-      } else {
-        data = (await obtenerPermisosPorFecha(fechaSeleccionada)).filter((a) =>
-          esTipoAcuerdo(a.tipo),
-        );
-      }
-      setRegistrosRaw(data);
-      await actualizarConteosPendientes();
-    } catch (error) {
-      console.error(error);
-    }
-  }, [
-    fechaSeleccionada,
-    fechaInicio,
-    fechaFin,
-    modoFiltro,
-    actualizarConteosPendientes,
-  ]);
+  const filtroParams = useMemo(
+    () => ({
+      modoFiltro,
+      fechaSeleccionada,
+      fechaInicio,
+      fechaFin,
+    }),
+    [modoFiltro, fechaSeleccionada, fechaInicio, fechaFin],
+  );
 
-  useEffect(() => {
-    const init = async () => {
-      setLoadingAcuerdos(true);
-      try {
-        let data: AcuerdoEmpleado[];
-        if (modoFiltro === "pendientes") {
-          data = (await obtenerTodosPendientes()).filter((a) =>
-            esTipoAcuerdo(a.tipo),
-          );
-        } else if (modoFiltro === "rango" || modoFiltro === "semana") {
-          data = (await obtenerPermisosPorRango(fechaInicio, fechaFin)).filter(
-            (a) => esTipoAcuerdo(a.tipo),
-          );
-        } else {
-          data = (await obtenerPermisosPorFecha(fechaSeleccionada)).filter(
-            (a) => esTipoAcuerdo(a.tipo),
-          );
-        }
-        const perfil = await obtenerPerfilUsuario();
-        setRegistrosRaw(data);
-        setPerfilUsuario(perfil);
-        await actualizarConteosPendientes(perfil);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoadingAcuerdos(false);
-      }
-    };
-    init();
-  }, [fechaSeleccionada, fechaInicio, fechaFin, modoFiltro]);
+  const { data: perfilUsuario = null, isLoading: loadingPerfil } =
+    usePerfilPermisos();
+  const {
+    data: registrosRawSinFiltrar,
+    isLoading: loadingRegistros,
+    isFetching: fetchingRegistros,
+  } = useRegistrosPermisos(filtroParams);
+  const necesitaConteosPendientes = tipoVista !== "mis_acuerdos";
+  const { data: pendientesRaw } = usePendientesPermisos(
+    necesitaConteosPendientes && modoFiltro !== "pendientes",
+  );
 
-  useEffect(() => {
-    if (perfilUsuario && usuariosAdaptados.length > 0) {
-      actualizarConteosPendientes();
+  const invalidarPermisos = useInvalidarPermisos();
+  const cargarDatos = useCallback(() => {
+    void invalidarPermisos();
+  }, [invalidarPermisos]);
+
+  const registrosRaw = useMemo(() => {
+    if (!registrosRawSinFiltrar) return EMPTY_PERMISOS as AcuerdoEmpleado[];
+    return registrosRawSinFiltrar.filter((a) =>
+      esTipoAcuerdo(a.tipo),
+    ) as AcuerdoEmpleado[];
+  }, [registrosRawSinFiltrar]);
+
+  const pendientesLista = pendientesRaw ?? EMPTY_PERMISOS;
+
+  const todosParaConteos =
+    modoFiltro === "pendientes"
+      ? (registrosRawSinFiltrar ?? EMPTY_PERMISOS)
+      : pendientesLista;
+
+  const conteosPendientes = useMemo(() => {
+    if (!perfilUsuario || usuariosAdaptados.length === 0) {
+      return { pendientes: 0, avalados: 0 };
     }
-  }, [perfilUsuario, usuariosAdaptados, actualizarConteosPendientes]);
+    return calcularConteosPendientes(
+      todosParaConteos,
+      perfilUsuario,
+      tipoVista,
+      usuariosAdaptados,
+      true,
+    );
+  }, [todosParaConteos, perfilUsuario, tipoVista, usuariosAdaptados]);
+
+  const loadingAcuerdos =
+    (loadingPerfil && !perfilUsuario) ||
+    (loadingRegistros && !registrosRawSinFiltrar);
 
   const registrosEnriquecidos = useMemo(() => {
-    if (!usuariosAdaptados.length) return [];
+    if (!usuariosAdaptados.length || !registrosRawSinFiltrar) {
+      return [] as AcuerdoEmpleado[];
+    }
     return registrosRaw.map((acuerdo) => {
       const usuarioEncontrado = usuariosAdaptados.find(
         (u) => u.id === acuerdo.user_id,
@@ -266,7 +188,10 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
         break;
     }
 
-    return { acuerdosVisibles: acuerdosFiltrados, usuariosParaModal: usuariosFiltrados };
+    return {
+      acuerdosVisibles: acuerdosFiltrados,
+      usuariosParaModal: usuariosFiltrados,
+    };
   }, [registrosEnriquecidos, usuariosAdaptados, perfilUsuario, tipoVista]);
 
   const registrosFinales = useMemo(() => {
@@ -338,16 +263,30 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
     );
   }, [registrosOrdenados, tipoVista, perfilUsuario]);
 
+  const oficinasAgrupadasKey = useMemo(
+    () =>
+      datosAgrupadosInterno
+        .map((g) => g.oficina_nombre)
+        .sort()
+        .join("\0"),
+    [datosAgrupadosInterno],
+  );
+
   useEffect(() => {
-    if (todosAbiertos) {
+    if (!todosAbiertos) return;
+    setOficinasAbiertas((prev) => {
+      const nombres = datosAgrupadosInterno.map((g) => g.oficina_nombre);
+      const sinCambios =
+        nombres.length === Object.keys(prev).length &&
+        nombres.every((nombre) => prev[nombre] === true);
+      if (sinCambios) return prev;
       const nuevoEstado: Record<string, boolean> = {};
-      datosAgrupadosInterno.forEach((g) => {
-        nuevoEstado[g.oficina_nombre] = true;
+      nombres.forEach((nombre) => {
+        nuevoEstado[nombre] = true;
       });
-      setOficinasAbiertas(nuevoEstado);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [registrosRaw, todosAbiertos]);
+      return nuevoEstado;
+    });
+  }, [oficinasAgrupadasKey, todosAbiertos]);
 
   const estadisticas = useMemo(() => {
     let pendientes = 0;
@@ -435,6 +374,7 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
   return {
     state: {
       loadingAcuerdos,
+      fetchingRegistros,
       searchTerm,
       filtroEstado,
       fechaSeleccionada,

@@ -46,46 +46,18 @@ import { motion, AnimatePresence } from "framer-motion";
 import { usePermisos, TipoVistaPermisos } from "./hooks";
 import { cn } from "@/lib/utils";
 import {
+  formatearFechaFiltro,
+  formatearFechaTarjetaDesdeISO,
+  formatearRangoTarjeta,
+  getSemanasDelMes,
+} from "@/components/permisos/lib/fechas";
+import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
 import Calendario from "@/components/ui/Calendario";
 import PermisosNav from "./PermisosNav";
-
-function getSemanasDelMes(yyyyMM: string) {
-  const [year, month] = yyyyMM.split("-").map(Number);
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 0);
-
-  const semanas = [];
-  let current = start;
-
-  while (current <= end) {
-    let weekEnd = new Date(current);
-    while (weekEnd.getDay() !== 0 && weekEnd < end) {
-      weekEnd.setDate(weekEnd.getDate() + 1);
-    }
-
-    const labelInicio = format(current, "EE d", { locale: es });
-    const labelFin = format(weekEnd, "EE d", { locale: es });
-    const label =
-      `${labelInicio.charAt(0).toUpperCase() + labelInicio.slice(1)} - ${labelFin.charAt(0).toUpperCase() + labelFin.slice(1)}`.replace(
-        /\./g,
-        "",
-      );
-
-    semanas.push({
-      inicio: format(current, "yyyy-MM-dd"),
-      fin: format(weekEnd, "yyyy-MM-dd"),
-      label,
-    });
-
-    current = new Date(weekEnd);
-    current.setDate(current.getDate() + 1);
-  }
-  return semanas;
-}
 
 type CategoriaPermiso =
   | "igss"
@@ -192,31 +164,6 @@ export default function VerPermisos({ tipoVista }: Props) {
     setFechaFin,
   ]);
 
-  const formatFechaCorta = (fecha: string) => {
-    const d = new Date(fecha + "T00:00:00");
-    let str = format(d, "EEE, d MMM yyyy", { locale: es });
-    // Capitalizar y quitar puntos si los hay (ej: "lun." -> "Lun")
-    return str
-      .split(" ")
-      .map((word) => {
-        let cleaned = word.replace(".", "");
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      })
-      .join(" ");
-  };
-
-  const formatFechaCompacta = (fecha: string) => {
-    const d = new Date(fecha + "T00:00:00");
-    let str = format(d, "d MMM yy", { locale: es });
-    return str
-      .split(" ")
-      .map((word) => {
-        const cleaned = word.replace(".", "");
-        return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-      })
-      .join(" ");
-  };
-
   const formatMes = (mesYear: string) => {
     const d = parseISO(mesYear + "-01");
     let str = format(d, "MMMM yyyy", { locale: es });
@@ -246,9 +193,9 @@ export default function VerPermisos({ tipoVista }: Props) {
   const tituloPagina = useMemo(() => {
     if (tipoVista === "mis_permisos") return "Mis Solicitudes";
     if (tipoVista === "gestion_rrhh")
-      return "Administración de Permisos y Acuerdos (RRHH)";
+      return "Administración de Permisos (RRHH)";
     if (tipoVista === "gestion_jefe")
-      return "Administración de Permisos y Acuerdos (JEFE)";
+      return "Administración de Permisos (JEFE)";
     return "Permisos";
   }, [tipoVista]);
 
@@ -430,38 +377,38 @@ export default function VerPermisos({ tipoVista }: Props) {
       <div className="w-full lg:w-[95%] mx-auto md:px-4 pb-10 transition-all">
         <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md w-full border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
           <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4 p-1 sm:p-2">
-            <PermisosNav tipoVista={navTipoVista} />
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-4">
-              <h2
-                className="text-lg lg:text-4xl font-bold text-gray-800 dark:text-gray-200 truncate max-w-2xl"
-                title={tituloPagina}
-              >
-                {tituloPagina}
-              </h2>
-
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <PermisosNav tipoVista={navTipoVista} />
               <div className="flex flex-wrap gap-2 items-center">
+                {tipoVista === "gestion_rrhh" && (
+                  <button
+                    type="button"
+                    onClick={() => setModalAsuetoAbierto(true)}
+                    className="flex items-center justify-center gap-1.5 h-8 lg:h-10 px-2.5 lg:px-3 text-xs lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
+                  >
+                    <PartyPopper className="w-3 h-3 lg:w-4 lg:h-4 shrink-0" />
+                    Gestionar Asuetos
+                  </button>
+                )}
                 {(tipoVista === "mis_permisos" ||
                   tipoVista === "gestion_rrhh") && (
-                  <Button
-                    size="sm"
+                  <button
+                    type="button"
                     onClick={handleNuevoPermiso}
-                    className="h-8 lg:h-12 text-xs lg:text-base bg-blue-600 hover:bg-blue-700 text-white border-0 shadow-sm gap-1.5"
+                    className="flex items-center justify-center gap-1.5 h-8 lg:h-10 px-2.5 lg:px-3 text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5 lg:w-5 lg:h-5" /> Nuevo Permiso
-                  </Button>
-                )}
-                {tipoVista === "gestion_rrhh" && (
-                  <Button
-                    size="sm"
-                    onClick={() => setModalAsuetoAbierto(true)}
-                    className="h-8 lg:h-12 text-xs lg:text-base bg-amber-500 hover:bg-amber-600 text-white border-0 gap-1.5"
-                  >
-                    <PartyPopper className="w-3 h-3 lg:w-5 lg:h-5" /> Gestionar
-                    Asuetos
-                  </Button>
+                    <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+                    Nuevo Permiso
+                  </button>
                 )}
               </div>
             </div>
+            <h2
+              className="text-lg lg:text-4xl font-bold text-gray-800 dark:text-gray-200 truncate max-w-2xl"
+              title={tituloPagina}
+            >
+              {tituloPagina}
+            </h2>
 
             <div className="flex flex-col gap-2 sm:gap-3 bg-gray-50/50 dark:bg-neutral-900/30 p-2 sm:p-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
               {/* Buscador + Ocultar */}
@@ -491,8 +438,16 @@ export default function VerPermisos({ tipoVista }: Props) {
                 </Button>
               </div>
 
-              {/* Switch: distribución pareja (flex-1) según opciones visibles */}
-              <div className="flex items-stretch h-11 w-full bg-gray-200/50 dark:bg-neutral-800 p-1 rounded-lg gap-1">
+              <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-end lg:gap-3 w-full">
+                <div
+                  className={cn(
+                    "order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:justify-self-center flex items-stretch h-11 w-full shrink-0 bg-gray-200/50 dark:bg-neutral-800 p-1 rounded-lg gap-1",
+                    (tipoVista === "gestion_jefe" || tipoVista === "gestion_rrhh") &&
+                      (conteosPendientes.pendientes > 0 || conteosPendientes.avalados > 0)
+                      ? "lg:w-[30rem]"
+                      : "lg:w-80",
+                  )}
+                >
                 <button
                   onClick={() => {
                     setModoFiltro("dia");
@@ -606,18 +561,9 @@ export default function VerPermisos({ tipoVista }: Props) {
                       </span>
                     </button>
                   )}
-              </div>
+                </div>
 
-              {/* Fecha + Apr/Rech */}
-              <div
-                className={cn(
-                  "flex gap-2",
-                  modoFiltro === "rango"
-                    ? "flex-col sm:flex-row sm:items-end sm:justify-between"
-                    : "flex-row items-end justify-between",
-                )}
-              >
-                <div className="flex-1 min-w-0 w-full sm:w-auto">
+                <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full">
                   {modoFiltro === "dia" && (
                     <div className="flex flex-col items-start gap-1">
                       <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
@@ -631,7 +577,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                           <button className="flex items-center gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm">
                             <Calendar className="w-4 h-4 text-blue-500" />
                             <span className="dark:text-gray-200 capitalize">
-                              {formatFechaCorta(fechaSeleccionada)}
+                              {formatearFechaFiltro(fechaSeleccionada)}
                             </span>
                           </button>
                         </PopoverTrigger>
@@ -729,11 +675,8 @@ export default function VerPermisos({ tipoVista }: Props) {
                           <PopoverTrigger asChild>
                             <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-emerald-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
                               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
-                              <span className="dark:text-gray-200 capitalize sm:hidden">
-                                {formatFechaCompacta(fechaInicio)}
-                              </span>
-                              <span className="dark:text-gray-200 capitalize hidden sm:inline">
-                                {formatFechaCorta(fechaInicio)}
+                              <span className="dark:text-gray-200">
+                                {formatearFechaFiltro(fechaInicio)}
                               </span>
                             </button>
                           </PopoverTrigger>
@@ -755,11 +698,8 @@ export default function VerPermisos({ tipoVista }: Props) {
                           <PopoverTrigger asChild>
                             <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-red-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
                               <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
-                              <span className="dark:text-gray-200 capitalize sm:hidden">
-                                {formatFechaCompacta(fechaFin)}
-                              </span>
-                              <span className="dark:text-gray-200 capitalize hidden sm:inline">
-                                {formatFechaCorta(fechaFin)}
+                              <span className="dark:text-gray-200">
+                                {formatearFechaFiltro(fechaFin)}
                               </span>
                             </button>
                           </PopoverTrigger>
@@ -778,7 +718,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end">
+                <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1 shrink-0 w-full lg:w-auto justify-start">
                   <Button
                     size="sm"
                     onClick={() => {
@@ -1219,20 +1159,11 @@ function UsuarioGrupoPermisos({
             );
             const esMismoDia = isSameDay(fechaInicio, fechaFin);
 
-            const formatCustom = (date: Date) => {
-              let str = format(date, "eee d MMM", { locale: es });
-              return str
-                .split(" ")
-                .map((word) => {
-                  let cleaned = word.replace(".", "");
-                  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-                })
-                .join(" ");
-            };
-
-            const textoFecha = esMismoDia
-              ? formatCustom(fechaInicio)
-              : `Del ${formatCustom(fechaInicio)} al ${formatCustom(fechaFin)}`;
+            const textoFecha = formatearRangoTarjeta(
+              fechaInicio,
+              fechaFin,
+              esMismoDia,
+            );
             const textoHora = `${format(fechaInicioConHora, "h:mm a", { locale: es })} - ${format(fechaFinConHora, "h:mm a", { locale: es })}`;
             const borderClass = getCategoriaBorderClass(
               permiso.tipo,
@@ -1270,11 +1201,33 @@ function UsuarioGrupoPermisos({
                       </span>
                     );
                   })()}
-                  <span className="text-[9px] lg:text-xs text-gray-400 font-medium">
-                    {format(parseISO(permiso.created_at), "d MMM yy", {
-                      locale: es,
-                    })}
-                  </span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-[9px] lg:text-xs text-gray-400 font-medium whitespace-nowrap">
+                      {formatearFechaTarjetaDesdeISO(permiso.created_at)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleAbrirJustificacion(e, permiso)}
+                      className={cn(
+                        "flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold rounded-md transition-colors border-2 cursor-pointer",
+                        permiso.comprobante_url
+                          ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-600 dark:border-emerald-400"
+                          : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-600 dark:border-indigo-400",
+                      )}
+                      title={
+                        permiso.comprobante_url
+                          ? "Ver comprobante"
+                          : "Subir comprobante"
+                      }
+                    >
+                      {permiso.comprobante_url ? (
+                        <Eye className="w-3 h-3 shrink-0" />
+                      ) : (
+                        <Upload className="w-3 h-3 shrink-0" />
+                      )}
+                      <span className="hidden sm:inline">Justificación</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2 mb-3">
@@ -1286,9 +1239,7 @@ function UsuarioGrupoPermisos({
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
                           <CalendarDays className="w-3 h-3 lg:w-4 lg:h-4 text-blue-500/70" />
-                          <span className="font-medium capitalize">
-                            {textoFecha}
-                          </span>
+                          <span className="font-medium">{textoFecha}</span>
                         </div>
                         <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
                           <span>
@@ -1340,38 +1291,16 @@ function UsuarioGrupoPermisos({
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <button
                       onClick={(e) => handleVerPreview(e, permiso)}
-                      className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border border-blue-100 dark:border-blue-800"
+                      className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
                     >
                       <Eye className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
                       Ver
                     </button>
 
-                    <button
-                      onClick={(e) => handleAbrirJustificacion(e, permiso)}
-                      className={cn(
-                        "flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold rounded-md transition-colors border",
-                        permiso.comprobante_url
-                          ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800"
-                          : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-100 dark:border-indigo-800",
-                      )}
-                      title={
-                        permiso.comprobante_url
-                          ? "Ver comprobante"
-                          : "Subir comprobante"
-                      }
-                    >
-                      {permiso.comprobante_url ? (
-                        <Eye className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                      ) : (
-                        <Upload className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                      )}
-                      Justificación
-                    </button>
-
                     {puedeEditar && (
                       <button
                         onClick={() => handleClickFila(permiso)}
-                        className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border border-amber-100 dark:border-amber-800"
+                        className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
                         Editar / Aprobar
@@ -1381,7 +1310,7 @@ function UsuarioGrupoPermisos({
                     {puedeEliminar && (
                       <button
                         onClick={(e) => handleEliminarPermiso(e, permiso.id)}
-                        className="flex items-center justify-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border border-red-100 dark:border-red-800"
+                        className="flex items-center justify-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer"
                         title="Borrar"
                         aria-label="Borrar"
                       >

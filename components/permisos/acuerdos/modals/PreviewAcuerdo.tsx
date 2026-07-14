@@ -9,6 +9,7 @@ import { formatearDiasSemana } from "../utilidades";
 import {
   parseDiasAcuerdo,
   getModalidadAcuerdo,
+  normalizarSemanaRegistro,
 } from "../dias-acuerdo";
 import { getCategoriaAcuerdo, getCategoriaAcuerdoBadgeClass } from "../categorias";
 import { cn } from "@/lib/utils";
@@ -41,10 +42,19 @@ export default function PreviewAcuerdo({
   const cat = getCategoriaAcuerdo(acuerdo);
   const diasParsed = parseDiasAcuerdo(acuerdo.dias);
   const esSemanalFlexible = getModalidadAcuerdo(diasParsed) === "semanal";
-  const puedeElegirDias =
+  const ultimoAsignador =
+    diasParsed &&
+    !Array.isArray(diasParsed) &&
+    diasParsed.modo === "semanal"
+      ? [...Object.values(diasParsed.semanas)]
+          .map((s) => normalizarSemanaRegistro(s)?.asignadoPor)
+          .filter((n): n is string => !!n && n !== "—")
+          .at(-1) ?? null
+      : null;
+  const puedeAsignarDias =
     esSemanalFlexible &&
     acuerdo.estado === "aprobado" &&
-    tipoVista === "mis_acuerdos";
+    tipoVista === "gestion_rrhh";
 
   const estadoLabel =
     acuerdo.estado === "aprobado"
@@ -152,6 +162,14 @@ export default function PreviewAcuerdo({
               <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
                 {formatearDiasSemana(acuerdo.dias)}
               </p>
+              {ultimoAsignador && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Última asignación por:{" "}
+                  <span className="font-semibold text-foreground">
+                    {ultimoAsignador}
+                  </span>
+                </p>
+              )}
             </div>
 
             {acuerdo.descripcion && (
@@ -189,7 +207,7 @@ export default function PreviewAcuerdo({
               </div>
             )}
 
-            {puedeElegirDias && onElegirDias && (
+            {puedeAsignarDias && onElegirDias && (
               <Button
                 type="button"
                 onClick={() => {
@@ -199,7 +217,7 @@ export default function PreviewAcuerdo({
                 className="w-full bg-violet-600 hover:bg-violet-700 text-white gap-2"
               >
                 <CalendarClock className="w-4 h-4" />
-                Elegir días de la semana
+                Asignar días de la semana
               </Button>
             )}
           </div>

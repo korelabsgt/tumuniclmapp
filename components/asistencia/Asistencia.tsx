@@ -39,6 +39,11 @@ import useFechaHora from "@/hooks/utility/useFechaHora";
 import { useAsistenciaUsuario } from "@/hooks/asistencia/useAsistenciaUsuario";
 import { usePermisosUsuario } from "@/hooks/asistencia/usePermisosUsuario";
 import { obtenerJustificacionParaDia } from "@/components/permisos/justificaciones";
+import {
+  obtenerHorarioAsistenciaEnFecha,
+  formatearHorarioAsistencia12h,
+  tieneHorarioAsignadoVisible,
+} from "@/components/permisos/utilidades";
 import { esTipoAcuerdo } from "@/components/permisos/types";
 import PreviewAcuerdo from "@/components/permisos/acuerdos/modals/PreviewAcuerdo";
 import { useObtenerUbicacion } from "@/hooks/ubicacion/useObtenerUbicacion";
@@ -181,6 +186,15 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
   const acuerdoHoy = justificacionHoy && esTipoAcuerdo(justificacionHoy.tipo) ? justificacionHoy : null;
   const justificacionVigente = justificacionHoy;
 
+  const hoyStr = format(fechaHoraGt, "yyyy-MM-dd");
+  const horarioAsignadoHoy = useMemo(() => {
+    if (!justificacionVigente) return null;
+    return obtenerHorarioAsistenciaEnFecha(justificacionVigente, hoyStr, {
+      entrada: horario_entrada,
+      salida: horario_salida,
+    });
+  }, [justificacionVigente, hoyStr, horario_entrada, horario_salida]);
+
   const comisionHoy = useMemo((): ComisionConFechaYHoraSeparada | null => {
     if (!comisionesEmpleado || comisionesEmpleado.length === 0) return null;
     const hoyStr = format(fechaHoraGt, 'yyyy-MM-dd');
@@ -205,14 +219,13 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     const [hE, mE, sE] = horaEntradaStr.split(":").map(Number);
     const [hS, mS, sS] = horaSalidaStr.split(":").map(Number);
 
-    const scheduleEntrada = set(fechaHoraGt, {
+    let scheduleEntrada = set(fechaHoraGt, {
       hours: hE,
       minutes: mE,
       seconds: sE || 0,
       milliseconds: 0,
     });
-    
-    // Si hay un permiso hoy, se usa la hora del permiso (inicio) como hora de salida
+
     let scheduleSalida = set(fechaHoraGt, {
       hours: hS,
       minutes: mS,
@@ -220,14 +233,40 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       milliseconds: 0,
     });
 
-    if (justificacionVigente) {
-      const horaJustificacion = new Date(justificacionVigente.inicio);
-      scheduleSalida = set(fechaHoraGt, {
-        hours: horaJustificacion.getHours(),
-        minutes: horaJustificacion.getMinutes(),
-        seconds: horaJustificacion.getSeconds(),
-        milliseconds: 0,
-      });
+    if (tieneHorarioAsignadoVisible(horarioAsignadoHoy)) {
+      if (horarioAsignadoHoy.entrada) {
+        const [h, m] = horarioAsignadoHoy.entrada.split(":").map(Number);
+        scheduleEntrada = set(fechaHoraGt, {
+          hours: h,
+          minutes: m,
+          seconds: 0,
+          milliseconds: 0,
+        });
+      }
+      if (horarioAsignadoHoy.salida) {
+        const [h, m] = horarioAsignadoHoy.salida.split(":").map(Number);
+        scheduleSalida = set(fechaHoraGt, {
+          hours: h,
+          minutes: m,
+          seconds: 0,
+          milliseconds: 0,
+        });
+      }
+    } else if (justificacionVigente && !esTipoAcuerdo(justificacionVigente.tipo)) {
+      const horarioPermiso = obtenerHorarioAsistenciaEnFecha(
+        justificacionVigente,
+        hoyStr,
+        { entrada: horario_entrada, salida: horario_salida },
+      );
+      if (horarioPermiso && !horarioPermiso.diaCompleto && horarioPermiso.salida) {
+        const [h, m] = horarioPermiso.salida.split(":").map(Number);
+        scheduleSalida = set(fechaHoraGt, {
+          hours: h,
+          minutes: m,
+          seconds: 0,
+          milliseconds: 0,
+        });
+      }
     }
 
     const scheduleSalidaTarde = addMinutes(scheduleSalida, 15);
@@ -251,8 +290,12 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     const horarioFormateado = {
       nombre: horario_nombre || "Normal",
       dias: formatScheduleDays(horario_dias),
-      entrada: formatScheduleTime(horario_entrada),
-      salida: justificacionVigente ? format(scheduleSalida, 'hh:mm aa', { locale: es }) : formatScheduleTime(horario_salida),
+      entrada: tieneHorarioAsignadoVisible(horarioAsignadoHoy) && horarioAsignadoHoy.entrada
+        ? (formatearHorarioAsistencia12h(horarioAsignadoHoy.entrada) ?? formatScheduleTime(horario_entrada))
+        : formatScheduleTime(horario_entrada),
+      salida: tieneHorarioAsignadoVisible(horarioAsignadoHoy) && horarioAsignadoHoy.salida
+        ? (formatearHorarioAsistencia12h(horarioAsignadoHoy.salida) ?? format(scheduleSalida, "hh:mm aa", { locale: es }))
+        : format(scheduleSalida, "hh:mm aa", { locale: es }),
     };
 
     const esHorarioMultiple =
@@ -276,6 +319,8 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     horario_dias,
     horario_nombre,
     justificacionVigente,
+    horarioAsignadoHoy,
+    hoyStr,
   ]);
 
   // Determina si la comisión de hoy "toca" la hora de entrada o salida
@@ -657,6 +702,22 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     return null;
   };
 
+  const renderHorarioAsignadoSlot = (
+    tipo: "entrada" | "salida",
+    textClass: string,
+  ) => {
+    if (!tieneHorarioAsignadoVisible(horarioAsignadoHoy)) return null;
+    const hora =
+      tipo === "entrada" ? horarioAsignadoHoy.entrada : horarioAsignadoHoy.salida;
+    const texto = formatearHorarioAsistencia12h(hora);
+    if (!texto) return null;
+    return (
+      <span className={`${textClass} font-bold`} title="Horario asignado">
+        {texto}
+      </span>
+    );
+  };
+
   const renderPermisoHoyBtn = (permiso: PermisoEmpleado) => {
     const categoria = getCategoriaPermiso(permiso);
     const Icono = getCategoriaIcon(categoria);
@@ -777,14 +838,18 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                                   <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
                                   {registroEntradaHoy 
                                     ? format(new Date(registroEntradaHoy.created_at), 'hh:mm aa', { locale: es }) 
-                                    : <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>}
+                                    : renderHorarioAsignadoSlot("entrada", getEntradaTextClass()) ?? (
+                                      <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
+                                    )}
                                 </span>
                                 <span className="text-gray-300 dark:text-neutral-700">|</span>
                                 <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                   <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
                                   {registroSalidaHoy 
                                     ? format(new Date(registroSalidaHoy.created_at), 'hh:mm aa', { locale: es }) 
-                                    : <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>}
+                                    : renderHorarioAsignadoSlot("salida", getSalidaTextClass()) ?? (
+                                      <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
+                                    )}
                                 </span>
                               </div>
                             )}
@@ -816,12 +881,16 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                           <div className="w-3/4 flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left px-2">
                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                               <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
+                               {renderHorarioAsignadoSlot("entrada", getEntradaTextClass()) ?? (
+                                 <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
+                               )}
                              </span>
                              <span className="text-gray-300 dark:text-neutral-700">|</span>
                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                               <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
+                               {renderHorarioAsignadoSlot("salida", getSalidaTextClass()) ?? (
+                                 <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
+                               )}
                              </span>
                           </div>
                           <div className="w-1/4 cursor-pointer">

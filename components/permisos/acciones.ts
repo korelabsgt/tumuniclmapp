@@ -7,10 +7,13 @@ import {
   parseDiasAcuerdo,
   construirDiasRecurrente,
   construirDiasSemanal,
+  construirDiasTodos,
   actualizarSemanaAcuerdo,
   esDiaLaboral,
   validarSeleccionSemanaAcuerdo,
+  obtenerSemanaRegistro,
   type DiasAcuerdoSemanal,
+  type DiaHorarioAcuerdo,
 } from "./acuerdos/dias-acuerdo";
 import {
   notificarCreacionPermiso,
@@ -276,7 +279,19 @@ export async function guardarPermiso(formData: FormData, id?: string) {
         dias = construirDiasSemanal(cupoSemanalInput);
       }
     } else if (modoAcuerdo === "todos") {
-      dias = null;
+      if (
+        diasParsed &&
+        typeof diasParsed === "object" &&
+        !Array.isArray(diasParsed) &&
+        diasParsed.modo === "todos"
+      ) {
+        dias = construirDiasTodos({
+          entrada: diasParsed.entrada,
+          salida: diasParsed.salida,
+        });
+      } else {
+        dias = null;
+      }
     } else if (
       modoAcuerdo === "recurrente" &&
       diasParsed &&
@@ -284,7 +299,10 @@ export async function guardarPermiso(formData: FormData, id?: string) {
       !Array.isArray(diasParsed) &&
       diasParsed.modo === "recurrente"
     ) {
-      dias = construirDiasRecurrente(inicio, fin, diasParsed.diasSemana);
+      dias = construirDiasRecurrente(inicio, fin, diasParsed.diasSemana, {
+        entrada: diasParsed.entrada,
+        salida: diasParsed.salida,
+      });
     }
   }
 
@@ -295,7 +313,10 @@ export async function guardarPermiso(formData: FormData, id?: string) {
       diasParsed.modo === "recurrente" &&
       esTipoAcuerdo(tipo)
     ) {
-      dias = construirDiasRecurrente(inicio, fin, diasParsed.diasSemana);
+      dias = construirDiasRecurrente(inicio, fin, diasParsed.diasSemana, {
+        entrada: diasParsed.entrada,
+        salida: diasParsed.salida,
+      });
     } else if (
       typeof diasParsed === "object" &&
       !Array.isArray(diasParsed) &&
@@ -306,7 +327,6 @@ export async function guardarPermiso(formData: FormData, id?: string) {
         modo: "semanal",
         cupoSemanal: cupoSemanalInput,
         semanas: diasParsed.semanas ?? {},
-        historial: diasParsed.historial ?? [],
       };
     } else {
       dias = diasParsed;
@@ -505,13 +525,16 @@ export async function obtenerPermisosDelUsuario(userId: string): Promise<Permiso
 export async function actualizarDiasSemanaAcuerdo(
   acuerdoId: string,
   semanaKey: string,
-  fechas: string[],
+  diasHorario: DiaHorarioAcuerdo[],
 ) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("No autorizado");
+  const perfil = await obtenerPerfilUsuario();
+  if (!perfil) throw new Error("No autorizado");
+
+  const esRRHH = ["RRHH", "SUPER", "SECRETARIO"].includes(perfil.rol || "");
+  if (!esRRHH) {
+    throw new Error("Solo RRHH puede asignar los días del acuerdo");
+  }
 
   const { data: registro, error: fetchError } = await supabase
     .from("permisos_empleado")
@@ -521,9 +544,6 @@ export async function actualizarDiasSemanaAcuerdo(
 
   if (fetchError || !registro) throw new Error("Acuerdo no encontrado");
   if (!esTipoAcuerdo(registro.tipo)) throw new Error("No es un acuerdo municipal");
-  if (registro.user_id !== user.id) {
-    throw new Error("Solo el empleado del acuerdo puede elegir los días");
-  }
   if (registro.estado !== "aprobado") {
     throw new Error("El acuerdo debe estar aprobado");
   }
@@ -538,17 +558,20 @@ export async function actualizarDiasSemanaAcuerdo(
     throw new Error("Este acuerdo no usa modalidad semanal flexible");
   }
 
-  if (fechas.length > diasParsed.cupoSemanal) {
-    throw new Error(`Solo puede elegir ${diasParsed.cupoSemanal} días por semana`);
+  if (diasHorario.length > diasParsed.cupoSemanal) {
+    throw new Error(`Solo puede asignar ${diasParsed.cupoSemanal} días por semana`);
   }
 
-  if (fechas.some((f) => !esDiaLaboral(f))) {
-    throw new Error("Solo puede elegir días laborales (lun–vie)");
+  if (diasHorario.some((d) => !esDiaLaboral(d.fecha))) {
+    throw new Error("Solo puede asignar días laborales (lun–vie)");
   }
 
-  const anteriores = diasParsed.semanas[semanaKey] ?? [];
+  const anteriores =
+    obtenerSemanaRegistro(diasParsed as DiasAcuerdoSemanal, semanaKey)?.dias ??
+    [];
+
   validarSeleccionSemanaAcuerdo({
-    fechas,
+    dias: diasHorario,
     anteriores,
     cupoSemanal: diasParsed.cupoSemanal,
   });
@@ -556,7 +579,8 @@ export async function actualizarDiasSemanaAcuerdo(
   const diasActualizados = actualizarSemanaAcuerdo(
     diasParsed as DiasAcuerdoSemanal,
     semanaKey,
-    fechas,
+    diasHorario,
+    perfil.nombre || "RRHH",
   );
 
   const { error } = await supabase

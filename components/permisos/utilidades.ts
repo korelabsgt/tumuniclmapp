@@ -25,3 +25,11 @@ export {
   formatearDiasAcuerdo as formatearDiasSemana,
   formatearDiasAcuerdo,
 } from "./acuerdos/dias-acuerdo";
+
+export {
+  obtenerHorarioAsistenciaEnFecha,
+  formatearHorarioAsistencia12h,
+  tieneHorarioAsignadoVisible,
+  type HorarioAsistenciaDia,
+  type HorarioEmpleadoRef,
+} from "./lib/horario-asistencia";

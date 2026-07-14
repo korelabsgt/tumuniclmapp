@@ -9,6 +9,7 @@ type TipoVista = "mis" | "jefe" | "rrhh";
 
 interface Props {
   tipoVista: TipoVista;
+  className?: string;
 }
 
 const RUTAS: Record<TipoVista, { permisos: string; acuerdos: string }> = {
@@ -26,13 +27,18 @@ const RUTAS: Record<TipoVista, { permisos: string; acuerdos: string }> = {
   },
 };
 
-export default function PermisosNav({ tipoVista }: Props) {
+export default function PermisosNav({ tipoVista, className }: Props) {
   const pathname = usePathname();
   const rutas = RUTAS[tipoVista];
   const esAcuerdos = pathname.includes("/acuerdos");
 
   return (
-    <div className="flex items-center gap-1 p-1 bg-gray-200/50 dark:bg-neutral-800 rounded-lg w-fit mb-3">
+    <div
+      className={cn(
+        "flex items-center gap-1 p-1 bg-gray-200/50 dark:bg-neutral-800 rounded-lg w-fit",
+        className,
+      )}
+    >
       <Link
         href={rutas.permisos}
         className={cn(

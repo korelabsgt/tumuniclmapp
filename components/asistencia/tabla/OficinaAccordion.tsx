@@ -6,7 +6,12 @@ import { ChevronDown, AlertCircle, LogIn, LogOut, PartyPopper, Clock, CheckCircl
 import { format, parseISO, isAfter, isToday, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PermisoEmpleado } from '@/components/permisos/types';
-import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
+import {
+  permisoAplicaEnDia,
+  obtenerHorarioAsistenciaEnFecha,
+  formatearHorarioAsistencia12h,
+  tieneHorarioAsignadoVisible,
+} from '@/components/permisos/utilidades';
 import {
   getMensajeSinMarcaje,
   getCategoriaPermiso,
@@ -54,14 +59,36 @@ export default function OficinaAccordion({
 
   let diaActual = "";
 
-  const formatTime = (iso: string | null | undefined, permiso: PermisoEmpleado | null) => {
-    if (!iso) {
-      const colorClass = permiso
-        ? getCategoriaTextClass(getCategoriaPermiso(permiso))
-        : 'text-red-500';
-      return <span className={`${colorClass} font-bold`}>--:--</span>;
+  const formatTime = (
+    iso: string | null | undefined,
+    permiso: PermisoEmpleado | null,
+    diaString?: string,
+    tipo?: 'entrada' | 'salida',
+    comision?: boolean,
+  ) => {
+    if (iso) {
+      return format(parseISO(iso), 'hh:mm aa', { locale: es });
     }
-    return format(parseISO(iso), 'hh:mm aa', { locale: es });
+    const colorClass = permiso
+      ? getCategoriaTextClass(getCategoriaPermiso(permiso))
+      : comision
+        ? COMISION_TEXT_CLASS
+        : 'text-red-500';
+    if (permiso && diaString && tipo) {
+      const horario = obtenerHorarioAsistenciaEnFecha(permiso, diaString);
+      if (tieneHorarioAsignadoVisible(horario)) {
+        const hora = tipo === 'entrada' ? horario.entrada : horario.salida;
+        const texto = formatearHorarioAsistencia12h(hora);
+        if (texto) {
+          return (
+            <span className={`${colorClass} font-bold`} title="Horario asignado">
+              {texto}
+            </span>
+          );
+        }
+      }
+    }
+    return <span className={`${colorClass} font-bold`}>--:--</span>;
   };
 
   const getComisionParaDia = (userId: string, diaString: string): ComisionInfo | null => {
@@ -229,6 +256,28 @@ export default function OficinaAccordion({
                                         Ver Asistencia ({totalRegistros})
                                       </div>
                                     ) : esVacio ? (() => {
+                                      const dashClass = permiso
+                                        ? getCategoriaTextClass(getCategoriaPermiso(permiso))
+                                        : asueto ? 'text-amber-500 dark:text-amber-400'
+                                        : comision ? COMISION_TEXT_CLASS : 'text-red-400';
+                                      const horario = permiso
+                                        ? obtenerHorarioAsistenciaEnFecha(permiso, registro.diaString)
+                                        : null;
+                                      if (tieneHorarioAsignadoVisible(horario)) {
+                                        return (
+                                          <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
+                                            <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                              <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
+                                              {formatTime(null, permiso, registro.diaString, 'entrada')}
+                                            </span>
+                                            <span className="text-gray-300 dark:text-neutral-700">|</span>
+                                            <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                              <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                              {formatTime(null, permiso, registro.diaString, 'salida')}
+                                            </span>
+                                          </div>
+                                        );
+                                      }
                                       const msg = getMensajeSinMarcaje({
                                         asueto: !!asueto,
                                         permiso,
@@ -245,15 +294,14 @@ export default function OficinaAccordion({
                                       <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
                                         <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                           <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                          {formatTime(registro.entrada?.created_at || registro.entrada?.fecha_hora, permiso)}
+                                          {formatTime(registro.entrada?.created_at || registro.entrada?.fecha_hora, permiso, registro.diaString, 'entrada')}
                                         </span>
                                         <span className="text-gray-300 dark:text-neutral-700">|</span>
                                         <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                           <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                                          {/* si hay comisión y no hay salida, mostrar azul en vez de rojo */}
                                           {registro.salida
-                                            ? formatTime(registro.salida?.created_at || registro.salida?.fecha_hora, permiso)
-                                            : <span className={`${permiso ? getCategoriaTextClass(getCategoriaPermiso(permiso)) : comision ? COMISION_TEXT_CLASS : 'text-red-500'} font-bold`}>--:--</span>}
+                                            ? formatTime(registro.salida?.created_at || registro.salida?.fecha_hora, permiso, registro.diaString, 'salida')
+                                            : formatTime(null, permiso, registro.diaString, 'salida', !!comision)}
                                         </span>
                                       </div>
                                     )}
@@ -362,11 +410,29 @@ export default function OficinaAccordion({
                                       onClick={() => !esAusencia && onAbrirModal(asistencia, usuario.nombre)}
                                     >
                                       {esAusencia ? (() => {
-                                        const msg = getMensajeSinMarcaje({ asueto: !!asueto, permiso, comision: !asueto && !permiso && !!comision });
                                         const dashClass = permiso
                                           ? getCategoriaTextClass(getCategoriaPermiso(permiso))
                                           : asueto ? 'text-amber-500 dark:text-amber-400'
                                           : comision ? COMISION_TEXT_CLASS : 'text-red-400';
+                                        const horario = permiso
+                                          ? obtenerHorarioAsistenciaEnFecha(permiso, asistencia.diaString)
+                                          : null;
+                                        if (tieneHorarioAsignadoVisible(horario)) {
+                                          return (
+                                            <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
+                                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                                <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
+                                                {formatTime(null, permiso, asistencia.diaString, 'entrada')}
+                                              </span>
+                                              <span className="text-gray-300 dark:text-neutral-700">|</span>
+                                              <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                                                <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                                {formatTime(null, permiso, asistencia.diaString, 'salida')}
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        const msg = getMensajeSinMarcaje({ asueto: !!asueto, permiso, comision: !asueto && !permiso && !!comision });
                                         return (
                                           <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
                                             <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
@@ -388,14 +454,14 @@ export default function OficinaAccordion({
                                         <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
                                           <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                             <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                            {formatTime(asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora, permiso)}
+                                            {formatTime(asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora, permiso, asistencia.diaString, 'entrada')}
                                           </span>
                                           <span className="text-gray-300 dark:text-neutral-700">|</span>
                                           <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
                                             <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
                                             {asistencia.salida
-                                              ? formatTime(asistencia.salida?.created_at || asistencia.salida?.fecha_hora, permiso)
-                                              : <span className={`${permiso ? getCategoriaTextClass(getCategoriaPermiso(permiso)) : comision ? COMISION_TEXT_CLASS : 'text-red-500'} font-bold`}>--:--</span>}
+                                              ? formatTime(asistencia.salida?.created_at || asistencia.salida?.fecha_hora, permiso, asistencia.diaString, 'salida')
+                                              : formatTime(null, permiso, asistencia.diaString, 'salida', !!comision)}
                                           </span>
                                         </div>
                                       )}

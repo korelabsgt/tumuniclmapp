@@ -4,7 +4,10 @@ import { useMemo, useState, useEffect } from "react";
 import { TODOS_LOS_MODULOS } from "../constants";
 import ModuleCard from "../modules/ModuleCard";
 import ModuleAccordion from "../modules/ModuleAccordion";
-import { checkIsAtencionVecino, checkIsElectricista } from "@/components/solicitudes/lamparas/lib/actions";
+import {
+  checkIsAtencionVecino,
+  checkIsElectricista,
+} from "@/components/solicitudes/lamparas/lib/actions";
 
 interface ModulesViewProps {
   rol: string;
@@ -41,11 +44,19 @@ export default function ModulesView({
   const modulosDisponibles = useMemo(
     () =>
       TODOS_LOS_MODULOS.filter((m) => {
-        if (m.id === 'DEV') {
+        if (m.id === "DEV") {
           return ["SUPER", "RRHH", "SECRETARIO"].includes(rol);
         }
         if (rol === "SUPER") return true;
-        if (["ACTIVIDADES", "PERMISOS", "SOLICITUDCOMBUSTIBLE", "MIS_BIENES"].includes(m.id)) return true;
+        if (
+          [
+            "ACTIVIDADES",
+            "PERMISOS",
+            "SOLICITUDCOMBUSTIBLE",
+            "MIS_BIENES",
+          ].includes(m.id)
+        )
+          return true;
         if (
           [
             "ASISTENCIA",
@@ -57,7 +68,11 @@ export default function ModulesView({
         )
           return esjefe;
         if (m.id === "SOLICITUDES_JEFE") {
-          return esjefe || esAtencionVecino || ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol);
+          return (
+            esjefe ||
+            esAtencionVecino ||
+            ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol)
+          );
         }
         if (
           [
@@ -80,7 +95,10 @@ export default function ModulesView({
           );
         }
         if (m.subgrupo === "Gestión de Recursos Municipales") {
-          if (m.id === "GESTION_COMBUSTIBLE" || m.id === "CONTRATOS_COMBUSTIBLE") {
+          if (
+            m.id === "GESTION_COMBUSTIBLE" ||
+            m.id === "CONTRATOS_COMBUSTIBLE"
+          ) {
             return (
               ["SUPER", "SECRETARIO", "SEC-TECNICO"].includes(rol) ||
               modulos.includes(m.permiso)
@@ -98,13 +116,23 @@ export default function ModulesView({
           );
         }
         if (m.id === "SOLICITUDES_LAMARAS") {
-          return ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino || esElectricista;
+          return (
+            ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) ||
+            esAtencionVecino ||
+            esElectricista
+          );
         }
         if (m.id === "SOLICITUDES_MOBILIARIO") {
-          return ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino;
+          return (
+            ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) ||
+            esAtencionVecino
+          );
         }
         if (m.id === "RECEPCION_DOCS") {
-          return ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino;
+          return (
+            ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) ||
+            esAtencionVecino
+          );
         }
         return modulos.includes(m.permiso);
       }),
@@ -135,14 +163,18 @@ export default function ModulesView({
     [rol, modulos],
   );
   const showRecursosMunicipalesAccordion = useMemo(
-    () => ["SUPER", "SECRETARIO", "SEC-TECNICO", "DAFIM"].includes(rol) || 
-          modulos.includes("COMBUSTIBLE") || 
-          modulos.includes("CONTRATOS") || 
-          modulos.includes("INVENTARIO"),
+    () =>
+      ["SUPER", "SECRETARIO", "SEC-TECNICO", "DAFIM"].includes(rol) ||
+      modulos.includes("COMBUSTIBLE") ||
+      modulos.includes("CONTRATOS") ||
+      modulos.includes("INVENTARIO"),
     [rol, modulos],
   );
   const showRecepcionAccordion = useMemo(
-    () => ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) || esAtencionVecino || esElectricista,
+    () =>
+      ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) ||
+      esAtencionVecino ||
+      esElectricista,
     [rol, esAtencionVecino, esElectricista],
   );
 
@@ -212,7 +244,7 @@ export default function ModulesView({
               <ModuleAccordion
                 titulo="Gestión Jefe de Área"
                 descripcion="Gestión y supervisión de equipos."
-                iconKey="tobsqthh"
+                iconKey="unfvchvi"
               >
                 {modulosGestion
                   .filter((m) => m.subgrupo === "Gestión Jefe de Área")
@@ -259,7 +291,9 @@ export default function ModulesView({
                 iconKey="bikvuqcq"
               >
                 {modulosGestion
-                  .filter((m) => m.subgrupo === "Gestión de Recursos Municipales")
+                  .filter(
+                    (m) => m.subgrupo === "Gestión de Recursos Municipales",
+                  )
                   .map(renderModuleCard)}
               </ModuleAccordion>
             )}
@@ -271,7 +305,10 @@ export default function ModulesView({
                 iconKey="dicxqsya"
               >
                 {modulosGestion
-                  .filter((m) => m.subgrupo === "Recepción" || m.id === "SOLICITUDES_JEFE")
+                  .filter(
+                    (m) =>
+                      m.subgrupo === "Recepción" || m.id === "SOLICITUDES_JEFE",
+                  )
                   .sort(
                     (a, b) =>
                       (RECEPCION_MODULE_ORDER[a.id] ?? 99) -

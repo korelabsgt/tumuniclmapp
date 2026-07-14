@@ -61,6 +61,24 @@ export async function obtenerIdsRRHH(
   return data.map((u: { id: string }) => u.id);
 }
 
+export async function obtenerIdsRRHHBloqueo(
+  supabase: Awaited<ReturnType<typeof import("@/utils/supabase/server").createClient>>,
+): Promise<string[]> {
+  const { data, error } = await supabase.rpc("obtener_ids_usuarios_por_rol", {
+    roles_filtro: ["RRHH"],
+  });
+
+  if (error || !data) return [];
+  return data.map((u: { id: string }) => u.id);
+}
+
+function destinatariosBloqueoJefeRRHH(
+  jefeId: string | null,
+  rrhhBloqueoIds: string[],
+): string[] {
+  return [...new Set([...(jefeId ? [jefeId] : []), ...rrhhBloqueoIds])];
+}
+
 function clasificarActor(
   perfil: PerfilUsuario,
   empleadoId: string,
@@ -84,8 +102,25 @@ function urlPermiso(esAcuerdo: boolean, vista: "empleado" | "jefe" | "rrhh") {
   return base;
 }
 
-function etiquetaRegistro(esAcuerdo: boolean) {
-  return esAcuerdo ? "acuerdo municipal" : "permiso";
+async function obtenerNombreEmpleado(
+  supabase: Awaited<ReturnType<typeof import("@/utils/supabase/server").createClient>>,
+  empleadoId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("info_usuario")
+    .select("nombre")
+    .eq("user_id", empleadoId)
+    .maybeSingle();
+  return data?.nombre?.trim() || "Empleado";
+}
+
+function resumenPermisoAcuerdo(
+  nombre: string,
+  tipo: string,
+  esAcuerdo: boolean,
+): string {
+  const registro = esAcuerdo ? "Acuerdo" : "Permiso";
+  return `${registro} de ${nombre} (${tipo})`;
 }
 
 async function crearMensajesBloqueo(
@@ -163,13 +198,15 @@ export async function notificarCreacionPermiso(params: {
   const { supabase, perfil, permisoId, empleadoId, tipo, crearAprobadoRRHH } =
     params;
   const esAcuerdo = esTipoAcuerdo(tipo);
-  const etiqueta = etiquetaRegistro(esAcuerdo);
+  const nombreEmpleado = await obtenerNombreEmpleado(supabase, empleadoId);
+  const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const actor = clasificarActor(perfil, empleadoId, crearAprobadoRRHH);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
+  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
   const titulo = esAcuerdo ? "Nuevo acuerdo municipal" : "Nueva solicitud de permiso";
-  const mensaje = `Se registró un ${etiqueta} que requiere su atención.`;
+  const mensaje = `Se registró un ${resumen} que requiere su atención.`;
 
   if (actor === "empleado") {
     await dispararNotificaciones({
@@ -195,10 +232,10 @@ export async function notificarCreacionPermiso(params: {
       tipo,
       evento: "creado",
       titulo,
-      mensaje: `Su jefe registró un ${etiqueta} a su nombre.`,
+      mensaje: `Su jefe registró un ${resumen} a su nombre.`,
       actorId: perfil.id,
       pushIds: [empleadoId, ...rrhhIds],
-      bloqueoIds: [empleadoId, ...rrhhIds],
+      bloqueoIds: [empleadoId, ...rrhhBloqueoIds],
       jefeId,
       rrhhIds,
     });
@@ -211,7 +248,7 @@ export async function notificarCreacionPermiso(params: {
     tipo,
     evento: "creado",
     titulo,
-    mensaje: `RRHH registró un ${etiqueta} ${crearAprobadoRRHH ? "aprobado" : ""} a su nombre.`,
+    mensaje: `RRHH registró un ${resumen} ${crearAprobadoRRHH ? "aprobado" : ""} a su nombre.`,
     actorId: perfil.id,
     pushIds: [empleadoId, ...(jefeId ? [jefeId] : [])],
     bloqueoIds: [empleadoId, ...(jefeId ? [jefeId] : [])],
@@ -229,11 +266,13 @@ export async function notificarModificacionPermiso(params: {
 }) {
   const { supabase, perfil, permisoId, empleadoId, tipo } = params;
   const esAcuerdo = esTipoAcuerdo(tipo);
-  const etiqueta = etiquetaRegistro(esAcuerdo);
+  const nombreEmpleado = await obtenerNombreEmpleado(supabase, empleadoId);
+  const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
+  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
-  const destinatarios = [
+  const destinatariosPush = [
     empleadoId,
     ...(jefeId ? [jefeId] : []),
     ...rrhhIds,
@@ -245,10 +284,10 @@ export async function notificarModificacionPermiso(params: {
     tipo,
     evento: "modificado",
     titulo: esAcuerdo ? "Acuerdo actualizado" : "Permiso actualizado",
-    mensaje: `Se modificó un ${etiqueta} en el que usted está involucrado.`,
+    mensaje: `Se modificó un ${resumen} en el que usted está involucrado.`,
     actorId: perfil.id,
-    pushIds: destinatarios,
-    bloqueoIds: destinatarios,
+    pushIds: destinatariosPush,
+    bloqueoIds: destinatariosBloqueoJefeRRHH(jefeId, rrhhBloqueoIds),
     jefeId,
     rrhhIds,
   });
@@ -264,9 +303,11 @@ export async function notificarGestionPermiso(params: {
 }) {
   const { supabase, perfil, permisoId, empleadoId, tipo, nuevoEstado } = params;
   const esAcuerdo = esTipoAcuerdo(tipo);
-  const etiqueta = etiquetaRegistro(esAcuerdo);
+  const nombreEmpleado = await obtenerNombreEmpleado(supabase, empleadoId);
+  const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
+  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
   if (nuevoEstado === "aprobado_jefe") {
     await dispararNotificaciones({
@@ -275,10 +316,10 @@ export async function notificarGestionPermiso(params: {
       tipo,
       evento: "aprobado_jefe",
       titulo: esAcuerdo ? "Acuerdo avalado por jefe" : "Permiso avalado por jefe",
-      mensaje: `Un ${etiqueta} fue avalado por el jefe y requiere revisión de RRHH.`,
+      mensaje: `Un ${resumen} fue avalado por el jefe y requiere revisión de RRHH.`,
       actorId: perfil.id,
       pushIds: rrhhIds,
-      bloqueoIds: rrhhIds,
+      bloqueoIds: rrhhBloqueoIds,
       jefeId,
       rrhhIds,
     });
@@ -292,7 +333,7 @@ export async function notificarGestionPermiso(params: {
       tipo,
       evento: "aprobado_rrhh",
       titulo: esAcuerdo ? "Acuerdo aprobado" : "Permiso aprobado",
-      mensaje: `Su ${etiqueta} fue aprobado por RRHH.`,
+      mensaje: `Su ${resumen} fue aprobado por RRHH.`,
       actorId: perfil.id,
       pushIds: [empleadoId, ...(jefeId ? [jefeId] : [])],
       bloqueoIds: [empleadoId, ...(jefeId ? [jefeId] : [])],
@@ -309,7 +350,7 @@ export async function notificarGestionPermiso(params: {
       tipo,
       evento: "rechazado_jefe",
       titulo: esAcuerdo ? "Acuerdo rechazado" : "Permiso rechazado",
-      mensaje: `Su ${etiqueta} fue rechazado por el jefe de área.`,
+      mensaje: `Su ${resumen} fue rechazado por el jefe de área.`,
       actorId: perfil.id,
       pushIds: [empleadoId],
       bloqueoIds: [empleadoId],
@@ -326,7 +367,7 @@ export async function notificarGestionPermiso(params: {
       tipo,
       evento: "rechazado_rrhh",
       titulo: esAcuerdo ? "Acuerdo rechazado" : "Permiso rechazado",
-      mensaje: `Su ${etiqueta} fue rechazado por RRHH.`,
+      mensaje: `Su ${resumen} fue rechazado por RRHH.`,
       actorId: perfil.id,
       pushIds: [empleadoId, ...(jefeId ? [jefeId] : [])],
       bloqueoIds: [empleadoId, ...(jefeId ? [jefeId] : [])],
@@ -345,11 +386,13 @@ export async function notificarEliminacionPermiso(params: {
 }) {
   const { supabase, perfil, permisoId, empleadoId, tipo } = params;
   const esAcuerdo = esTipoAcuerdo(tipo);
-  const etiqueta = etiquetaRegistro(esAcuerdo);
+  const nombreEmpleado = await obtenerNombreEmpleado(supabase, empleadoId);
+  const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
+  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
-  const destinatarios = [
+  const destinatariosPush = [
     empleadoId,
     ...(jefeId ? [jefeId] : []),
     ...rrhhIds,
@@ -361,10 +404,10 @@ export async function notificarEliminacionPermiso(params: {
     tipo,
     evento: "modificado",
     titulo: esAcuerdo ? "Acuerdo eliminado" : "Permiso eliminado",
-    mensaje: `Se eliminó un ${etiqueta} del sistema.`,
+    mensaje: `Se eliminó un ${resumen} del sistema.`,
     actorId: perfil.id,
-    pushIds: destinatarios,
-    bloqueoIds: destinatarios,
+    pushIds: destinatariosPush,
+    bloqueoIds: destinatariosBloqueoJefeRRHH(jefeId, rrhhBloqueoIds),
     jefeId,
     rrhhIds,
   });

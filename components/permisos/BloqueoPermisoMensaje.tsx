@@ -18,6 +18,8 @@ interface MensajePendiente {
   titulo: string;
   mensaje: string;
   created_at: string;
+  empleado_nombre?: string | null;
+  permiso_tipo?: string | null;
 }
 
 const formatearFechaHora = (fechaISO: string) => {
@@ -142,6 +144,20 @@ export default function BloqueoPermisoMensaje() {
           </p>
 
           <div className="w-full bg-zinc-50 dark:bg-zinc-900 rounded-xl border-2 border-[#1a95d3]/30 p-5 mb-8 text-left">
+            {(mensaje.empleado_nombre || mensaje.permiso_tipo) && (
+              <div className="mb-4 rounded-lg border border-[#1a95d3]/20 bg-sky-50/60 dark:bg-sky-950/30 px-3 py-2">
+                {mensaje.empleado_nombre && (
+                  <p className="text-sm font-bold text-foreground">
+                    {mensaje.empleado_nombre}
+                  </p>
+                )}
+                {mensaje.permiso_tipo && (
+                  <p className="text-xs font-semibold text-[#1a95d3] dark:text-[#5ec8f0] mt-0.5">
+                    {mensaje.permiso_tipo}
+                  </p>
+                )}
+              </div>
+            )}
             <p className="text-sm text-foreground whitespace-pre-wrap mb-4">
               {mensaje.mensaje}
             </p>

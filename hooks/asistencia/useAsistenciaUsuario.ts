@@ -7,10 +7,11 @@ import { createClient } from '@/utils/supabase/client';
 
 const FIVE_MINUTES = 1000 * 60 * 5;
 
-const KEYS = {
-  asistenciaUsuario: (userId: string | null, start: any, end: any) => 
-    ['asistencia-usuario', userId, start, end],
-};
+export const asistenciaUsuarioQueryKey = (
+  userId: string | null,
+  fechaInicio: Date | string | null,
+  fechaFinal: Date | string | null,
+) => ['asistencia-usuario', userId, fechaInicio, fechaFinal] as const;
 
 export function useAsistenciaUsuario(
   userId: string | null,
@@ -18,7 +19,7 @@ export function useAsistenciaUsuario(
   fechaFinal: Date | string | null
 ) {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: KEYS.asistenciaUsuario(userId, fechaInicio, fechaFinal),
+    queryKey: asistenciaUsuarioQueryKey(userId, fechaInicio, fechaFinal),
     
     queryFn: async () => {
       if (!userId) return [];

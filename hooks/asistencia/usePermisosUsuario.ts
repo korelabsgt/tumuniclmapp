@@ -1,21 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { obtenerPermisosDelUsuario } from '@/components/permisos/acciones';
-import { PermisoEmpleado } from '@/components/permisos/types';
+
+const FIVE_MINUTES = 1000 * 60 * 5;
+
+export const permisosUsuarioQueryKey = (userId: string | null) =>
+  ['permisos-usuario', userId] as const;
 
 export function usePermisosUsuario(userId: string | null) {
-  const [permisos, setPermisos] = useState<PermisoEmpleado[]>([]);
-  const [loading, setLoading] = useState(!!userId);
+  const { data, isLoading } = useQuery({
+    queryKey: permisosUsuarioQueryKey(userId),
+    queryFn: () => obtenerPermisosDelUsuario(userId!),
+    enabled: !!userId,
+    staleTime: FIVE_MINUTES,
+  });
 
-  useEffect(() => {
-    if (!userId) return;
-    setLoading(true);
-    obtenerPermisosDelUsuario(userId)
-      .then(setPermisos)
-      .catch(() => setPermisos([]))
-      .finally(() => setLoading(false));
-  }, [userId]);
-
-  return { permisos, loading };
+  return { permisos: data ?? [], loading: isLoading };
 }

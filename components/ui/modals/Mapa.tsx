@@ -6,8 +6,8 @@ import { X, MapPin, ArrowUpDown, Eye, EyeOff, FileCheck, ExternalLink } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import type { PermisoEmpleado } from '@/components/permisos/types';
+import { getGoogleMapsApiKey, useGoogleMapsLibrary } from '@/hooks/mapa/useGoogleMapsLibrary';
 
 interface Registro {
   created_at: string;
@@ -33,30 +33,8 @@ const MARKER_COLORS = [
   '#DB2777', '#0891B2', '#EA580C', '#4F46E5', '#65A30D',
 ];
 
-const GOOGLE_MAPS_API_KEY =
-  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-  ?? process.env.NEXT_PUBLIC_Maps_API_KEY
-  ?? '';
-
-let googleMapsConfigured = false;
-let googleMapsLibraryPromise: Promise<google.maps.MapsLibrary> | null = null;
-
 function getMarkerColor(index: number): string {
   return MARKER_COLORS[index % MARKER_COLORS.length];
-}
-
-function loadGoogleMapsLibrary(): Promise<google.maps.MapsLibrary> {
-  if (!GOOGLE_MAPS_API_KEY) {
-    return Promise.reject(new Error('missing_api_key'));
-  }
-  if (!googleMapsConfigured) {
-    setOptions({ key: GOOGLE_MAPS_API_KEY, v: 'weekly' });
-    googleMapsConfigured = true;
-  }
-  if (!googleMapsLibraryPromise) {
-    googleMapsLibraryPromise = importLibrary('maps');
-  }
-  return googleMapsLibraryPromise;
 }
 
 const MAX_MAP_ZOOM = 15;
@@ -132,7 +110,6 @@ export default function Mapa({ isOpen, onClose, registros, nombreUsuario, titulo
   const [registroActivo, setRegistroActivo] = useState<Registro | null>(null);
   const [mapaVisible, setMapaVisible] = useState(true);
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
-  const [mapaError, setMapaError] = useState<string | null>(null);
 
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -152,7 +129,6 @@ export default function Mapa({ isOpen, onClose, registros, nombreUsuario, titulo
       setRawRegistros(nuevosRegistros);
       setMapaVisible(true);
       setSortOrder('asc');
-      setMapaError(null);
     }
   }, [isOpen, registros]);
 
@@ -170,6 +146,22 @@ export default function Mapa({ isOpen, onClose, registros, nombreUsuario, titulo
     () => listaRegistros.filter((r) => r.ubicacion !== null),
     [listaRegistros],
   );
+
+  const googleMapsApiKey = getGoogleMapsApiKey();
+  const shouldLoadGoogleMaps = isOpen && mapaVisible && registrosConUbicacion.length > 0;
+  const {
+    data: googleMapsLibrary,
+    isError: googleMapsLoadError,
+  } = useGoogleMapsLibrary(shouldLoadGoogleMaps);
+
+  const mapaError = useMemo(() => {
+    if (!shouldLoadGoogleMaps) return null;
+    if (!googleMapsApiKey) {
+      return 'Falta configurar NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (o NEXT_PUBLIC_Maps_API_KEY).';
+    }
+    if (googleMapsLoadError) return 'No se pudo cargar Google Maps.';
+    return null;
+  }, [shouldLoadGoogleMaps, googleMapsApiKey, googleMapsLoadError]);
 
   const ubicacionesKey = useMemo(
     () => registrosConUbicacion
@@ -221,82 +213,61 @@ export default function Mapa({ isOpen, onClose, registros, nombreUsuario, titulo
   }, [colorPorRegistro]);
 
   useEffect(() => {
-    if (!isOpen || !mapaVisible || registrosConUbicacion.length === 0) return;
+    if (!shouldLoadGoogleMaps || !googleMapsLibrary || !mapContainerRef.current) return;
 
-    let cancelled = false;
     let resizeTimers: ReturnType<typeof setTimeout>[] = [];
 
-    const initMap = async () => {
-      try {
-        await loadGoogleMapsLibrary();
-      } catch {
-        if (!cancelled) {
-          setMapaError(
-            GOOGLE_MAPS_API_KEY
-              ? 'No se pudo cargar Google Maps.'
-              : 'Falta configurar NEXT_PUBLIC_GOOGLE_MAPS_API_KEY (o NEXT_PUBLIC_Maps_API_KEY).',
-          );
-        }
-        return;
-      }
+    if (mapInstanceRef.current) {
+      markersByRegistroRef.current.forEach((marker) => marker.setMap(null));
+      markersByRegistroRef.current.clear();
+      infoWindowRef.current?.close();
+      mapInstanceRef.current = null;
+    }
 
-      if (cancelled || !mapContainerRef.current) return;
+    const center = registrosConUbicacion[0].ubicacion!;
+    const map = new google.maps.Map(mapContainerRef.current, {
+      center: { lat: center.lat, lng: center.lng },
+      zoom: MAX_MAP_ZOOM,
+      mapTypeControl: true,
+      mapTypeControlOptions: { position: google.maps.ControlPosition.TOP_RIGHT },
+      streetViewControl: false,
+      fullscreenControl: true,
+      fullscreenControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
+      gestureHandling: 'greedy',
+    });
 
-      if (mapInstanceRef.current) {
-        markersByRegistroRef.current.forEach((marker) => marker.setMap(null));
-        markersByRegistroRef.current.clear();
-        infoWindowRef.current?.close();
-        mapInstanceRef.current = null;
-      }
+    const infoWindow = new google.maps.InfoWindow();
+    infoWindowRef.current = infoWindow;
 
-      const center = registrosConUbicacion[0].ubicacion!;
-      const map = new google.maps.Map(mapContainerRef.current, {
-        center: { lat: center.lat, lng: center.lng },
-        zoom: MAX_MAP_ZOOM,
-        mapTypeControl: true,
-        mapTypeControlOptions: { position: google.maps.ControlPosition.TOP_RIGHT },
-        streetViewControl: false,
-        fullscreenControl: true,
-        fullscreenControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
-        gestureHandling: 'greedy',
+    registrosConUbicacion.forEach((registro) => {
+      const { lat, lng } = registro.ubicacion!;
+      const color = colorPorRegistro.get(registro) ?? '#2563EB';
+      const tituloMarcador = getTituloRegistro(registro);
+      const hora = formatTimeWithAMPM(registro.created_at);
+
+      const marker = new google.maps.Marker({
+        position: { lat, lng },
+        map,
+        icon: buildMarkerIcon(color, false),
       });
 
-      const infoWindow = new google.maps.InfoWindow();
-      infoWindowRef.current = infoWindow;
-
-      registrosConUbicacion.forEach((registro) => {
-        const { lat, lng } = registro.ubicacion!;
-        const color = colorPorRegistro.get(registro) ?? '#2563EB';
-        const tituloMarcador = getTituloRegistro(registro);
-        const hora = formatTimeWithAMPM(registro.created_at);
-
-        const marker = new google.maps.Marker({
-          position: { lat, lng },
-          map,
-          icon: buildMarkerIcon(color, false),
-        });
-
-        marker.addListener('click', () => {
-          setRegistroActivo(registro);
-          infoWindow.setContent(buildInfoWindowContent(tituloMarcador, hora));
-          infoWindow.open({ map, anchor: marker });
-        });
-
-        markersByRegistroRef.current.set(registro, marker);
+      marker.addListener('click', () => {
+        setRegistroActivo(registro);
+        infoWindow.setContent(buildInfoWindowContent(tituloMarcador, hora));
+        infoWindow.open({ map, anchor: marker });
       });
 
-      applyMapView(map, registrosConUbicacion);
+      markersByRegistroRef.current.set(registro, marker);
+    });
 
-      mapInstanceRef.current = map;
+    applyMapView(map, registrosConUbicacion);
 
-      requestAnimationFrame(invalidateMapSize);
-      resizeTimers = [150, 400, 800].map((ms) => setTimeout(invalidateMapSize, ms));
-    };
+    mapInstanceRef.current = map;
 
-    void initMap();
+    requestAnimationFrame(invalidateMapSize);
+    resizeTimers = [150, 400, 800].map((ms) => setTimeout(invalidateMapSize, ms));
 
     return () => {
-      cancelled = true;
       resizeTimers.forEach(clearTimeout);
       markersByRegistroRef.current.forEach((marker) => marker.setMap(null));
       markersByRegistroRef.current.clear();
@@ -304,7 +275,16 @@ export default function Mapa({ isOpen, onClose, registros, nombreUsuario, titulo
       infoWindowRef.current = null;
       mapInstanceRef.current = null;
     };
-  }, [isOpen, mapaVisible, ubicacionesKey, registrosConUbicacion, colorPorRegistro, getTituloRegistro, formatTimeWithAMPM, invalidateMapSize]);
+  }, [
+    shouldLoadGoogleMaps,
+    googleMapsLibrary,
+    ubicacionesKey,
+    registrosConUbicacion,
+    colorPorRegistro,
+    getTituloRegistro,
+    formatTimeWithAMPM,
+    invalidateMapSize,
+  ]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !registroActivo?.ubicacion) return;

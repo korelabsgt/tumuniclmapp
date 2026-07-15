@@ -34,7 +34,7 @@ import { PermisoEmpleado } from "@/components/permisos/types";
 import Cargando from "@/components/ui/animations/Cargando";
 import Swal, { SweetAlertOptions } from "sweetalert2";
 
-import { marcarNuevaAsistencia } from "@/lib/asistencia/acciones";
+import { useMarcarAsistencia } from "@/hooks/asistencia/useMarcarAsistencia";
 import useFechaHora from "@/hooks/utility/useFechaHora";
 import { useAsistenciaUsuario } from "@/hooks/asistencia/useAsistenciaUsuario";
 import { usePermisosUsuario } from "@/hooks/asistencia/usePermisosUsuario";
@@ -152,9 +152,10 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
   const {
     asistencias: todosLosRegistros,
     loading: cargandoRegistros,
-    fetchAsistencias,
   } = useAsistenciaUsuario(userId, null, null);
   const { permisos: permisosEmpleado, loading: cargandoPermisos } = usePermisosUsuario(userId);
+  const marcarAsistenciaMutation = useMarcarAsistencia();
+  const marcandoAsistencia = marcarAsistenciaMutation.isPending;
   const fechaHoraGt = useFechaHora();
   const { comisiones: comisionesEmpleado, loading: cargandoComisiones } = useObtenerComisiones(
     getMonth(fechaHoraGt),
@@ -169,7 +170,6 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     error: errorGeo,
   } = useObtenerUbicacion();
 
-  const [cargando, setCargando] = useState(false);
   const [modalMapaAbierto, setModalMapaAbierto] = useState(false);
   const [registrosSeleccionadosParaMapa, setRegistrosSeleccionadosParaMapa] =
     useState<{ entrada: any | null; salida: any | null; multiple?: any[] }>({
@@ -508,30 +508,28 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     ubicacionActual: { lat: number; lng: number },
     notasDeMarcado: string,
   ) => {
-    setCargando(true);
     if (!userId) {
       Swal.fire("Error", "No se encontró el ID de usuario.", "error");
-      setCargando(false);
       return;
     }
-    const nuevoRegistro = await marcarNuevaAsistencia(
+
+    const nuevoRegistro = await marcarAsistenciaMutation.mutateAsync({
       userId,
       tipo,
-      ubicacionActual,
-      notasDeMarcado,
-    );
+      ubicacion: ubicacionActual,
+      notas: notasDeMarcado,
+    });
+
     if (nuevoRegistro) {
       await Swal.fire(
         `¡${tipo === "Marca" ? "Marca" : tipo} Exitosa!`,
         `Registrado correctamente.`,
         "success",
       );
-      fetchAsistencias();
       if (onFinalizar) {
         onFinalizar();
       }
     }
-    setCargando(false);
   };
 
   const handleAbrirMapa = (registro: any) => {
@@ -592,13 +590,13 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       return (
         <Button
           onClick={() => handleIniciarMarcado("Marca")}
-          disabled={cargando || cargandoGeo}
+          disabled={marcandoAsistencia || cargandoGeo}
           className="w-full py-6 text-base bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 flex items-center justify-center gap-2 border-0 text-white"
         >
           {cargandoGeo && <MapPin className="animate-bounce h-4 w-4" />}
           {cargandoGeo
             ? "Obteniendo ubicación..."
-            : cargando
+            : marcandoAsistencia
               ? "Registrando..."
               : "Marcar"}
         </Button>
@@ -610,7 +608,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
         <div className="flex flex-col items-center gap-2 w-full">
           <Button
             onClick={() => handleIniciarMarcado("Entrada")}
-            disabled={cargando || cargandoGeo || !puedeMarcarEntrada}
+            disabled={marcandoAsistencia || cargandoGeo || !puedeMarcarEntrada}
             className={`w-full py-6 text-base flex items-center justify-center gap-2 border-0 text-white transition-all ${
               puedeMarcarEntrada
                 ? "bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
@@ -620,7 +618,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
             {cargandoGeo && <MapPin className="animate-bounce h-4 w-4" />}
             {cargandoGeo
               ? "Obteniendo ubicación..."
-              : cargando
+              : marcandoAsistencia
                 ? "Marcando..."
                 : "Marcar Entrada"}
           </Button>
@@ -636,7 +634,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
         <div className="flex flex-col items-center gap-2 w-full">
           <Button
             onClick={() => handleIniciarMarcado("Salida")}
-            disabled={cargando || cargandoGeo || !puedeMarcarSalida}
+            disabled={marcandoAsistencia || cargandoGeo || !puedeMarcarSalida}
             className={`w-full py-6 text-base flex items-center justify-center gap-2 border-0 text-white transition-all ${
               puedeMarcarSalida
                 ? "bg-red-600 hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600"
@@ -646,7 +644,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
             {cargandoGeo && <MapPin className="animate-bounce h-4 w-4" />}
             {cargandoGeo
               ? "Obteniendo ubicación..."
-              : cargando
+              : marcandoAsistencia
                 ? "Marcando..."
                 : "Marcar Salida"}
           </Button>

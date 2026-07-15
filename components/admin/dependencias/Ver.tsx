@@ -215,7 +215,7 @@ const getSelectableDependencies = (
 };
 
 export default function Ver() {
-  const { rol, cargando: cargandoUsuario } = useUserData();
+  const { rol } = useUserData();
   const {
     usuarios,
     loading: loadingUsuarios,
@@ -272,6 +272,11 @@ export default function Ver() {
     description: "",
   });
   const hasPermission = rol === "SUPER" || rol === "SECRETARIO";
+  const [canShowActions, setCanShowActions] = useState(false);
+
+  useEffect(() => {
+    setCanShowActions(true);
+  }, []);
 
   const { usuario: datosCompletosParaForm } = useInfoUsuario(
     selectedUsuario ? selectedUsuario.id : null,
@@ -785,7 +790,7 @@ export default function Ver() {
           />
         </div>
         <div className="w-full md:w-auto flex items-center gap-2 exclude-from-capture">
-          {hasPermission && (
+          {canShowActions && hasPermission && (
             <Button
               onClick={() => handleOpenForm()}
               className="w-full text-xs md:w-auto bg-blue-100 text-blue-800 hover:bg-blue-200"

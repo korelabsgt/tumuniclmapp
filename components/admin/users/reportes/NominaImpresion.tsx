@@ -1,8 +1,10 @@
 import React, { forwardRef, useMemo } from "react";
 
-const FILAS_PAGINA_1 = 26;
-const FILAS_PAGINA_X = 25;
-const ALTO_FILA = "h-6";
+const FILAS_PAGINA_1 = 22;
+const FILAS_PAGINA_X = 24;
+const ALTO_CELDA = "h-6 max-h-6 overflow-hidden p-0";
+const CELDA_INTERNA =
+  "box-border h-6 max-h-6 min-w-0 w-full px-1 flex items-center leading-none overflow-hidden";
 
 interface Props {
   datos: any[];
@@ -134,6 +136,39 @@ const NominaImpresion = forwardRef<HTMLDivElement, Props>(
       return parts[parts.length - 1].trim();
     };
 
+    const celdaTexto = (
+      contenido: React.ReactNode,
+      className = "",
+      alineacion: "left" | "center" | "right" = "left",
+    ) => (
+      <td className={`border border-gray-300 ${ALTO_CELDA} ${className}`}>
+        <div className={`${CELDA_INTERNA}`}>
+          <span
+            className={`block w-full truncate ${
+              alineacion === "center"
+                ? "text-center"
+                : alineacion === "right"
+                  ? "text-right"
+                  : "text-left"
+            }`}
+          >
+            {contenido}
+          </span>
+        </div>
+      </td>
+    );
+
+    const celdaMonto = (
+      valor: number,
+      className = "",
+      conQ = true,
+    ) =>
+      celdaTexto(
+        valor > 0 ? (conQ ? `Q ${formatQ(valor)}` : formatQ(valor)) : "---",
+        className,
+        valor > 0 ? "right" : "center",
+      );
+
     return (
       <div ref={ref} className="flex flex-col gap-8">
         {paginasProcesadas.map((datosPagina, indexPagina) => {
@@ -145,10 +180,10 @@ const NominaImpresion = forwardRef<HTMLDivElement, Props>(
           return (
             <div
               key={indexPagina}
-              className="bg-white shadow-lg relative text-black flex flex-col justify-between"
+              className="bg-white shadow-lg relative text-black flex flex-col overflow-hidden"
               style={{ width: "1248px", height: "816px", padding: "40px" }}
             >
-              <div className="flex-grow">
+              <div className="flex-1 min-h-0 overflow-hidden">
                 {esPrimeraPagina ? (
                   <div className="flex justify-between items-center mb-2 border-b-2 border-[#0066CC] pb-2">
                     <div className="w-1/3 text-left text-xs text-gray-500 font-bold uppercase">
@@ -358,141 +393,72 @@ const NominaImpresion = forwardRef<HTMLDivElement, Props>(
                             >
                               <td
                                 colSpan={colSpanTable}
-                                className={`px-2 font-bold text-[8px] uppercase text-gray-800 border-b border-gray-300 align-middle leading-tight ${ALTO_FILA}`}
+                                className={`border border-gray-300 ${ALTO_CELDA}`}
                               >
-                                <span className="text-blue-600">
-                                  Dependencia:
-                                </span>{" "}
-                                {getDependenciaCorta(fila.dependencia_nombre)}
+                                <div
+                                  className={`${CELDA_INTERNA} px-2 font-bold text-[8px] uppercase text-gray-800`}
+                                >
+                                  <span className="truncate block w-full">
+                                    <span className="text-blue-600">
+                                      Dependencia:
+                                    </span>{" "}
+                                    {getDependenciaCorta(
+                                      fila.dependencia_nombre,
+                                    )}
+                                  </span>
+                                </div>
                               </td>
                             </tr>
                           )}
                           <tr
-                            className="[&>td]:border [&>td]:border-gray-300 [&>td]:px-1 [&>td]:align-middle hover:bg-red-50 cursor-pointer transition-colors"
+                            className="hover:bg-red-50 cursor-pointer transition-colors"
                             onClick={handleHideEmpleado(fila.id)}
                             title="Clic para ocultar empleado"
                           >
-                            {visible("no") && (
-                              <td className={`text-center ${ALTO_FILA}`}>
-                                {indiceInicial + idx + 1}
-                              </td>
-                            )}
-                            {visible("nombre") && (
-                              <td
-                                className={`font-semibold px-1 overflow-hidden ${ALTO_FILA}`}
-                              >
-                                <div className="line-clamp-2">
-                                  {fila.nombre}
-                                </div>
-                              </td>
-                            )}
-                            {visible("cargo") && (
-                              <td
-                                className={`px-1 text-[8px] overflow-hidden ${ALTO_FILA}`}
-                              >
-                                <div className="line-clamp-2">
-                                  {fila.puesto}
-                                </div>
-                              </td>
-                            )}
-                            {visible("renglon") && (
-                              <td className={`text-center ${ALTO_FILA}`}>
-                                {fila.renglon}
-                              </td>
-                            )}
-                            {visible("dietas") && (
-                              <td
-                                className={`px-1 ${ALTO_FILA} ${fila.dietaFinal > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.dietaFinal > 0
-                                  ? `Q ${formatQ(fila.dietaFinal)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("salario") && (
-                              <td
-                                className={`px-1 ${ALTO_FILA} ${fila.salarioFinal > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.salarioFinal > 0
-                                  ? `Q ${formatQ(fila.salarioFinal)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("honorarios") && (
-                              <td
-                                className={`px-1 ${ALTO_FILA} ${fila.honorarioFinal > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.honorarioFinal > 0
-                                  ? `Q ${formatQ(fila.honorarioFinal)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("bonif") && (
-                              <td
-                                className={`px-1 ${ALTO_FILA} ${fila.bonifFinal > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.bonifFinal > 0
-                                  ? `Q ${formatQ(fila.bonifFinal)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("gastos_rep") && (
-                              <td
-                                className={`px-1 ${ALTO_FILA} ${fila.gastosRepFinal > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.gastosRepFinal > 0
-                                  ? `Q ${formatQ(fila.gastosRepFinal)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("total_dev") && (
-                              <td
-                                className={`px-1 font-bold bg-gray-100 ${ALTO_FILA} ${fila.totalDevengado > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.totalDevengado > 0
-                                  ? `Q ${formatQ(fila.totalDevengado)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("igss") && (
-                              <td
-                                className={`px-1 text-red-800 ${ALTO_FILA} ${fila.igss > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.igss > 0 ? formatQ(fila.igss) : "---"}
-                              </td>
-                            )}
-                            {visible("plan") && (
-                              <td
-                                className={`px-1 text-red-800 ${ALTO_FILA} ${fila.plan > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.plan > 0 ? formatQ(fila.plan) : "---"}
-                              </td>
-                            )}
-                            {visible("isr") && (
-                              <td
-                                className={`px-1 text-red-800 ${ALTO_FILA} ${fila.isr > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.isr > 0 ? formatQ(fila.isr) : "---"}
-                              </td>
-                            )}
-                            {visible("total_desc") && (
-                              <td
-                                className={`px-1 font-semibold text-red-800 bg-red-50 ${ALTO_FILA} ${fila.totalDescuentos > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.totalDescuentos > 0
-                                  ? `Q ${formatQ(fila.totalDescuentos)}`
-                                  : "---"}
-                              </td>
-                            )}
-                            {visible("liquido") && (
-                              <td
-                                className={`px-1 font-bold text-green-800 bg-green-50 ${ALTO_FILA} ${fila.liquido > 0 ? "text-right" : "text-center"}`}
-                              >
-                                {fila.liquido > 0
-                                  ? `Q ${formatQ(fila.liquido)}`
-                                  : "---"}
-                              </td>
-                            )}
+                            {visible("no") &&
+                              celdaTexto(
+                                indiceInicial + idx + 1,
+                                "",
+                                "center",
+                              )}
+                            {visible("nombre") &&
+                              celdaTexto(
+                                fila.nombre,
+                                "font-semibold",
+                              )}
+                            {visible("cargo") && celdaTexto(fila.puesto)}
+                            {visible("renglon") &&
+                              celdaTexto(fila.renglon, "", "center")}
+                            {visible("dietas") &&
+                              celdaMonto(fila.dietaFinal)}
+                            {visible("salario") &&
+                              celdaMonto(fila.salarioFinal)}
+                            {visible("honorarios") &&
+                              celdaMonto(fila.honorarioFinal)}
+                            {visible("bonif") && celdaMonto(fila.bonifFinal)}
+                            {visible("gastos_rep") &&
+                              celdaMonto(fila.gastosRepFinal)}
+                            {visible("total_dev") &&
+                              celdaMonto(
+                                fila.totalDevengado,
+                                "font-bold bg-gray-100",
+                              )}
+                            {visible("igss") &&
+                              celdaMonto(fila.igss, "text-red-800", false)}
+                            {visible("plan") &&
+                              celdaMonto(fila.plan, "text-red-800", false)}
+                            {visible("isr") &&
+                              celdaMonto(fila.isr, "text-red-800", false)}
+                            {visible("total_desc") &&
+                              celdaMonto(
+                                fila.totalDescuentos,
+                                "font-semibold text-red-800 bg-red-50",
+                              )}
+                            {visible("liquido") &&
+                              celdaMonto(
+                                fila.liquido,
+                                "font-bold text-green-800 bg-green-50",
+                              )}
                           </tr>
                         </React.Fragment>
                       );
@@ -501,7 +467,7 @@ const NominaImpresion = forwardRef<HTMLDivElement, Props>(
                 </table>
               </div>
 
-              <div className="absolute bottom-4 left-0 w-full text-center text-[8px] text-gray-400 border-t mx-10 pt-1">
+              <div className="shrink-0 mt-2 pt-1 border-t border-gray-200 text-center text-[8px] text-gray-400">
                 Generado el {fechaHoyTexto} | Página {indexPagina + 1} de{" "}
                 {paginasProcesadas.length}
               </div>

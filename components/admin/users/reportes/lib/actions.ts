@@ -6,19 +6,27 @@ export interface ReporteNominaFila {
   id: string;
   nombre: string;
   puesto: string;
+  dependencia_id: string;
   dependencia_nombre: string;
   path_orden: string;
   renglon: string;
 
-  // VALORES BASE (Unitarios)
   salario_unitario: number;
   bonificacion_unitaria: number;
 
-  // VALORES PRE-CALCULADOS (Por defecto mensual o lo que venga de DB)
-  // Pero estos se sobrescribirán en el cliente si es 031/035
   prima: boolean;
   plan_prestaciones: boolean;
   isr: number;
+
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+}
+
+function normalizarFecha(valor: string | null | undefined): string | null {
+  if (!valor) return null;
+  const soloFecha = valor.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(soloFecha)) return soloFecha;
+  return null;
 }
 
 export async function obtenerReporteNomina(): Promise<ReporteNominaFila[]> {
@@ -42,6 +50,52 @@ export async function obtenerReporteNomina(): Promise<ReporteNominaFila[]> {
 
   if (error || !usuarios) {
     return [];
+  }
+
+  const dependenciaIds = [
+    ...new Set(
+      usuarios
+        .map((u) => u.dependencia_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0),
+    ),
+  ];
+
+  const contratoPorDependencia = new Map<
+    string,
+    { user_id: string; fecha_inicio: string | null; fecha_fin: string | null }
+  >();
+  const contratoPorUsuarioDep = new Map<
+    string,
+    { fecha_inicio: string | null; fecha_fin: string | null }
+  >();
+
+  if (dependenciaIds.length > 0) {
+    const { data: contratos } = await supabase
+      .from("contrato")
+      .select("user_id, dependencia_id, fecha_inicio, fecha_fin, created_at")
+      .in("dependencia_id", dependenciaIds)
+      .order("created_at", { ascending: false });
+
+    for (const c of contratos ?? []) {
+      if (!c.dependencia_id) continue;
+
+      const fechas = {
+        fecha_inicio: normalizarFecha(c.fecha_inicio),
+        fecha_fin: normalizarFecha(c.fecha_fin),
+      };
+
+      const claveUsuarioDep = `${c.user_id}:${c.dependencia_id}`;
+      if (!contratoPorUsuarioDep.has(claveUsuarioDep)) {
+        contratoPorUsuarioDep.set(claveUsuarioDep, fechas);
+      }
+
+      if (!contratoPorDependencia.has(c.dependencia_id)) {
+        contratoPorDependencia.set(c.dependencia_id, {
+          user_id: c.user_id,
+          ...fechas,
+        });
+      }
+    }
   }
 
   const { data: todasDependencias } = await supabase
@@ -77,29 +131,37 @@ export async function obtenerReporteNomina(): Promise<ReporteNominaFila[]> {
   };
 
   const reporte: ReporteNominaFila[] = usuarios
-    .map((u: any) => {
+    .map((u) => {
       const dep = u.dependencias;
       const d = Array.isArray(dep) ? dep[0] : dep;
 
       if (!d) return null;
 
       const jerarquia = procesarJerarquia(d.id);
+      const contrato =
+        contratoPorUsuarioDep.get(`${u.user_id}:${d.id}`) ??
+        (u.dependencia_id
+          ? contratoPorDependencia.get(u.dependencia_id)
+          : undefined);
 
       return {
         id: u.user_id,
-        nombre: u.nombre,
+        nombre: u.nombre ?? "",
         puesto: d.nombre,
+        dependencia_id: d.id,
         dependencia_nombre: jerarquia.dependencia_nombre,
         path_orden: jerarquia.path_orden,
         renglon: d.renglon || "---",
 
-        // Enviamos el valor crudo de la DB
         salario_unitario: d.salario || 0,
         bonificacion_unitaria: d.bonificacion || 0,
 
-        prima: d.prima || false,
+        prima: !!d.prima,
         plan_prestaciones: d.plan_prestaciones || false,
         isr: d.isr || 0,
+
+        fecha_inicio: contrato?.fecha_inicio ?? null,
+        fecha_fin: contrato?.fecha_fin ?? null,
       };
     })
     .filter((item): item is ReporteNominaFila => item !== null);

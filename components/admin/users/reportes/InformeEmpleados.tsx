@@ -34,6 +34,7 @@ import {
 import { NominaIngreso } from "./NominaIngreso";
 import NominaImpresion from "./NominaImpresion";
 import DirectorioEmpleados from "./DirectorioEmpleados";
+import { createClient } from "@/utils/supabase/client";
 
 interface Props {
   isOpen: boolean;
@@ -44,6 +45,12 @@ const ITEMS_POR_PAGINA = 28;
 
 type ActionType = "col" | "oficina" | "emp";
 type HistoryItem = { type: ActionType; value: string };
+
+function soloFecha(valor: string | null | undefined): string | null {
+  if (!valor) return null;
+  const fecha = valor.slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(fecha) ? fecha : null;
+}
 
 export default function InformeEmpleados({ isOpen, onClose }: Props) {
   const [datosBase, setDatosBase] = useState<ReporteNominaFila[]>([]);
@@ -83,7 +90,60 @@ export default function InformeEmpleados({ isOpen, onClose }: Props) {
         obtenerReporteNomina(),
         obtenerFirmasAutoridades(),
       ]);
-      setDatosBase(dataNomina);
+
+      const dependenciaIds = [
+        ...new Set(dataNomina.map((f) => f.dependencia_id).filter(Boolean)),
+      ];
+
+      const supabase = createClient();
+      const contratosPorDep = new Map<
+        string,
+        { fecha_inicio: string | null; fecha_fin: string | null }
+      >();
+      const contratosPorUsuarioDep = new Map<
+        string,
+        { fecha_inicio: string | null; fecha_fin: string | null }
+      >();
+
+      if (dependenciaIds.length > 0) {
+        const { data: contratos, error: errorContratos } = await supabase
+          .from("contrato")
+          .select("user_id, dependencia_id, fecha_inicio, fecha_fin, created_at")
+          .order("created_at", { ascending: false });
+
+        if (errorContratos) {
+          console.error("Error cargando contratos:", errorContratos);
+        }
+
+        for (const c of contratos ?? []) {
+          if (!c.dependencia_id) continue;
+          if (!dependenciaIds.includes(c.dependencia_id)) continue;
+          const fechas = {
+            fecha_inicio: soloFecha(c.fecha_inicio),
+            fecha_fin: soloFecha(c.fecha_fin),
+          };
+          const clave = `${c.user_id}:${c.dependencia_id}`;
+          if (!contratosPorUsuarioDep.has(clave)) {
+            contratosPorUsuarioDep.set(clave, fechas);
+          }
+          if (!contratosPorDep.has(c.dependencia_id)) {
+            contratosPorDep.set(c.dependencia_id, fechas);
+          }
+        }
+      }
+
+      const dataConContrato = dataNomina.map((fila) => {
+        const contrato =
+          contratosPorUsuarioDep.get(`${fila.id}:${fila.dependencia_id}`) ??
+          contratosPorDep.get(fila.dependencia_id);
+        return {
+          ...fila,
+          fecha_inicio: contrato?.fecha_inicio ?? fila.fecha_inicio,
+          fecha_fin: contrato?.fecha_fin ?? fila.fecha_fin,
+        };
+      });
+
+      setDatosBase(dataConContrato);
       setFirmas({ coordinator: dataFirmas.rrhh, dafim: dataFirmas.dafim });
     } catch (error) {
       console.error(error);
@@ -93,8 +153,31 @@ export default function InformeEmpleados({ isOpen, onClose }: Props) {
     }
   };
 
+  const datosDelPeriodo = useMemo(() => {
+    const anioNum = parseInt(anio, 10);
+    const mesNum = parseInt(mes, 10);
+    if (Number.isNaN(anioNum) || Number.isNaN(mesNum)) return datosBase;
+
+    const inicioPeriodo = `${anioNum}-${String(mesNum).padStart(2, "0")}-01`;
+    const ultimoDia = new Date(anioNum, mesNum, 0).getDate();
+    const finPeriodo = `${anioNum}-${String(mesNum).padStart(2, "0")}-${String(ultimoDia).padStart(2, "0")}`;
+
+    return datosBase.filter((fila) => {
+      const fechaInicio = soloFecha(fila.fecha_inicio);
+      const fechaFin = soloFecha(fila.fecha_fin);
+
+      if (fechaInicio && fechaInicio > finPeriodo) {
+        return false;
+      }
+      if (fechaFin && fechaFin < inicioPeriodo) {
+        return false;
+      }
+      return true;
+    });
+  }, [datosBase, anio, mes]);
+
   const datosCalculados = useMemo(() => {
-    return datosBase.map((fila) => {
+    return datosDelPeriodo.map((fila) => {
       const renglonLower = (fila.renglon || "").toLowerCase();
       const esVariable =
         renglonLower.includes("031") || renglonLower.includes("035");
@@ -171,7 +254,7 @@ export default function InformeEmpleados({ isOpen, onClose }: Props) {
         liquido,
       };
     });
-  }, [datosBase, cantidadesManuales]);
+  }, [datosDelPeriodo, cantidadesManuales]);
 
   const empleadosParaEditar = useMemo(
     () => datosCalculados.filter((d) => d.esVariable),
@@ -497,7 +580,7 @@ export default function InformeEmpleados({ isOpen, onClose }: Props) {
             <div className="flex gap-2 ml-2">
               <Button
                 onClick={generatePdf}
-                disabled={loading || datosBase.length === 0 || isPrinting}
+                disabled={loading || datosCalculados.length === 0 || isPrinting}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold h-10 px-6"
               >
                 {isPrinting ? (

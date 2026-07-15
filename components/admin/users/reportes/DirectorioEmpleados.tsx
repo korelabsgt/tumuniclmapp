@@ -1,8 +1,10 @@
 import React, { forwardRef, useState, useMemo, useEffect } from "react";
 
-const FILAS_PAGINA_1 = 24;
-const FILAS_PAGINA_X = 27;
-const ALTO_FILA = "h-6";
+const FILAS_PAGINA_1 = 22;
+const FILAS_PAGINA_X = 24;
+const ALTO_CELDA = "h-6 max-h-6 overflow-hidden p-0";
+const CELDA_INTERNA =
+  "h-6 min-w-0 w-full px-1 flex items-center leading-none overflow-hidden";
 
 interface Props {
   datos: any[];
@@ -139,10 +141,10 @@ const DirectorioEmpleados = forwardRef<HTMLDivElement, Props>(
             return (
               <div
                 key={indexPagina}
-                className="bg-white shadow-lg relative text-black flex flex-col justify-between"
+                className="bg-white shadow-lg relative text-black flex flex-col overflow-hidden"
                 style={{ width: "1248px", height: "816px", padding: "40px" }}
               >
-                <div className="flex-grow">
+                <div className="flex-1 min-h-0 overflow-hidden">
                   {esPrimeraPagina ? (
                     <div className="flex justify-between items-center mb-2 border-b-2 border-[#0066CC] pb-2">
                       <div className="w-1/3 text-left text-xs text-gray-500 font-bold uppercase">
@@ -226,62 +228,113 @@ const DirectorioEmpleados = forwardRef<HTMLDivElement, Props>(
                               <tr className="bg-gray-200 border border-gray-400 break-inside-avoid">
                                 <td
                                   colSpan={8}
-                                  className={`px-2 font-bold text-[8px] uppercase text-gray-800 border-b border-gray-300 align-middle leading-tight ${ALTO_FILA}`}
+                                  className={`border border-gray-300 ${ALTO_CELDA}`}
                                 >
-                                  <span className="text-blue-600">
-                                    DEPENDENCIA:
-                                  </span>{" "}
-                                  {getDependenciaCorta(fila.dependencia_nombre)}
+                                  <div
+                                    className={`${CELDA_INTERNA} px-2 font-bold text-[8px] uppercase text-gray-800`}
+                                  >
+                                    <span className="truncate block w-full">
+                                      <span className="text-blue-600">
+                                        DEPENDENCIA:
+                                      </span>{" "}
+                                      {getDependenciaCorta(
+                                        fila.dependencia_nombre,
+                                      )}
+                                    </span>
+                                  </div>
                                 </td>
                               </tr>
                             )}
-                            <tr className="[&>td]:border [&>td]:border-gray-300 [&>td]:px-1 [&>td]:align-middle hover:bg-gray-50 transition-colors">
-                              <td className={`text-center ${ALTO_FILA}`}>
-                                {indiceInicial + idx + 1}
-                              </td>
+                            <tr className="hover:bg-gray-50 transition-colors">
                               <td
-                                className={`font-semibold px-1 overflow-hidden ${ALTO_FILA}`}
+                                className={`border border-gray-300 text-center ${ALTO_CELDA}`}
                               >
-                                <div className="line-clamp-2">
-                                  {fila.nombre}
+                                <div
+                                  className={`${CELDA_INTERNA} justify-center`}
+                                >
+                                  {indiceInicial + idx + 1}
                                 </div>
                               </td>
                               <td
-                                className={`px-1 overflow-hidden ${ALTO_FILA}`}
+                                className={`border border-gray-300 font-semibold ${ALTO_CELDA}`}
                               >
-                                <div className="line-clamp-2">
-                                  {fila.puesto}
+                                <div className={CELDA_INTERNA}>
+                                  <span className="truncate block w-full">
+                                    {fila.nombre}
+                                  </span>
                                 </div>
                               </td>
-                              <td className={`text-center ${ALTO_FILA}`}>
-                                Municipalidad
+                              <td
+                                className={`border border-gray-300 ${ALTO_CELDA}`}
+                              >
+                                <div className={CELDA_INTERNA}>
+                                  <span className="truncate block w-full">
+                                    {fila.puesto}
+                                  </span>
+                                </div>
                               </td>
-                              <td className={`px-1 ${ALTO_FILA}`}>
-                                <input
-                                  type="text"
-                                  placeholder="79435619"
-                                  value={telefonos[fila.id] ?? "79435619"}
-                                  onChange={(e) =>
-                                    handleTelefonoChange(
-                                      fila.id,
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="w-full px-1 py-0.5 text-[9px] text-center border-none outline-none bg-transparent placeholder-black placeholder-opacity-100"
-                                />
+                              <td
+                                className={`border border-gray-300 text-center ${ALTO_CELDA}`}
+                              >
+                                <div
+                                  className={`${CELDA_INTERNA} justify-center`}
+                                >
+                                  Municipalidad
+                                </div>
                               </td>
-                              <td className={`text-center ${ALTO_FILA}`}>NO</td>
-                              <td className={`text-center ${ALTO_FILA}`}>NO</td>
-                              <td className={`px-1 ${ALTO_FILA}`}>
-                                <input
-                                  type="email"
-                                  placeholder="NO"
-                                  value={correos[fila.id] || ""}
-                                  onChange={(e) =>
-                                    handleCorreoChange(fila.id, e.target.value)
-                                  }
-                                  className="w-full px-1 py-0.5 text-[9px] border-none outline-none bg-transparent placeholder-black placeholder-opacity-100"
-                                />
+                              <td
+                                className={`border border-gray-300 ${ALTO_CELDA}`}
+                              >
+                                <div className={CELDA_INTERNA}>
+                                  <input
+                                    type="text"
+                                    placeholder="79435619"
+                                    value={telefonos[fila.id] ?? "79435619"}
+                                    onChange={(e) =>
+                                      handleTelefonoChange(
+                                        fila.id,
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="w-full h-full text-[9px] text-center border-none outline-none bg-transparent placeholder-black placeholder-opacity-100"
+                                  />
+                                </div>
+                              </td>
+                              <td
+                                className={`border border-gray-300 text-center ${ALTO_CELDA}`}
+                              >
+                                <div
+                                  className={`${CELDA_INTERNA} justify-center`}
+                                >
+                                  NO
+                                </div>
+                              </td>
+                              <td
+                                className={`border border-gray-300 text-center ${ALTO_CELDA}`}
+                              >
+                                <div
+                                  className={`${CELDA_INTERNA} justify-center`}
+                                >
+                                  NO
+                                </div>
+                              </td>
+                              <td
+                                className={`border border-gray-300 ${ALTO_CELDA}`}
+                              >
+                                <div className={CELDA_INTERNA}>
+                                  <input
+                                    type="email"
+                                    placeholder="NO"
+                                    value={correos[fila.id] || ""}
+                                    onChange={(e) =>
+                                      handleCorreoChange(
+                                        fila.id,
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="w-full h-full text-[9px] border-none outline-none bg-transparent placeholder-black placeholder-opacity-100"
+                                  />
+                                </div>
                               </td>
                             </tr>
                           </React.Fragment>
@@ -291,7 +344,7 @@ const DirectorioEmpleados = forwardRef<HTMLDivElement, Props>(
                   </table>
                 </div>
 
-                <div className="absolute bottom-4 left-0 w-full text-center text-[8px] text-gray-400 border-t mx-10 pt-1">
+                <div className="shrink-0 mt-2 pt-1 border-t border-gray-200 text-center text-[8px] text-gray-400">
                   Generado el {fechaHoyTexto} | Página {indexPagina + 1} de{" "}
                   {paginasProcesadas.length}
                 </div>

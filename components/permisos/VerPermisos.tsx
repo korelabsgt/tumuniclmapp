@@ -264,7 +264,7 @@ export default function VerPermisos({ tipoVista }: Props) {
     const d = (descripcion || "").toLowerCase();
     const cat = getCategoriaFromTexto(t, d);
 
-    if (cat === "igss") return "border-l-4 border-l-yellow-500";
+    if (cat === "igss") return "border-l-4 border-l-amber-500";
     if (cat === "vacaciones") return "border-l-4 border-l-purple-500";
     if (cat === "academicas") return "border-l-4 border-l-green-500";
     if (cat === "extras") return "border-l-4 border-l-slate-500";
@@ -295,7 +295,7 @@ export default function VerPermisos({ tipoVista }: Props) {
   const getCategoriaBadgeClass = (cat: CategoriaPermiso) => {
     switch (cat) {
       case "igss":
-        return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-400";
+        return "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300";
       case "vacaciones":
         return "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400";
       case "academicas":

@@ -67,6 +67,20 @@ import {
   useObtenerComisiones,
   type ComisionConFechaYHoraSeparada,
 } from "@/hooks/comisiones/useObtenerComisiones";
+import {
+  resolverEstadoMarcaje,
+  getEstadoMarcajeMeta,
+  esEntradaTardeMarcaje,
+  ENTRADA_TARDE_TIME_CLASS,
+  MARCaje_FILA_CLASS,
+  MARCaje_ETIQUETA_CLASS,
+  MARCaje_HORA_CLASS,
+  MINUTOS_INICIO_ENTRADA_TARDE,
+} from "@/components/asistencia/lib/estado-marcaje";
+
+const JUSTIFICACION_BADGE_CLASS =
+  "w-full min-h-[2.35rem] py-2 px-2 rounded-md font-bold flex items-center justify-center gap-1.5 text-center text-[11px] sm:text-xs leading-snug border shadow-sm";
+const JUSTIFICACION_ICON_CLASS = "w-4 h-4 flex-shrink-0";
 
 const formatScheduleTime = (timeString: string | null | undefined) => {
   if (!timeString) return "--";
@@ -440,13 +454,13 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       }
     } else {
       swalConfig.confirmButtonText = "Sí, marcar Entrada";
-      const scheduleEntradaTarde = addMinutes(scheduleEntrada, 15);
-      const esEntradaTarde = isAfter(fechaHoraGt, scheduleEntradaTarde);
+      const limiteEntradaTarde = addMinutes(scheduleEntrada, MINUTOS_INICIO_ENTRADA_TARDE);
+      const esEntradaTarde = !isBefore(fechaHoraGt, limiteEntradaTarde);
       if (esEntradaTarde) {
         swalConfig = {
           ...swalConfig,
           title: "Justificación de Entrada Tarde",
-          text: `Está marcando entrada tarde (${format(scheduleEntradaTarde, "h:mm a", { locale: es })}). Justificación obligatoria.`,
+          text: `Está marcando entrada tarde (a partir de ${format(limiteEntradaTarde, "h:mm a", { locale: es })}). Justificación obligatoria.`,
           icon: "warning",
           inputPlaceholder: "Escriba su justificación aquí (requerido)...",
           inputValidator: (value) => {
@@ -475,7 +489,10 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
           notasFinales = `Salida Tarde: ${notasFinales}`;
         else if (
           tipo === "Entrada" &&
-          isAfter(fechaHoraGt, addMinutes(scheduleEntrada, 15))
+          !isBefore(
+            fechaHoraGt,
+            addMinutes(scheduleEntrada, MINUTOS_INICIO_ENTRADA_TARDE),
+          )
         )
           notasFinales = `Entrada Tarde: ${notasFinales}`;
       }
@@ -649,7 +666,22 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     }
   };
 
+  const horarioEntradaHoyStr = format(scheduleEntrada, "HH:mm:ss");
+
   const getEntradaTextClass = () => {
+    if (registroEntradaHoy) {
+      if (
+        esEntradaTardeMarcaje({
+          marcaEntradaAt: registroEntradaHoy.created_at,
+          horarioEntrada: horarioEntradaHoyStr,
+          diaString: format(fechaHoraGt, "yyyy-MM-dd"),
+          notas: registroEntradaHoy.notas,
+        })
+      ) {
+        return ENTRADA_TARDE_TIME_CLASS;
+      }
+      return "font-normal text-gray-800 dark:text-gray-200";
+    }
     if (permisoHoy) return getCategoriaTextClass(getCategoriaPermiso(permisoHoy));
     if (acuerdoHoy) return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy));
     if (comisionHoy && comisionTocaEntrada) return COMISION_TEXT_CLASS;
@@ -657,6 +689,9 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
   };
 
   const getSalidaTextClass = () => {
+    if (registroSalidaHoy) {
+      return "font-normal text-gray-800 dark:text-gray-200";
+    }
     if (permisoHoy) return getCategoriaTextClass(getCategoriaPermiso(permisoHoy));
     if (acuerdoHoy) return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy));
     if (comisionHoy && comisionTocaSalida) return COMISION_TEXT_CLASS;
@@ -670,9 +705,9 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
         if (comisionHoy) setComisionPreview(comisionHoy);
       }}
       title={comisionHoy?.titulo}
-      className={`w-full py-1.5 px-1 rounded font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight border shadow-sm cursor-pointer transition-colors hover:opacity-80 ${COMISION_BADGE_CLASS}`}
+      className={`${JUSTIFICACION_BADGE_CLASS} cursor-pointer transition-colors hover:opacity-80 ${COMISION_BADGE_CLASS}`}
     >
-      <Briefcase className="w-2.5 h-2.5 flex-shrink-0" />
+      <Briefcase className={JUSTIFICACION_ICON_CLASS} />
       Comisión
     </button>
   );
@@ -687,11 +722,36 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
           e.stopPropagation();
           setAcuerdoParaPreview(acuerdo);
         }}
-        className={`w-full py-1.5 px-1 rounded font-bold flex items-center justify-center gap-1 text-center transition-colors text-[9px] leading-tight border shadow-sm cursor-pointer ${getCategoriaAcuerdoJustificacionClass(categoria)}`}
+        className={`${JUSTIFICACION_BADGE_CLASS} transition-colors cursor-pointer ${getCategoriaAcuerdoJustificacionClass(categoria)}`}
       >
-        <Icono className="w-2.5 h-2.5 flex-shrink-0" />
+        <Icono className={JUSTIFICACION_ICON_CLASS} />
         {getCategoriaAcuerdoLabel(categoria)}
       </button>
+    );
+  };
+
+  const renderEstadoMarcajeHoyBtn = () => {
+    const hoyStr = format(fechaHoraGt, "yyyy-MM-dd");
+    const estado = resolverEstadoMarcaje({
+      fechaStr: hoyStr,
+      tieneEntrada: !!registroEntradaHoy,
+      tieneSalida: !!registroSalidaHoy,
+      notasEntrada: registroEntradaHoy?.notas,
+      notasSalida: registroSalidaHoy?.notas,
+      marcaEntradaAt: registroEntradaHoy?.created_at,
+      horarioEntrada: horarioEntradaHoyStr,
+    });
+
+    if (!estado) return null;
+
+    const meta = getEstadoMarcajeMeta(estado);
+    const Icono = meta.icon;
+
+    return (
+      <div className={`${JUSTIFICACION_BADGE_CLASS} ${meta.className} cursor-default transition-colors`}>
+        <Icono className={JUSTIFICACION_ICON_CLASS} />
+        {meta.label}
+      </div>
     );
   };
 
@@ -699,7 +759,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     if (permisoHoy) return renderPermisoHoyBtn(permisoHoy);
     if (acuerdoHoy) return renderAcuerdoHoyBtn(acuerdoHoy);
     if (comisionHoy) return renderComisionHoyBtn();
-    return null;
+    return renderEstadoMarcajeHoyBtn();
   };
 
   const renderPermisoHoyBtn = (permiso: PermisoEmpleado) => {
@@ -712,9 +772,9 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
           e.stopPropagation();
           setPermisoParaPreview(permiso);
         }}
-        className={`w-full py-1.5 px-1 rounded font-bold flex items-center justify-center gap-1 text-center transition-colors text-[9px] leading-tight border shadow-sm cursor-pointer ${getCategoriaJustificacionClass(categoria)}`}
+        className={`${JUSTIFICACION_BADGE_CLASS} transition-colors cursor-pointer ${getCategoriaJustificacionClass(categoria)}`}
       >
-        <Icono className="w-2.5 h-2.5 flex-shrink-0" />
+        <Icono className={JUSTIFICACION_ICON_CLASS} />
         {getCategoriaLabel(categoria)}
       </button>
     );
@@ -810,7 +870,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                           {/* Columna 3/4: Asistencia de Hoy (Estilo Calendario) */}
                           <div 
                             onClick={handleAbrirMapaHoy}
-                            className="w-3/4 cursor-pointer"
+                            className="flex-1 min-w-0 cursor-pointer"
                           >
                             {(esHorarioMultiple || registrosHoyMultiple.length > 2) ? (
                               <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex justify-center items-center text-center transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[11px] md:text-sm">
@@ -818,37 +878,37 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                               </div>
                             ) : (
                               <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left">
-                                <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                  <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
+                                <span className={MARCaje_FILA_CLASS}>
+                                  <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
                                   {registroEntradaHoy 
-                                    ? format(new Date(registroEntradaHoy.created_at), 'hh:mm aa', { locale: es }) 
+                                    ? (
+                                      <span className={getEntradaTextClass()}>
+                                        {format(new Date(registroEntradaHoy.created_at), 'hh:mm aa', { locale: es })}
+                                      </span>
+                                    )
                                     : (
-                                      <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
+                                      <span className={`${getEntradaTextClass()} font-normal`}>--:--</span>
                                     )}
                                 </span>
                                 <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                  <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                <span className={MARCaje_FILA_CLASS}>
+                                  <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
                                   {registroSalidaHoy 
-                                    ? format(new Date(registroSalidaHoy.created_at), 'hh:mm aa', { locale: es }) 
+                                    ? (
+                                      <span className={getSalidaTextClass()}>
+                                        {format(new Date(registroSalidaHoy.created_at), 'hh:mm aa', { locale: es })}
+                                      </span>
+                                    )
                                     : (
-                                      <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
+                                      <span className={`${getSalidaTextClass()} font-normal`}>--:--</span>
                                     )}
                                 </span>
                               </div>
                             )}
                           </div>
 
-                          <div className="w-1/4 cursor-pointer">
-                            {renderJustificacionHoyBtn() ?? (registrosHoyMultiple.length >= 2 ? (
-                              <div className="w-full py-1.5 px-1 rounded bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-green-100 dark:border-green-900/30 cursor-default transition-colors shadow-sm">
-                                Correcto
-                              </div>
-                            ) : (
-                              <div className="w-full py-1.5 px-1 rounded bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-gray-500 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-gray-200 dark:border-neutral-700 cursor-default transition-colors shadow-sm">
-                                Esperando Asistencia
-                              </div>
-                            ))}
+                          <div className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0 cursor-pointer">
+                            {renderJustificacionHoyBtn()}
                           </div>
                         </div>
                       </>
@@ -862,27 +922,19 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                           </p>
                         </div>
                         <div className="flex items-center gap-1">
-                          <div className="w-3/4 flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left px-2">
-                             <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                               <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                               <span className={`${getEntradaTextClass()} font-bold`}>--:--</span>
+                          <div className="flex-1 min-w-0 flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left px-2">
+                             <span className={MARCaje_FILA_CLASS}>
+                               <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
+                               <span className={`${getEntradaTextClass()} font-normal`}>--:--</span>
                              </span>
                              <span className="text-gray-300 dark:text-neutral-700">|</span>
-                             <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                               <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-                               <span className={`${getSalidaTextClass()} font-bold`}>--:--</span>
+                             <span className={MARCaje_FILA_CLASS}>
+                               <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
+                               <span className={`${getSalidaTextClass()} font-normal`}>--:--</span>
                              </span>
                           </div>
-                          <div className="w-1/4 cursor-pointer">
-                            {renderJustificacionHoyBtn() ?? (registrosHoyMultiple.length >= 2 ? (
-                              <div className="w-full py-1.5 px-1 rounded bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-green-100 dark:border-green-900/30 cursor-default transition-colors shadow-sm">
-                                Correcto
-                              </div>
-                            ) : (
-                              <div className="w-full py-1.5 px-1 rounded bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-gray-500 font-bold flex items-center justify-center text-center text-[9px] leading-tight border border-gray-200 dark:border-neutral-700 cursor-default transition-colors shadow-sm">
-                                Esperando Asistencia
-                              </div>
-                            ))}
+                          <div className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0 cursor-pointer">
+                            {renderJustificacionHoyBtn()}
                           </div>
                         </div>
                       </div>

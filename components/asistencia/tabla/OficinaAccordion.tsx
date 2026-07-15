@@ -1,9 +1,9 @@
 'use client';
 
-import React, { Fragment } from 'react';
+import React, { Fragment, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, AlertCircle, LogIn, LogOut, PartyPopper, Clock, CheckCircle2, XCircle, Briefcase } from 'lucide-react';
-import { format, parseISO, isAfter, isToday, startOfToday } from 'date-fns';
+import { ChevronDown, AlertCircle, LogIn, LogOut, PartyPopper, Briefcase } from 'lucide-react';
+import { format, parseISO, isAfter, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PermisoEmpleado, esTipoAcuerdo } from '@/components/permisos/types';
 import {
@@ -28,6 +28,16 @@ import {
 } from '@/components/permisos/acuerdos/categorias';
 import { Asueto, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
 import type { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
+import {
+  resolverEstadoMarcaje,
+  getEstadoMarcajeMeta,
+  esEntradaTardeMarcaje,
+  ENTRADA_TARDE_TIME_CLASS,
+  MARCaje_FILA_CLASS,
+  MARCaje_ETIQUETA_CLASS,
+  MARCaje_HORA_CLASS,
+  resolverHorarioEntradaDia,
+} from '@/components/asistencia/lib/estado-marcaje';
 import type { Usuario } from '@/lib/usuarios/esquemas';
 
 type ComisionInfo = ComisionConFechaYHoraSeparada;
@@ -46,6 +56,7 @@ interface OficinaAccordionProps {
   onVerComision?: (comision: ComisionInfo) => void;
   asuetos?: Asueto[];
   usuarios?: Usuario[];
+  horariosMap?: Record<string, { entrada: string; salida: string | null }>;
 }
 
 export default function OficinaAccordion({
@@ -61,7 +72,41 @@ export default function OficinaAccordion({
   onVerAcuerdo,
   onVerComision,
   asuetos = [],
+  usuarios = [],
+  horariosMap = {},
 }: OficinaAccordionProps) {
+
+  const horariosPorUsuario = useMemo(() => {
+    const map: Record<string, { entrada: string; salida: string | null }> = {
+      ...horariosMap,
+    };
+    usuarios.forEach((u) => {
+      const usuario = u as Usuario & {
+        user_id?: string;
+        horario_entrada?: string | null;
+        horario_salida?: string | null;
+      };
+      const id = usuario.id || usuario.user_id;
+      if (!id || map[id]) return;
+      map[id] = {
+        entrada: usuario.horario_entrada || '08:00:00',
+        salida: usuario.horario_salida || null,
+      };
+    });
+    return map;
+  }, [horariosMap, usuarios]);
+
+  const resolverHorarioEntrada = (
+    userId: string,
+    diaString: string,
+    permiso: PermisoEmpleado | null,
+  ) =>
+    resolverHorarioEntradaDia(
+      diaString,
+      horariosPorUsuario[userId]?.entrada || '08:00:00',
+      horariosPorUsuario[userId]?.salida,
+      permiso,
+    );
 
   let diaActual = "";
 
@@ -71,16 +116,35 @@ export default function OficinaAccordion({
     diaString?: string,
     tipo?: 'entrada' | 'salida',
     comision?: boolean,
+    notas?: string | null,
+    horarioEntrada?: string | null,
+    userId?: string,
   ) => {
     if (iso) {
-      return format(parseISO(iso), 'hh:mm aa', { locale: es });
+      const hora = format(parseISO(iso), 'hh:mm aa', { locale: es });
+      const horario =
+        horarioEntrada ||
+        (userId && diaString ? resolverHorarioEntrada(userId, diaString, permiso) : '08:00:00');
+      if (
+        tipo === 'entrada' &&
+        !permiso &&
+        esEntradaTardeMarcaje({
+          marcaEntradaAt: iso,
+          horarioEntrada: horario,
+          diaString,
+          notas,
+        })
+      ) {
+        return <span className={ENTRADA_TARDE_TIME_CLASS}>{hora}</span>;
+      }
+      return <span className={MARCaje_HORA_CLASS}>{hora}</span>;
     }
     const colorClass = permiso
       ? getJustificacionTextClass(permiso)
       : comision
         ? COMISION_TEXT_CLASS
         : 'text-red-500';
-    return <span className={`${colorClass} font-bold`}>--:--</span>;
+    return <span className={`${colorClass} font-normal`}>--:--</span>;
   };
 
   const getComisionParaDia = (userId: string, diaString: string): ComisionInfo | null => {
@@ -122,7 +186,7 @@ export default function OficinaAccordion({
     justificacion: PermisoEmpleado | null,
     asueto: Asueto | null,
     comision: ComisionInfo | null,
-    sizeClass = 'text-[9px] md:text-sm',
+    sizeClass = MARCaje_FILA_CLASS,
   ) => {
     const dashClass = justificacion
       ? getJustificacionTextClass(justificacion)
@@ -134,34 +198,43 @@ export default function OficinaAccordion({
 
     return (
       <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-        <span className={`${sizeClass} text-gray-500 dark:text-gray-400 whitespace-nowrap`}>
-          <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-          <span className={`${dashClass} font-bold`}>--:--</span>
+        <span className={MARCaje_FILA_CLASS}>
+          <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
+          <span className={`${dashClass} font-normal`}>--:--</span>
         </span>
         <span className="text-gray-300 dark:text-neutral-700">|</span>
-        <span className={`${sizeClass} text-gray-500 dark:text-gray-400 whitespace-nowrap`}>
-          <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
-          <span className={`${dashClass} font-bold`}>--:--</span>
+        <span className={MARCaje_FILA_CLASS}>
+          <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
+          <span className={`${dashClass} font-normal`}>--:--</span>
         </span>
       </div>
     );
   };
 
+  const JUSTIFICACION_BADGE_CLASS =
+    'w-full min-h-[2.35rem] py-2 px-2 rounded-md font-bold flex items-center justify-center gap-1.5 text-center text-[11px] sm:text-xs leading-snug border shadow-sm';
+  const JUSTIFICACION_ICON_CLASS = 'w-4 h-4 flex-shrink-0';
+
   /** Botón de justificación con íconos */
-  const JustificacionBtn = ({ justificacion, asueto, comision, totalRegistros, fechaStr }: {
+  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada }: {
     justificacion: PermisoEmpleado | null;
     asueto: Asueto | null;
     comision: ComisionInfo | null;
-    totalRegistros: number;
     fechaStr: string;
+    tieneEntrada?: boolean;
+    tieneSalida?: boolean;
+    notasEntrada?: string | null;
+    notasSalida?: string | null;
+    marcaEntradaAt?: string | null;
+    horarioEntrada?: string | null;
   }) => {
     if (asueto) {
       return (
         <div
           title={asueto.descripcion || asueto.nombre}
-          className="w-full py-1 px-1 rounded bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight border border-amber-200 dark:border-amber-800 cursor-default shadow-sm"
+          className={`${JUSTIFICACION_BADGE_CLASS} bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 cursor-default`}
         >
-          <PartyPopper className="w-2.5 h-2.5 flex-shrink-0" />
+          <PartyPopper className={JUSTIFICACION_ICON_CLASS} />
           Asueto
         </div>
       );
@@ -174,9 +247,9 @@ export default function OficinaAccordion({
         return (
           <button
             onClick={(e) => { e.stopPropagation(); onVerAcuerdo?.(justificacion); }}
-            className={`w-full py-1 px-1 rounded font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight transition-colors shadow-sm border cursor-pointer ${getCategoriaAcuerdoJustificacionClass(categoria)}`}
+            className={`${JUSTIFICACION_BADGE_CLASS} transition-colors cursor-pointer ${getCategoriaAcuerdoJustificacionClass(categoria)}`}
           >
-            <Icono className="w-2.5 h-2.5 flex-shrink-0" />
+            <Icono className={JUSTIFICACION_ICON_CLASS} />
             {getCategoriaAcuerdoLabel(categoria)}
           </button>
         );
@@ -186,9 +259,9 @@ export default function OficinaAccordion({
       return (
         <button
           onClick={(e) => { e.stopPropagation(); onVerPermiso?.(justificacion); }}
-          className={`w-full py-1 px-1 rounded font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight transition-colors shadow-sm border cursor-pointer ${getCategoriaJustificacionClass(categoria)}`}
+          className={`${JUSTIFICACION_BADGE_CLASS} transition-colors cursor-pointer ${getCategoriaJustificacionClass(categoria)}`}
         >
-          <Icono className="w-2.5 h-2.5 flex-shrink-0" />
+          <Icono className={JUSTIFICACION_ICON_CLASS} />
           {getCategoriaLabel(categoria)}
         </button>
       );
@@ -200,40 +273,33 @@ export default function OficinaAccordion({
         <button
           onClick={(e) => { e.stopPropagation(); onVerComision?.(comision); }}
           title={comision.titulo}
-          className={`w-full py-1 px-1 rounded font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight border shadow-sm cursor-pointer transition-colors hover:opacity-80 ${COMISION_BADGE_CLASS}`}
+          className={`${JUSTIFICACION_BADGE_CLASS} cursor-pointer transition-colors hover:opacity-80 ${COMISION_BADGE_CLASS}`}
         >
-          <Briefcase className="w-2.5 h-2.5 flex-shrink-0" />
+          <Briefcase className={JUSTIFICACION_ICON_CLASS} />
           Comisión
         </button>
       );
     }
 
-    const fechaDia = parseISO(fechaStr + 'T00:00:00');
-    const esHoyOFuturo = isToday(fechaDia) || isAfter(fechaDia, startOfToday());
+    const estadoMarcaje = resolverEstadoMarcaje({
+      fechaStr,
+      tieneEntrada,
+      tieneSalida,
+      notasEntrada,
+      notasSalida,
+      marcaEntradaAt,
+      horarioEntrada,
+    });
 
-    if (esHoyOFuturo && totalRegistros === 0) return null;
+    if (!estadoMarcaje) return null;
 
-    if (totalRegistros < 2) {
-      if (esHoyOFuturo) {
-        return (
-          <div className="w-full py-1 px-1 rounded bg-gray-100 dark:bg-neutral-800 text-gray-400 dark:text-gray-500 font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight border border-gray-200 dark:border-neutral-700 cursor-default shadow-sm">
-            <Clock className="w-2.5 h-2.5 flex-shrink-0" />
-            Esperando
-          </div>
-        );
-      }
-      return (
-        <div className="w-full py-1 px-1 rounded bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight border border-red-100 dark:border-red-900/30 cursor-default shadow-sm">
-          <XCircle className="w-2.5 h-2.5 flex-shrink-0" />
-          Sin Permiso
-        </div>
-      );
-    }
+    const meta = getEstadoMarcajeMeta(estadoMarcaje);
+    const IconoEstado = meta.icon;
 
     return (
-      <div className="w-full py-1 px-1 rounded bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 font-bold flex items-center justify-center gap-1 text-center text-[9px] leading-tight border border-green-100 dark:border-green-900/30 cursor-default shadow-sm">
-        <CheckCircle2 className="w-2.5 h-2.5 flex-shrink-0" />
-        Correcto
+      <div className={`${JUSTIFICACION_BADGE_CLASS} ${meta.className} cursor-default`}>
+        <IconoEstado className={JUSTIFICACION_ICON_CLASS} />
+        {meta.label}
       </div>
     );
   };
@@ -323,13 +389,13 @@ export default function OficinaAccordion({
                                       );
                                     })() : (
                                       <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                        <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                          <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                          {formatTime(registro.entrada?.created_at || registro.entrada?.fecha_hora, permiso, registro.diaString, 'entrada')}
+                                        <span className={MARCaje_FILA_CLASS}>
+                                          <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
+                                          {formatTime(registro.entrada?.created_at || registro.entrada?.fecha_hora, permiso, registro.diaString, 'entrada', false, registro.entrada?.notas, undefined, registro.userId)}
                                         </span>
                                         <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                        <span className="text-[9px] md:text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                          <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                        <span className={MARCaje_FILA_CLASS}>
+                                          <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
                                           {registro.salida
                                             ? formatTime(registro.salida?.created_at || registro.salida?.fecha_hora, permiso, registro.diaString, 'salida')
                                             : formatTime(null, permiso, registro.diaString, 'salida', !!comision)}
@@ -338,7 +404,18 @@ export default function OficinaAccordion({
                                     )}
                                   </div>
                                   <div className="w-1/4 flex-shrink-0 cursor-pointer">
-                                    <JustificacionBtn justificacion={permiso} asueto={asueto} comision={comision} totalRegistros={totalRegistros} fechaStr={registro.diaString} />
+                                    <JustificacionBtn
+                                      justificacion={permiso}
+                                      asueto={asueto}
+                                      comision={comision}
+                                      fechaStr={registro.diaString}
+                                      tieneEntrada={!!registro.entrada}
+                                      tieneSalida={!!registro.salida}
+                                      notasEntrada={registro.entrada?.notas}
+                                      notasSalida={registro.salida?.notas}
+                                      marcaEntradaAt={registro.entrada?.created_at || registro.entrada?.fecha_hora}
+                                      horarioEntrada={resolverHorarioEntrada(registro.userId, registro.diaString, permiso)}
+                                    />
                                   </div>
                                 </div>
                               </td>
@@ -450,13 +527,13 @@ export default function OficinaAccordion({
                                         </div>
                                       ) : (
                                         <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                            <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
-                                            {formatTime(asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora, permiso, asistencia.diaString, 'entrada')}
+                                          <span className={MARCaje_FILA_CLASS}>
+                                            <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
+                                            {formatTime(asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora, permiso, asistencia.diaString, 'entrada', false, asistencia.entrada?.notas, undefined, usuario.userId)}
                                           </span>
                                           <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                          <span className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                            <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                          <span className={MARCaje_FILA_CLASS}>
+                                            <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
                                             {asistencia.salida
                                               ? formatTime(asistencia.salida?.created_at || asistencia.salida?.fecha_hora, permiso, asistencia.diaString, 'salida')
                                               : formatTime(null, permiso, asistencia.diaString, 'salida', !!comision)}
@@ -465,7 +542,18 @@ export default function OficinaAccordion({
                                       )}
                                     </div>
                                     <div className="w-1/4 flex-shrink-0 cursor-pointer">
-                                      <JustificacionBtn justificacion={permiso} asueto={asueto} comision={comision} totalRegistros={totalRegistros} fechaStr={asistencia.diaString} />
+                                      <JustificacionBtn
+                                        justificacion={permiso}
+                                        asueto={asueto}
+                                        comision={comision}
+                                        fechaStr={asistencia.diaString}
+                                        tieneEntrada={!!asistencia.entrada}
+                                        tieneSalida={!!asistencia.salida}
+                                        notasEntrada={asistencia.entrada?.notas}
+                                        notasSalida={asistencia.salida?.notas}
+                                        marcaEntradaAt={asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora}
+                                        horarioEntrada={resolverHorarioEntrada(usuario.userId, asistencia.diaString, permiso)}
+                                      />
                                     </div>
                                   </div>
                                 </td>

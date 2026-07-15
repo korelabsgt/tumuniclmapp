@@ -6,6 +6,11 @@ import { RegistrosAgrupadosPorUsuario, RegistrosAgrupadosDiarios, AsistenciaEnri
 import { PermisoEmpleado } from '@/components/permisos/types';
 import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
 import { getMensajeSinMarcaje } from '@/components/permisos/categorias';
+import {
+  MARCaje_FILA_CLASS,
+  MARCaje_ETIQUETA_CLASS,
+  MARCaje_HORA_CLASS,
+} from '@/components/asistencia/lib/estado-marcaje';
 
 interface ListaAsistenciasProps {
     vista: 'nombre' | 'fecha';
@@ -171,18 +176,26 @@ const ListaAsistencias: React.FC<ListaAsistenciasProps> = ({
                                                                     </div>
                                                                 ) : (
                                                                     <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                                                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                                            <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
+                                                                        <span className={MARCaje_FILA_CLASS}>
+                                                                            <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
                                                                             {asistencia.entrada
-                                                                                ? format(parseISO(asistencia.entrada.created_at), 'hh:mm aa', { locale: es })
-                                                                                : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-bold`}>--:--</span>}
+                                                                                ? (
+                                                                                  <span className={MARCaje_HORA_CLASS}>
+                                                                                    {format(parseISO(asistencia.entrada.created_at), 'hh:mm aa', { locale: es })}
+                                                                                  </span>
+                                                                                )
+                                                                                : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-normal`}>--:--</span>}
                                                                         </span>
                                                                         <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                                                        <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                                            <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                                                        <span className={MARCaje_FILA_CLASS}>
+                                                                            <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
                                                                             {asistencia.salida
-                                                                                ? format(parseISO(asistencia.salida.created_at), 'hh:mm aa', { locale: es })
-                                                                                : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-bold`}>--:--</span>}
+                                                                                ? (
+                                                                                  <span className={MARCaje_HORA_CLASS}>
+                                                                                    {format(parseISO(asistencia.salida.created_at), 'hh:mm aa', { locale: es })}
+                                                                                  </span>
+                                                                                )
+                                                                                : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-normal`}>--:--</span>}
                                                                         </span>
                                                                     </div>
                                                                 )}
@@ -263,18 +276,26 @@ const ListaAsistencias: React.FC<ListaAsistenciasProps> = ({
                                                             </div>
                                                         ) : (
                                                             <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                                    <span className="font-bold text-gray-700 dark:text-gray-300">Ent: </span>
+                                                                <span className={MARCaje_FILA_CLASS}>
+                                                                    <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
                                                                     {registro.entrada
-                                                                        ? format(parseISO(registro.entrada.created_at), 'hh:mm aa', { locale: es })
-                                                                        : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-bold`}>--:--</span>}
+                                                                        ? (
+                                                                          <span className={MARCaje_HORA_CLASS}>
+                                                                            {format(parseISO(registro.entrada.created_at), 'hh:mm aa', { locale: es })}
+                                                                          </span>
+                                                                        )
+                                                                        : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-normal`}>--:--</span>}
                                                                 </span>
                                                                 <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                                                <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                                                                    <span className="font-bold text-gray-700 dark:text-gray-300">Sal: </span>
+                                                                <span className={MARCaje_FILA_CLASS}>
+                                                                    <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
                                                                     {registro.salida
-                                                                        ? format(parseISO(registro.salida.created_at), 'hh:mm aa', { locale: es })
-                                                                        : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-bold`}>--:--</span>}
+                                                                        ? (
+                                                                          <span className={MARCaje_HORA_CLASS}>
+                                                                            {format(parseISO(registro.salida.created_at), 'hh:mm aa', { locale: es })}
+                                                                          </span>
+                                                                        )
+                                                                        : <span className={`${permiso ? (permiso.tipo.toLowerCase().includes('vacaciones') ? 'text-purple-500 dark:text-purple-400' : 'text-blue-500 dark:text-blue-400') : 'text-red-400'} font-normal`}>--:--</span>}
                                                                 </span>
                                                             </div>
                                                         )}

@@ -28,6 +28,8 @@ interface AsistenciaControlsProps {
   setVistaAgrupada: (val: 'nombre' | 'fecha') => void;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
+  busquedaPor: 'dependencia' | 'nombre';
+  setBusquedaPor: (val: 'dependencia' | 'nombre') => void;
   ordenDescendente: boolean;
   setOrdenDescendente: (val: boolean) => void;
 }
@@ -43,6 +45,7 @@ export default function AsistenciaControls({
   handleAplicarFechaManual, handleBorrarFiltro,
   vistaAgrupada, setVistaAgrupada,
   searchTerm, setSearchTerm,
+  busquedaPor, setBusquedaPor,
   ordenDescendente, setOrdenDescendente
 }: AsistenciaControlsProps) {
 
@@ -129,14 +132,36 @@ export default function AsistenciaControls({
           />
         </div>
 
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-          <Input
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 bg-white dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700 text-xs w-full rounded-sm h-9"
-            placeholder="Filtrar por nombre..."
-          />
+        <div className="flex flex-1 w-full gap-2 min-w-0">
+          <Select
+            value={busquedaPor}
+            onValueChange={(val) => setBusquedaPor(val as 'dependencia' | 'nombre')}
+          >
+            <SelectTrigger className="w-[8.5rem] shrink-0 bg-white dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700 text-xs rounded-sm h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="dark:bg-neutral-800 dark:border-neutral-700">
+              <SelectItem value="dependencia" className="dark:text-gray-200 dark:focus:bg-neutral-700">
+                Dependencia
+              </SelectItem>
+              <SelectItem value="nombre" className="dark:text-gray-200 dark:focus:bg-neutral-700">
+                Nombre
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative flex-1 min-w-0">
+            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-8 bg-white dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700 text-xs w-full rounded-sm h-9"
+              placeholder={
+                busquedaPor === 'dependencia'
+                  ? 'Filtrar por dependencia...'
+                  : 'Filtrar por nombre...'
+              }
+            />
+          </div>
         </div>
 
       </div>

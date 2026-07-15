@@ -79,18 +79,33 @@ export const getCategoriaLabel = (cat: CategoriaPermiso): string => {
  * Colores para botón/badge con fondo suave (estilo Justificación del calendario).
  * Devuelve clases combinadas para el contenedor.
  */
+export const IGSS_JUSTIFICACION_CLASS =
+  "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 border-amber-200 dark:border-amber-800";
+export const IGSS_TEXT_CLASS = "text-amber-600 dark:text-amber-400";
+export const IGSS_DOT_CLASS = "bg-amber-500";
+
+export const PERMISO_JUSTIFICACION_CLASS =
+  "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 border-green-200 dark:border-green-900/40";
+export const PERMISO_TEXT_CLASS = "text-green-600 dark:text-green-400";
+export const PERMISO_DOT_CLASS = "bg-green-500";
+
+export const VACACIONES_JUSTIFICACION_CLASS =
+  "bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/40 border-sky-100 dark:border-sky-900/30";
+export const VACACIONES_TEXT_CLASS = "text-sky-500 dark:text-sky-400";
+export const VACACIONES_DOT_CLASS = "bg-sky-500";
+
 export const getCategoriaJustificacionClass = (cat: CategoriaPermiso): string => {
   switch (cat) {
     case "igss":
-      return "bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-300 hover:bg-pink-100 dark:hover:bg-pink-900/40 border-pink-200 dark:border-pink-900/40";
+      return IGSS_JUSTIFICACION_CLASS;
     case "vacaciones":
-      return "bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 border-purple-100 dark:border-purple-900/30";
+      return VACACIONES_JUSTIFICACION_CLASS;
     case "academicas":
       return "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 border-green-200 dark:border-green-900/40";
     case "extras":
       return "bg-slate-50 dark:bg-slate-900/20 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900/40 border-slate-200 dark:border-slate-800";
     default:
-      return "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/40 border-blue-100 dark:border-blue-900/30";
+      return PERMISO_JUSTIFICACION_CLASS;
   }
 };
 
@@ -138,14 +153,14 @@ export const getMensajeSinMarcaje = (opts: {
 export const getCategoriaTextClass = (cat: CategoriaPermiso): string => {
   switch (cat) {
     case "igss":
-      return "text-pink-500 dark:text-pink-400";
+      return IGSS_TEXT_CLASS;
     case "vacaciones":
-      return "text-purple-500 dark:text-purple-400";
+      return VACACIONES_TEXT_CLASS;
     case "academicas":
       return "text-green-600 dark:text-green-400";
     case "extras":
       return "text-slate-600 dark:text-slate-400";
     default:
-      return "text-blue-500 dark:text-blue-400";
+      return PERMISO_TEXT_CLASS;
   }
 };

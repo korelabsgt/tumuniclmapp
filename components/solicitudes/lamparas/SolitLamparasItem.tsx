@@ -444,6 +444,11 @@ export const SolitLamparasItem: React.FC<Props> = ({
                                                                 Cambio de Lámpara
                                                             </span>
                                                         )}
+                                                        {sol.checklists.lampara_nueva && (
+                                                            <span className="w-full block text-center px-3 py-1.5 bg-purple-50/80 text-purple-700 dark:bg-purple-900/25 dark:text-purple-300 rounded-lg text-[11px] font-bold border border-purple-100/80 dark:border-purple-800/40">
+                                                                Lámpara Nueva
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 </div>
                                             )}

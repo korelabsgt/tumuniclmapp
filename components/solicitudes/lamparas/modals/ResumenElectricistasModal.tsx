@@ -22,6 +22,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                         cambioBombilla: { comp: 0, pend: 0, rech: 0, total: 0 },
                         revisionLampara: { comp: 0, pend: 0, rech: 0, total: 0 },
                         cambioLampara: { comp: 0, pend: 0, rech: 0, total: 0 },
+                        lamparaNueva: { comp: 0, pend: 0, rech: 0, total: 0 },
                     }
                 };
             }
@@ -48,6 +49,12 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                 if (sol.estado === 'completado') acc[uid].reqs.cambioLampara.comp++;
                 if (sol.estado === 'pendiente') acc[uid].reqs.cambioLampara.pend++;
                 if (sol.estado === 'rechazado') acc[uid].reqs.cambioLampara.rech++;
+            }
+            if (sol.checklists?.lampara_nueva) {
+                acc[uid].reqs.lamparaNueva.total++;
+                if (sol.estado === 'completado') acc[uid].reqs.lamparaNueva.comp++;
+                if (sol.estado === 'pendiente') acc[uid].reqs.lamparaNueva.pend++;
+                if (sol.estado === 'rechazado') acc[uid].reqs.lamparaNueva.rech++;
             }
 
             return acc;
@@ -128,6 +135,13 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.cambioLampara.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioLampara.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.cambioLampara.total}</span></td>
                                                 </tr>
+                                                <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30">
+                                                    <td className="px-3 py-1.5 pl-8 text-slate-600 dark:text-slate-400 font-medium">Lámpara nueva</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.lamparaNueva.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.lamparaNueva.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.lamparaNueva.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.lamparaNueva.total}</span></td>
+                                                </tr>
                                             </React.Fragment>
                                         ))}
                                     </tbody>
@@ -179,12 +193,21 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                 </tr>
 
                                                 {/* Row 3: Cambio de Lámpara */}
-                                                <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30 transition-colors border-b border-slate-100 dark:border-neutral-800/60">
+                                                <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30 transition-colors">
                                                     <td className="px-4 py-2.5 pl-12 text-slate-600 dark:text-slate-400 font-medium">Cambio de lámpara</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.cambioLampara.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.cambioLampara.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioLampara.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.cambioLampara.total}</span></td>
+                                                </tr>
+
+                                                {/* Row 4: Lámpara Nueva */}
+                                                <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30 transition-colors border-b border-slate-100 dark:border-neutral-800/60">
+                                                    <td className="px-4 py-2.5 pl-12 text-slate-600 dark:text-slate-400 font-medium">Lámpara nueva</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.lamparaNueva.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.lamparaNueva.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.lamparaNueva.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.lamparaNueva.total}</span></td>
                                                 </tr>
                                             </React.Fragment>
                                         ))}

@@ -120,6 +120,7 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
       cambio_bombilla: false,
       revision_lampara: false,
       cambio_lampara: false,
+      lampara_nueva: false,
     },
   });
 
@@ -140,6 +141,7 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
             cambio_bombilla: false,
             revision_lampara: false,
             cambio_lampara: false,
+            lampara_nueva: false,
           },
         });
       } else {
@@ -156,6 +158,7 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
             cambio_bombilla: false,
             revision_lampara: false,
             cambio_lampara: false,
+            lampara_nueva: false,
           },
         });
       }
@@ -360,11 +363,12 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
                 <label className="block text-xs font-bold text-gray-500 dark:text-neutral-400 uppercase tracking-widest ml-1">
                     Tipo de Mantenimiento
                 </label>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
                     {[
                         { id: 'cambio_bombilla', label: 'Cambio de bombilla' },
                         { id: 'revision_lampara', label: 'Revisión de Lámpara' },
                         { id: 'cambio_lampara', label: 'Cambio de Lámpara' },
+                        { id: 'lampara_nueva', label: 'Lámpara Nueva' },
                     ].map((item) => (
                         <label 
                             key={item.id}

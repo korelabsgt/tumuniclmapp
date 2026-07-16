@@ -115,6 +115,7 @@ const ReportPage = ({ solicitudes, nombreElectricista, numPag, totalPag }: { sol
             if (sol.checklists?.cambio_bombilla) actions.push('Cambio de Bombilla');
             if (sol.checklists?.revision_lampara) actions.push('Revisión de Lámpara');
             if (sol.checklists?.cambio_lampara) actions.push('Cambio de Lámpara');
+            if (sol.checklists?.lampara_nueva) actions.push('Lámpara Nueva');
 
             const { dayName, dateStr } = formatTinyDate(getGTDate(sol.created_at));
             const cod = sol.id.slice(0, 3).toUpperCase() + '-' + sol.id.slice(3, 6).toUpperCase();

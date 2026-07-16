@@ -60,6 +60,7 @@ export const crearSolicitudLamparaSchema = z.object({
       cambio_bombilla: z.boolean().default(false),
       revision_lampara: z.boolean().default(false),
       cambio_lampara: z.boolean().default(false),
+      lampara_nueva: z.boolean().default(false),
     })
     .optional(),
   aldea: z.string().optional(),

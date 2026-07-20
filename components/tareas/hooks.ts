@@ -8,9 +8,10 @@ import {
   updateChecklist,
   cambiarEstado,
   eliminarTarea,
-  duplicarTarea
+  duplicarTarea,
+  actualizarArchivosTarea
 } from "./actions";
-import { TipoVistaTareas, NewTaskState, ChecklistItem } from "./types";
+import { TipoVistaTareas, NewTaskState, ChecklistItem, ArchivoAdjunto } from "./types";
 
 const KEYS = {
   gestor: (vista: string) => ["gestor-tareas", vista],
@@ -63,5 +64,10 @@ export const useTareaMutations = () => {
     onSuccess: invalidar,
   });
 
-  return { crear, actualizar, actualizarChecklist, cambiarStatus, eliminar, duplicar };
+  const actualizarArchivos = useMutation({
+    mutationFn: ({ id, archivos }: { id: string; archivos: ArchivoAdjunto[] }) => actualizarArchivosTarea(id, archivos),
+    onSuccess: invalidar,
+  });
+
+  return { crear, actualizar, actualizarChecklist, cambiarStatus, eliminar, duplicar, actualizarArchivos };
 };

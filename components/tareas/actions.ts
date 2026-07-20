@@ -298,6 +298,13 @@ export async function actualizarTarea(id: string, updates: any) {
   revalidatePath('/protected/actividades', 'layout'); 
 }
 
+export async function actualizarArchivosTarea(taskId: string, nuevosArchivos: any[]) {
+  const supabase = await createClient();
+  const { error } = await supabase.from('tasks').update({ archivos: nuevosArchivos }).eq('id', taskId);
+  if (error) throw new Error(error.message);
+  revalidatePath('/protected/actividades', 'layout');
+}
+
 export async function updateChecklist(taskId: string, newChecklist: ChecklistItem[]) {
   const supabase = await createClient();
   const { error } = await supabase.from('tasks').update({ checklist: newChecklist }).eq('id', taskId);

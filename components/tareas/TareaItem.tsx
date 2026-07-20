@@ -6,6 +6,7 @@ import { Tarea, ChecklistItem, Usuario } from './types';
 import EditarTarea from './modals/EditarTarea';
 import DuplicateTarea from './modals/DuplicateTarea'; 
 import TareaChecklist from './TareaChecklist'; 
+import GestorArchivos from './GestorArchivos';
 import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 import { 
@@ -389,7 +390,16 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
                       </div>
                 </div>
             </div>
+            
             <div className="mt-6 pt-4 border-t border-slate-100 dark:border-neutral-800">
+                <GestorArchivos 
+                    tareaId={tarea.id} 
+                    archivosIniciales={tarea.archivos} 
+                    esLectura={isReadOnly} 
+                />
+            </div>
+
+            <div className="mt-4 pt-4 border-t border-slate-100 dark:border-neutral-800">
                 <div className="bg-slate-50 dark:bg-neutral-800 rounded-xl p-3 text-xs text-slate-500 dark:text-gray-400 flex flex-col gap-2">
                       <div className="flex justify-between items-center border-b pb-2 border-slate-200 dark:border-neutral-700">
                         <span className="font-bold text-slate-400 dark:text-gray-500 uppercase text-[10px]">Detalles del Registro</span>

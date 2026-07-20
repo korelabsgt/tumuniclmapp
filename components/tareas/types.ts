@@ -30,6 +30,14 @@ export interface ChecklistItem {
   is_completed: boolean;
 }
 
+export interface ArchivoAdjunto {
+  id: string;
+  tipo: 'pdf' | 'enlace';
+  nombre: string;
+  url: string;
+  ruta_storage?: string; // Solo para PDFs
+}
+
 export interface Tarea {
   id: string;
   title: string;
@@ -42,6 +50,7 @@ export interface Tarea {
   created_at: string;
   updated_at: string;
   confirmed_at: string | null;
+  archivos: ArchivoAdjunto[] | null;
   
   // Relaciones expandidas
   assignee?: { 

@@ -99,6 +99,7 @@ export function resolverEstadoMarcaje(params: {
   notasSalida?: string | null;
   marcaEntradaAt?: string | null;
   horarioEntrada?: string | null;
+  cantidadMarcajes?: number | null;
 }): EstadoMarcaje | null {
   const {
     fechaStr,
@@ -107,9 +108,18 @@ export function resolverEstadoMarcaje(params: {
     notasEntrada,
     marcaEntradaAt,
     horarioEntrada,
+    cantidadMarcajes,
   } = params;
   const fechaDia = parseISO(`${fechaStr}T00:00:00`);
   const esHoyOFuturo = isToday(fechaDia) || isAfter(fechaDia, startOfToday());
+
+  if (cantidadMarcajes != null && cantidadMarcajes > 0) {
+    if (cantidadMarcajes % 2 !== 0) {
+      if (esHoyOFuturo) return "esperando";
+      return "sin_permiso";
+    }
+    return "correcto";
+  }
 
   if (!tieneEntrada && !tieneSalida) {
     if (esHoyOFuturo) return null;

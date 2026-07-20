@@ -736,8 +736,12 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       tieneSalida: !!registroSalidaHoy,
       notasEntrada: registroEntradaHoy?.notas,
       notasSalida: registroSalidaHoy?.notas,
-      marcaEntradaAt: registroEntradaHoy?.created_at,
+      marcaEntradaAt: registroEntradaHoy?.created_at || registrosHoyMultiple[0]?.created_at,
       horarioEntrada: horarioEntradaHoyStr,
+      cantidadMarcajes:
+        esHorarioMultiple || registrosHoyMultiple.length > 2
+          ? registrosHoyMultiple.length
+          : null,
     });
 
     if (!estado) return null;

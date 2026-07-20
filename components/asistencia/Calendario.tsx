@@ -368,7 +368,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
   };
 
   /** Botón de justificación con ícono por tipo */
-  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, cargando = false, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada }: {
+  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, cargando = false, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada, cantidadMarcajes }: {
     justificacion: PermisoEmpleado | null;
     asueto: ReturnType<typeof getAsuetoPorFecha>;
     comision: ComisionConFechaYHoraSeparada | null;
@@ -380,6 +380,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
     notasSalida?: string | null;
     marcaEntradaAt?: string | null;
     horarioEntrada?: string | null;
+    cantidadMarcajes?: number | null;
   }) => {
     if (cargando) return <JustificacionSkeleton />;
     if (asueto) {
@@ -442,6 +443,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
       notasSalida,
       marcaEntradaAt,
       horarioEntrada,
+      cantidadMarcajes,
     });
 
     if (!estadoMarcaje) return null;
@@ -750,6 +752,11 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                         horarioSalida,
                                         justificacionDelDia,
                                       )}
+                                      cantidadMarcajes={
+                                        esHorarioMultiple || usuario.tieneMultiple
+                                          ? usuario.cantidad
+                                          : null
+                                      }
                                     />
                                 </div>
                               </div>

@@ -111,7 +111,7 @@ interface Props {
 export default function ListSolitLampara({ initialData, userServerSide }: Props) {
   const userId = userServerSide?.userId;
   const isElectricista = userServerSide?.isElectricista || false;
-  
+
   const { solicitudes, loading, refresh, updateLocalSolicitud } = useSolicitudesLamparas(initialData);
   const { asignar, actualizarEstado, eliminar } = useSolicitudMutations();
   const { data: electricistas = [] } = useElectricistas();
@@ -130,13 +130,13 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilterMode, setDateFilterMode] = useState<'dia' | 'semana' | 'rango'>('semana');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
-    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const [startDate, setStartDate] = useState<string>(() => {
-    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const [endDate, setEndDate] = useState<string>(() => {
-    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
 
   // Semana mode states
@@ -192,7 +192,7 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
 
   const solicitudesFiltradasGlobal = useMemo(() => {
     if (!isMounted) return [];
-    
+
     let filtered = solicitudes;
 
     // Si es electricista, solo ve lo asignado a él y que esté pendiente
@@ -206,7 +206,9 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
       const solDay = new Date(dateGT.getFullYear(), dateGT.getMonth(), dateGT.getDate()).getTime();
 
       let coincideFecha = false;
-      if (dateFilterMode === 'dia') {
+      if (isElectricista) {
+        coincideFecha = true;
+      } else if (dateFilterMode === 'dia') {
         const sel = new Date(selectedDate + 'T00:00:00');
         coincideFecha = solDay === new Date(sel.getFullYear(), sel.getMonth(), sel.getDate()).getTime();
       } else if (dateFilterMode === 'semana') {
@@ -228,13 +230,13 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
 
       let activeMantenimientos = '';
       if (sol.checklists) {
-         if (sol.checklists.cambio_bombilla) activeMantenimientos += 'cambio de bombilla ';
-         if (sol.checklists.revision_lampara) activeMantenimientos += 'revisión de lámpara revision de lampara ';
-         if (sol.checklists.cambio_lampara) activeMantenimientos += 'cambio de lámpara cambio de lampara ';
-         if (sol.checklists.lampara_nueva) activeMantenimientos += 'lámpara nueva lampara nueva ';
+        if (sol.checklists.cambio_bombilla) activeMantenimientos += 'cambio de bombilla ';
+        if (sol.checklists.revision_lampara) activeMantenimientos += 'revisión de lámpara revision de lampara ';
+        if (sol.checklists.cambio_lampara) activeMantenimientos += 'cambio de lámpara cambio de lampara ';
+        if (sol.checklists.lampara_nueva) activeMantenimientos += 'lámpara nueva lampara nueva ';
       }
 
-      const coincideMantenimiento = filtroMantenimiento === 'todos' || 
+      const coincideMantenimiento = filtroMantenimiento === 'todos' ||
         (filtroMantenimiento === 'cambio_bombilla' && sol.checklists?.cambio_bombilla) ||
         (filtroMantenimiento === 'revision_lampara' && sol.checklists?.revision_lampara) ||
         (filtroMantenimiento === 'cambio_lampara' && sol.checklists?.cambio_lampara) ||
@@ -382,231 +384,231 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
     <>
       <div className="max-w-[1600px] w-full mx-auto px-2 sm:px-6 lg:px-8 flex flex-col gap-4 pb-20 mt-5 sm:mt-7">
         <div className="flex flex-col sm:flex-row justify-between items-center sm:items-center gap-3 sm:gap-4 text-center sm:text-left">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Solicitudes de Lámparas Dañadas</h1>
-          <p className="text-slate-500 dark:text-gray-400 text-sm font-medium">
-            Gestione los reportes ciudadanos de lámparas y asigne electricistas.
-          </p>
+          <div>
+            <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Solicitudes de Lámparas Dañadas</h1>
+            <p className="text-slate-500 dark:text-gray-400 text-sm font-medium">
+              Gestione los reportes ciudadanos de lámparas y asigne electricistas.
+            </p>
+          </div>
+
+          {!isElectricista && (
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:flex-1 justify-end mt-3 sm:mt-0 sm:ml-6">
+              {/* Barra de búsqueda (PC) */}
+              <div className="relative hidden sm:block flex-1 w-full max-w-2xl group order-2 sm:order-1 mt-1 sm:mt-0">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Buscar nombre, ubicación, tipo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 dark:text-gray-200"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto order-1 sm:order-2">
+                <button
+                  onClick={() => setIsResumenOpen(!isResumenOpen)}
+                  className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm whitespace-nowrap ${isResumenOpen ? 'bg-slate-800 text-white hover:bg-slate-900 dark:bg-white dark:text-black dark:hover:bg-slate-200' : 'bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-slate-300'}`}
+                  title={isResumenOpen ? "Volver a la lista" : "Ver resumen de actividades"}
+                >
+                  {isResumenOpen ? <List size={16} /> : <BarChart2 size={16} />}
+                  <span>{isResumenOpen ? 'VER LISTA' : 'RESUMEN'}</span>
+                </button>
+
+                <button
+                  onClick={() => setIsCrearOpen(true)}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition-all shadow-sm whitespace-nowrap"
+                  title="Crear nueva solicitud de lámparas"
+                >
+                  <Plus size={16} />
+                  <span>NUEVA SOLICITUD</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {!isElectricista && (
-          <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 w-full sm:flex-1 justify-end mt-3 sm:mt-0 sm:ml-6">
-            {/* Barra de búsqueda (PC) */}
-            <div className="relative hidden sm:block flex-1 w-full max-w-2xl group order-2 sm:order-1 mt-1 sm:mt-0">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Buscar nombre, ubicación, tipo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 dark:text-gray-200"
-              />
+          <div className="flex flex-col xl:flex-row gap-3 xl:gap-4 mb-2">
+
+            {/* Barra de Búsqueda y Actualizar (Mobile, Arriba de Estados) */}
+            <div className="flex sm:hidden items-center gap-2 w-full">
+              <div className="relative flex-1 group">
+                <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Buscar nombre, ubicación, tipo..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 dark:text-gray-200"
+                />
+              </div>
+              <button
+                onClick={() => refresh()}
+                className="bg-white hover:bg-slate-50 border border-slate-200 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-slate-600 dark:text-slate-300 p-2.5 rounded-xl transition-colors shadow-sm shrink-0"
+                title="Actualizar lista"
+              >
+                <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+              </button>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto order-1 sm:order-2">
-              <button
-                onClick={() => setIsResumenOpen(!isResumenOpen)}
-                className={`w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm whitespace-nowrap ${isResumenOpen ? 'bg-slate-800 text-white hover:bg-slate-900 dark:bg-white dark:text-black dark:hover:bg-slate-200' : 'bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 border border-slate-200 dark:border-neutral-700 text-slate-700 dark:text-slate-300'}`}
-                title={isResumenOpen ? "Volver a la lista" : "Ver resumen de actividades"}
-              >
-                {isResumenOpen ? <List size={16} /> : <BarChart2 size={16} />}
-                <span>{isResumenOpen ? 'VER LISTA' : 'RESUMEN'}</span>
-              </button>
-              
-              <button
-                onClick={() => setIsCrearOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-xl text-xs font-bold text-white transition-all shadow-sm whitespace-nowrap"
-                title="Crear nueva solicitud de lámparas"
-              >
-                <Plus size={16} />
-                <span>NUEVA SOLICITUD</span>
-              </button>
+            <div className="flex flex-col sm:flex-row items-center gap-3 justify-center xl:justify-start w-full xl:w-auto">
+              <div className="overflow-x-auto pb-1 xl:pb-0 flex justify-center xl:justify-start w-full sm:w-auto">
+                <div className="flex items-center w-full sm:w-auto sm:min-w-max gap-1 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md p-1 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm">
+                  {pestañas
+                    .filter(t => t !== 'Todos')
+                    .map((tab) => {
+                      const styles = TAB_STYLES[tab];
+                      const isActive = filtroEstado === tab;
+                      return (
+                        <button
+                          key={tab}
+                          onClick={() => setFiltroEstado(isActive ? 'Todos' : tab)}
+                          className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap uppercase tracking-tight
+                      ${isActive ? styles.active : styles.inactive}`}
+                        >
+                          {pestañasLabel[tab]}
+                          <span className={`px-1.5 py-0.5 rounded-md text-[10px] min-w-[18px] text-center font-extrabold
+                      ${isActive ? 'bg-white/20 text-white' : styles.badge}`}>
+                            {conteos[tab as keyof typeof conteos]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Filtro por Tipo de Mantenimiento (PC) */}
+              <div className="hidden sm:block shrink-0 min-w-[160px]">
+                <select
+                  value={filtroMantenimiento}
+                  onChange={(e) => setFiltroMantenimiento(e.target.value)}
+                  className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
+                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                >
+                  <option value="todos">Todos los Tipos</option>
+                  <option value="cambio_bombilla">Cambio de bombilla</option>
+                  <option value="revision_lampara">Revisión de lámpara</option>
+                  <option value="cambio_lampara">Cambio de lámpara</option>
+                  <option value="lampara_nueva">Lámpara nueva</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex flex-col xl:flex-row gap-3 xl:ml-auto w-full xl:w-auto items-center xl:items-start">
+              <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
+
+                {/* Filtro por Tipo de Mantenimiento (Mobile) */}
+                <div className="flex-1 sm:hidden min-w-0">
+                  <select
+                    value={filtroMantenimiento}
+                    onChange={(e) => setFiltroMantenimiento(e.target.value)}
+                    className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                  >
+                    <option value="todos">Todos los Tipos</option>
+                    <option value="cambio_bombilla">Cambio de bombilla</option>
+                    <option value="revision_lampara">Revisión de lámpara</option>
+                    <option value="cambio_lampara">Cambio de lámpara</option>
+                    <option value="lampara_nueva">Lámpara nueva</option>
+                  </select>
+                </div>
+
+                {/* Filtros de fecha: Día / Semana / Rango (Ahora un select) */}
+                <div className="flex-1 sm:flex-none min-w-0 sm:min-w-[110px]">
+                  <select
+                    value={dateFilterMode}
+                    onChange={(e) => setDateFilterMode(e.target.value as 'dia' | 'semana' | 'rango')}
+                    className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
+                    style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                  >
+                    <option value="dia">Por Día</option>
+                    <option value="semana">Por Semana</option>
+                    <option value="rango">Por Rango</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex flex-row items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+
+                {dateFilterMode === 'dia' ? (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">
+                        <CalendarIcon size={16} className="text-blue-500" />
+                        <span className="capitalize">{formatDateLabel(selectedDate)}</span>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendario fechaSeleccionada={selectedDate} onSelectDate={setSelectedDate} />
+                    </PopoverContent>
+                  </Popover>
+                ) : dateFilterMode === 'semana' ? (
+                  <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
+                    <input
+                      type="month"
+                      value={`${semanaAnio}-${String(semanaMes + 1).padStart(2, '0')}`}
+                      onChange={(e) => {
+                        const [y, m] = e.target.value.split('-');
+                        setSemanaAnio(parseInt(y));
+                        setSemanaMes(parseInt(m) - 1);
+                      }}
+                      className="flex-1 min-w-0 sm:w-auto px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-sm"
+                    />
+                    <select
+                      value={semanaSeleccionada}
+                      onChange={(e) => setSemanaSeleccionada(e.target.value)}
+                      className="flex-1 min-w-0 sm:w-auto px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-sm pr-10 appearance-none"
+                      style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
+                    >
+                      {weekOptionsData.map((w) => (
+                        <option key={w.id} value={w.id}>{w.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">
+                          <CalendarIcon size={16} className="text-emerald-500" />
+                          <span className="capitalize">{formatDateLabel(startDate)}</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendario fechaSeleccionada={startDate} onSelectDate={setStartDate} />
+                      </PopoverContent>
+                    </Popover>
+                    <ArrowRight size={16} className="text-slate-400 shrink-0" />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">
+                          <CalendarIcon size={16} className="text-red-500" />
+                          <span className="capitalize">{formatDateLabel(endDate)}</span>
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendario fechaSeleccionada={endDate} onSelectDate={setEndDate} />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => refresh()}
+                  className="hidden sm:block bg-white hover:bg-slate-50 border border-slate-200 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-slate-600 dark:text-slate-300 p-2.5 rounded-xl transition-colors shadow-sm shrink-0"
+                  title="Actualizar lista"
+                >
+                  <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                </button>
+
+              </div>
             </div>
           </div>
         )}
-      </div>
-      
-      {!isElectricista && (
-        <div className="flex flex-col xl:flex-row gap-3 xl:gap-4 mb-2">
-          
-          {/* Barra de Búsqueda y Actualizar (Mobile, Arriba de Estados) */}
-          <div className="flex sm:hidden items-center gap-2 w-full">
-            <div className="relative flex-1 group">
-              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Buscar nombre, ubicación, tipo..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-slate-700 dark:text-gray-200"
-              />
-            </div>
-            <button
-              onClick={() => refresh()}
-              className="bg-white hover:bg-slate-50 border border-slate-200 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-slate-600 dark:text-slate-300 p-2.5 rounded-xl transition-colors shadow-sm shrink-0"
-              title="Actualizar lista"
-            >
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            </button>
-          </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3 justify-center xl:justify-start w-full xl:w-auto">
-            <div className="overflow-x-auto pb-1 xl:pb-0 flex justify-center xl:justify-start w-full sm:w-auto">
-              <div className="flex items-center w-full sm:w-auto sm:min-w-max gap-1 bg-white/90 dark:bg-neutral-900/90 backdrop-blur-md p-1 rounded-2xl border border-slate-200 dark:border-neutral-800 shadow-sm">
-              {pestañas
-                .filter(t => t !== 'Todos')
-                .map((tab) => {
-                  const styles = TAB_STYLES[tab];
-                  const isActive = filtroEstado === tab;
-                  return (
-                    <button
-                      key={tab}
-                      onClick={() => setFiltroEstado(isActive ? 'Todos' : tab)}
-                      className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap uppercase tracking-tight
-                      ${isActive ? styles.active : styles.inactive}`}
-                    >
-                      {pestañasLabel[tab]}
-                      <span className={`px-1.5 py-0.5 rounded-md text-[10px] min-w-[18px] text-center font-extrabold
-                      ${isActive ? 'bg-white/20 text-white' : styles.badge}`}>
-                        {conteos[tab as keyof typeof conteos]}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Filtro por Tipo de Mantenimiento (PC) */}
-            <div className="hidden sm:block shrink-0 min-w-[160px]">
-              <select
-                value={filtroMantenimiento}
-                onChange={(e) => setFiltroMantenimiento(e.target.value)}
-                className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
-              >
-                <option value="todos">Todos los Tipos</option>
-                <option value="cambio_bombilla">Cambio de bombilla</option>
-                <option value="revision_lampara">Revisión de lámpara</option>
-                <option value="cambio_lampara">Cambio de lámpara</option>
-                <option value="lampara_nueva">Lámpara nueva</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-col xl:flex-row gap-3 xl:ml-auto w-full xl:w-auto items-center xl:items-start">
-          <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
-
-            {/* Filtro por Tipo de Mantenimiento (Mobile) */}
-            <div className="flex-1 sm:hidden min-w-0">
-              <select
-                value={filtroMantenimiento}
-                onChange={(e) => setFiltroMantenimiento(e.target.value)}
-                className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
-              >
-                <option value="todos">Todos los Tipos</option>
-                <option value="cambio_bombilla">Cambio de bombilla</option>
-                <option value="revision_lampara">Revisión de lámpara</option>
-                <option value="cambio_lampara">Cambio de lámpara</option>
-                <option value="lampara_nueva">Lámpara nueva</option>
-              </select>
-            </div>
-
-            {/* Filtros de fecha: Día / Semana / Rango (Ahora un select) */}
-            <div className="flex-1 sm:flex-none min-w-0 sm:min-w-[110px]">
-              <select
-                value={dateFilterMode}
-                onChange={(e) => setDateFilterMode(e.target.value as 'dia' | 'semana' | 'rango')}
-                className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
-              >
-                <option value="dia">Por Día</option>
-                <option value="semana">Por Semana</option>
-                <option value="rango">Por Rango</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="flex flex-row items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
-
-            {dateFilterMode === 'dia' ? (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">
-                    <CalendarIcon size={16} className="text-blue-500" />
-                    <span className="capitalize">{formatDateLabel(selectedDate)}</span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendario fechaSeleccionada={selectedDate} onSelectDate={setSelectedDate} />
-                </PopoverContent>
-              </Popover>
-            ) : dateFilterMode === 'semana' ? (
-              <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
-                <input
-                  type="month"
-                  value={`${semanaAnio}-${String(semanaMes + 1).padStart(2, '0')}`}
-                  onChange={(e) => {
-                    const [y, m] = e.target.value.split('-');
-                    setSemanaAnio(parseInt(y));
-                    setSemanaMes(parseInt(m) - 1);
-                  }}
-                  className="flex-1 min-w-0 sm:w-auto px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-sm"
-                />
-                <select
-                  value={semanaSeleccionada}
-                  onChange={(e) => setSemanaSeleccionada(e.target.value)}
-                  className="flex-1 min-w-0 sm:w-auto px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer shadow-sm pr-10 appearance-none"
-                  style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
-                >
-                  {weekOptionsData.map((w) => (
-                    <option key={w.id} value={w.id}>{w.label}</option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">
-                      <CalendarIcon size={16} className="text-emerald-500" />
-                      <span className="capitalize">{formatDateLabel(startDate)}</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendario fechaSeleccionada={startDate} onSelectDate={setStartDate} />
-                  </PopoverContent>
-                </Popover>
-                <ArrowRight size={16} className="text-slate-400 shrink-0" />
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">
-                      <CalendarIcon size={16} className="text-red-500" />
-                      <span className="capitalize">{formatDateLabel(endDate)}</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendario fechaSeleccionada={endDate} onSelectDate={setEndDate} />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-
-            <button
-              onClick={() => refresh()}
-              className="hidden sm:block bg-white hover:bg-slate-50 border border-slate-200 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-slate-600 dark:text-slate-300 p-2.5 rounded-xl transition-colors shadow-sm shrink-0"
-              title="Actualizar lista"
-            >
-              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            </button>
-
-          </div>
-        </div>
-      </div>
-      )}
-
-      {isElectricista && (
-         <div className="flex flex-col xl:flex-row gap-3 mb-2">
+        {isElectricista && (
+          <div className="flex flex-col xl:flex-row gap-3 mb-2">
             <div className="flex flex-col xl:flex-row gap-3 xl:ml-auto w-full xl:w-auto items-center xl:items-start">
               <div className="flex flex-wrap items-center gap-2 w-full xl:w-auto">
                 <div className="relative flex-1 sm:flex-none sm:w-64 group">
@@ -646,88 +648,88 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
 
               </div>
             </div>
-         </div>
-      )}
+          </div>
+        )}
 
-      {isResumenOpen ? (
-        <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <ResumenElectricistasView solicitudes={solicitudesFiltradasGlobal} />
-        </div>
-      ) : (
-        <>
-          {listaVisual.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-neutral-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-neutral-800 mt-4">
-              <SearchX size={32} className="text-slate-300 mb-4" />
-              <h3 className="text-slate-900 dark:text-white font-bold">No se encontraron solicitudes</h3>
-              <p className="text-slate-500 text-sm mt-1">Intente cambiar los filtros de búsqueda o fecha.</p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
-              {groupedSolicitudes.map((group) => (
-                <div key={group.dateObj.toISOString()} className="flex flex-col gap-3">
-                  <div className="flex items-center gap-3 pl-1">
-                    <div className="flex items-center gap-2 bg-slate-100 dark:bg-neutral-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-700">
-                      <CalendarDays size={14} className="text-slate-500 dark:text-gray-400" />
-                      <span className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wider">
-                        {group.label}
-                      </span>
+        {isResumenOpen ? (
+          <div className="mt-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <ResumenElectricistasView solicitudes={solicitudesFiltradasGlobal} />
+          </div>
+        ) : (
+          <>
+            {listaVisual.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 bg-slate-50 dark:bg-neutral-900/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-neutral-800 mt-4">
+                <SearchX size={32} className="text-slate-300 mb-4" />
+                <h3 className="text-slate-900 dark:text-white font-bold">No se encontraron solicitudes</h3>
+                <p className="text-slate-500 text-sm mt-1">Intente cambiar los filtros de búsqueda o fecha.</p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+                {groupedSolicitudes.map((group) => (
+                  <div key={group.dateObj.toISOString()} className="flex flex-col gap-3">
+                    <div className="flex items-center gap-3 pl-1">
+                      <div className="flex items-center gap-2 bg-slate-100 dark:bg-neutral-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-neutral-700">
+                        <CalendarDays size={14} className="text-slate-500 dark:text-gray-400" />
+                        <span className="text-[10px] font-bold text-slate-700 dark:text-gray-200 uppercase tracking-wider">
+                          {group.label}
+                        </span>
+                      </div>
+                      <div className="h-px flex-1 bg-slate-200 dark:bg-neutral-800/50"></div>
                     </div>
-                    <div className="h-px flex-1 bg-slate-200 dark:bg-neutral-800/50"></div>
+                    <div className="flex flex-col gap-3">
+                      {group.items.map((sol) => (
+                        <SolitLamparasItem
+                          key={sol.id}
+                          sol={sol}
+                          isOpen={expandedId === sol.id}
+                          onToggle={() => setExpandedId(expandedId === sol.id ? null : sol.id)}
+                          onAsignar={(item) => handleAsignar(item)}
+                          onCambiarEstado={(item) => handleCambiarEstado(item)}
+                          onEditar={(item) => handleEditar(item)}
+                          onEliminar={(item) => handleEliminar(item)}
+                          onImprimir={() => {
+                            setPrioridadElectricista(sol.asignado_a_uid || 'sin_asignar');
+                            setIsImprimirOpen(true);
+                          }}
+                          isElectricista={isElectricista}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-3">
-                    {group.items.map((sol) => (
-                      <SolitLamparasItem
-                        key={sol.id}
-                        sol={sol}
-                        isOpen={expandedId === sol.id}
-                        onToggle={() => setExpandedId(expandedId === sol.id ? null : sol.id)}
-                        onAsignar={(item) => handleAsignar(item)}
-                        onCambiarEstado={(item) => handleCambiarEstado(item)}
-                        onEditar={(item) => handleEditar(item)}
-                        onEliminar={(item) => handleEliminar(item)}
-                        onImprimir={() => {
-                          setPrioridadElectricista(sol.asignado_a_uid || 'sin_asignar');
-                          setIsImprimirOpen(true);
-                        }}
-                        isElectricista={isElectricista}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
-      <CrearSolicitud
-        isOpen={isCrearOpen}
-        onClose={() => { setIsCrearOpen(false); setEditingSolicitud(null); }}
-        onSuccess={() => {
-          setIsCrearOpen(false);
-          setEditingSolicitud(null);
-          refresh();
-        }}
-        editData={editingSolicitud}
-      />
-
-      {selectedSolicitud && (
-        <CambioEstadoModal
-          isOpen={!!selectedSolicitud}
-          solicitud={selectedSolicitud}
-          onClose={() => handleCloseModal()}
-          onSuccess={(estado, comentarios) => handleCloseModal(estado, comentarios)}
-          isElectricista={isElectricista}
+        <CrearSolicitud
+          isOpen={isCrearOpen}
+          onClose={() => { setIsCrearOpen(false); setEditingSolicitud(null); }}
+          onSuccess={() => {
+            setIsCrearOpen(false);
+            setEditingSolicitud(null);
+            refresh();
+          }}
+          editData={editingSolicitud}
         />
-      )}
 
-      <ImprimirReporteModal 
-        isOpen={isImprimirOpen}
-        onClose={() => { setIsImprimirOpen(false); setPrioridadElectricista(null); }}
-        solicitudes={listaVisual}
-        prioridadUid={prioridadElectricista}
-      />
-    </div>
+        {selectedSolicitud && (
+          <CambioEstadoModal
+            isOpen={!!selectedSolicitud}
+            solicitud={selectedSolicitud}
+            onClose={() => handleCloseModal()}
+            onSuccess={(estado, comentarios) => handleCloseModal(estado, comentarios)}
+            isElectricista={isElectricista}
+          />
+        )}
+
+        <ImprimirReporteModal
+          isOpen={isImprimirOpen}
+          onClose={() => { setIsImprimirOpen(false); setPrioridadElectricista(null); }}
+          solicitudes={listaVisual}
+          prioridadUid={prioridadElectricista}
+        />
+      </div>
     </>
   );
 }

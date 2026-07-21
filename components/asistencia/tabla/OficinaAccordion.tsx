@@ -216,7 +216,7 @@ export default function OficinaAccordion({
   const JUSTIFICACION_ICON_CLASS = 'w-4 h-4 flex-shrink-0';
 
   /** Botón de justificación con íconos */
-  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada }: {
+  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada, cantidadMarcajes }: {
     justificacion: PermisoEmpleado | null;
     asueto: Asueto | null;
     comision: ComisionInfo | null;
@@ -227,6 +227,7 @@ export default function OficinaAccordion({
     notasSalida?: string | null;
     marcaEntradaAt?: string | null;
     horarioEntrada?: string | null;
+    cantidadMarcajes?: number | null;
   }) => {
     if (asueto) {
       return (
@@ -289,6 +290,7 @@ export default function OficinaAccordion({
       notasSalida,
       marcaEntradaAt,
       horarioEntrada,
+      cantidadMarcajes,
     });
 
     if (!estadoMarcaje) return null;
@@ -413,8 +415,9 @@ export default function OficinaAccordion({
                                       tieneSalida={!!registro.salida}
                                       notasEntrada={registro.entrada?.notas}
                                       notasSalida={registro.salida?.notas}
-                                      marcaEntradaAt={registro.entrada?.created_at || registro.entrada?.fecha_hora}
+                                      marcaEntradaAt={registro.entrada?.created_at || registro.entrada?.fecha_hora || registro.multiple?.[0]?.created_at}
                                       horarioEntrada={resolverHorarioEntrada(registro.userId, registro.diaString, permiso)}
+                                      cantidadMarcajes={esMultiple || totalRegistros > 2 ? totalRegistros : null}
                                     />
                                   </div>
                                 </div>
@@ -551,8 +554,9 @@ export default function OficinaAccordion({
                                         tieneSalida={!!asistencia.salida}
                                         notasEntrada={asistencia.entrada?.notas}
                                         notasSalida={asistencia.salida?.notas}
-                                        marcaEntradaAt={asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora}
+                                        marcaEntradaAt={asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora || asistencia.multiple?.[0]?.created_at}
                                         horarioEntrada={resolverHorarioEntrada(usuario.userId, asistencia.diaString, permiso)}
+                                        cantidadMarcajes={esMultiple || totalRegistros > 2 ? totalRegistros : null}
                                       />
                                     </div>
                                   </div>

@@ -59,6 +59,7 @@ import {
   getEstadoMarcajeMeta,
   esEntradaTardeMarcaje,
   resolverHorarioEntradaDia,
+  esTipoMarcajeLibre,
   ENTRADA_TARDE_TIME_CLASS,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
@@ -186,7 +187,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
       grupo.cantidad++;
       if (!grupo.representante) grupo.representante = registro;
 
-      if (registro.tipo_registro === 'Multiple' || registro.tipo_registro === 'Marca') {
+      if (esTipoMarcajeLibre(registro.tipo_registro)) {
           grupo.tieneMultiple = true;
       }
 
@@ -368,7 +369,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
   };
 
   /** Botón de justificación con ícono por tipo */
-  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, cargando = false, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada }: {
+  const JustificacionBtn = ({ justificacion, asueto, comision, fechaStr, cargando = false, tieneEntrada = false, tieneSalida = false, notasEntrada, notasSalida, marcaEntradaAt, horarioEntrada, cantidadMarcajes }: {
     justificacion: PermisoEmpleado | null;
     asueto: ReturnType<typeof getAsuetoPorFecha>;
     comision: ComisionConFechaYHoraSeparada | null;
@@ -380,6 +381,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
     notasSalida?: string | null;
     marcaEntradaAt?: string | null;
     horarioEntrada?: string | null;
+    cantidadMarcajes?: number | null;
   }) => {
     if (cargando) return <JustificacionSkeleton />;
     if (asueto) {
@@ -442,6 +444,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
       notasSalida,
       marcaEntradaAt,
       horarioEntrada,
+      cantidadMarcajes,
     });
 
     if (!estadoMarcaje) return null;
@@ -750,6 +753,11 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                         horarioSalida,
                                         justificacionDelDia,
                                       )}
+                                      cantidadMarcajes={
+                                        esHorarioMultiple || usuario.tieneMultiple
+                                          ? usuario.cantidad
+                                          : null
+                                      }
                                     />
                                 </div>
                               </div>

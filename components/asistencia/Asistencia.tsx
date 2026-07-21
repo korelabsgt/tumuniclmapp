@@ -71,6 +71,8 @@ import {
   resolverEstadoMarcaje,
   getEstadoMarcajeMeta,
   esEntradaTardeMarcaje,
+  esNombreHorarioMultiple,
+  esTipoMarcajeLibre,
   ENTRADA_TARDE_TIME_CLASS,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
@@ -312,8 +314,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
         : format(scheduleSalida, "hh:mm aa", { locale: es }),
     };
 
-    const esHorarioMultiple =
-      horario_nombre?.trim().toLowerCase() === "multiple";
+    const esHorarioMultiple = esNombreHorarioMultiple(horario_nombre);
 
     return {
       estaFueraDeHorario,
@@ -730,6 +731,11 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
 
   const renderEstadoMarcajeHoyBtn = () => {
     const hoyStr = format(fechaHoraGt, "yyyy-MM-dd");
+    const esMarcajeLibre =
+      esHorarioMultiple ||
+      registrosHoyMultiple.some((r: { tipo_registro?: string | null }) =>
+        esTipoMarcajeLibre(r.tipo_registro),
+      );
     const estado = resolverEstadoMarcaje({
       fechaStr: hoyStr,
       tieneEntrada: !!registroEntradaHoy,
@@ -738,6 +744,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       notasSalida: registroSalidaHoy?.notas,
       marcaEntradaAt: registroEntradaHoy?.created_at,
       horarioEntrada: horarioEntradaHoyStr,
+      cantidadMarcajes: esMarcajeLibre ? registrosHoyMultiple.length : null,
     });
 
     if (!estado) return null;
@@ -953,6 +960,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                 todosLosRegistros={todosLosRegistros}
                 onAbrirMapa={handleAbrirMapa}
                 fechaHoraGt={fechaHoraGt}
+                esHorarioMultiple={esHorarioMultiple}
                 permisosEmpleado={permisosEmpleado}
                 comisionesEmpleado={comisionesEmpleado}
                 horarioDias={horario_dias}

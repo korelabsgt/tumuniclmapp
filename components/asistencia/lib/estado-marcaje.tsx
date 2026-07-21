@@ -91,6 +91,24 @@ export function esEntradaTardeMarcaje(params: {
   return (notas ?? "").toLowerCase().includes("entrada tarde");
 }
 
+export function esTipoMarcajeLibre(tipo: string | null | undefined): boolean {
+  const t = (tipo ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return t === "marca" || t === "multiple";
+}
+
+export function esNombreHorarioMultiple(nombre: string | null | undefined): boolean {
+  const n = (nombre ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return n === "multiple";
+}
+
 export function resolverEstadoMarcaje(params: {
   fechaStr: string;
   tieneEntrada: boolean;
@@ -99,6 +117,7 @@ export function resolverEstadoMarcaje(params: {
   notasSalida?: string | null;
   marcaEntradaAt?: string | null;
   horarioEntrada?: string | null;
+  cantidadMarcajes?: number | null;
 }): EstadoMarcaje | null {
   const {
     fechaStr,
@@ -107,9 +126,18 @@ export function resolverEstadoMarcaje(params: {
     notasEntrada,
     marcaEntradaAt,
     horarioEntrada,
+    cantidadMarcajes,
   } = params;
   const fechaDia = parseISO(`${fechaStr}T00:00:00`);
   const esHoyOFuturo = isToday(fechaDia) || isAfter(fechaDia, startOfToday());
+
+  if (cantidadMarcajes != null && cantidadMarcajes > 0) {
+    if (cantidadMarcajes % 2 !== 0) {
+      if (esHoyOFuturo) return "esperando";
+      return "sin_permiso";
+    }
+    return "correcto";
+  }
 
   if (!tieneEntrada && !tieneSalida) {
     if (esHoyOFuturo) return null;

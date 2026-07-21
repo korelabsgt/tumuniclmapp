@@ -4,17 +4,21 @@ import React from 'react';
 import { SolicitudJefe } from './lib/zod';
 import {
     ChevronDown,
-    MapPin,
-    User,
     FileText,
     CheckCircle2,
-    Clock,
     XCircle,
     Calendar,
     Pencil,
     Trash2,
-    ListTodo
+    ListTodo,
+    MoreVertical,
 } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface Props {
     sol: SolicitudJefe;
@@ -43,6 +47,66 @@ export default function SolitJefeItem({
         return `${day}/${month}/${year}`;
     };
 
+    const getFechaNumerica = (dateStr: string | null | undefined) => {
+        if (!dateStr) return '--';
+        let date: Date;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+            const [y, m, d] = dateStr.split('-').map(Number);
+            date = new Date(y, m - 1, d);
+        } else {
+            date = new Date(dateStr);
+        }
+        if (Number.isNaN(date.getTime())) return '--';
+        const diaSemana = date
+            .toLocaleDateString('es-GT', { weekday: 'short' })
+            .replace('.', '')
+            .toLowerCase();
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+        const year = date.getFullYear().toString().slice(-2);
+        return `${diaSemana} ${day}/${month}/${year}`;
+    };
+
+    const nombreCorto = (nombreCompleto: string) => {
+        const PARTICLES = new Set(['de', 'del', 'la', 'las', 'los', 'y', 'san', 'santa']);
+        const parts = nombreCompleto.trim().split(/\s+/).filter(Boolean);
+        if (parts.length <= 1) return nombreCompleto.trim();
+        if (parts.length === 2) return `${parts[0]} ${parts[1]}`;
+
+        const firstName = parts[0];
+        let idx = 1;
+
+        while (idx < parts.length && PARTICLES.has(parts[idx].toLowerCase())) {
+            idx += 1;
+            if (idx < parts.length) idx += 1;
+        }
+
+        const remaining = parts.length - idx;
+        if (remaining >= 3) {
+            if (PARTICLES.has(parts[idx]?.toLowerCase() ?? '')) {
+                idx += 1;
+                if (idx < parts.length) idx += 1;
+            } else {
+                idx += 1;
+            }
+        }
+
+        if (idx >= parts.length) return `${firstName} ${parts[parts.length - 1]}`;
+
+        if (PARTICLES.has(parts[idx].toLowerCase())) {
+            const surnameBits = [parts[idx]];
+            idx += 1;
+            while (idx < parts.length && PARTICLES.has(parts[idx].toLowerCase())) {
+                surnameBits.push(parts[idx]);
+                idx += 1;
+            }
+            if (idx < parts.length) surnameBits.push(parts[idx]);
+            return `${firstName} ${surnameBits.join(' ')}`;
+        }
+
+        return `${firstName} ${parts[idx]}`;
+    };
+
     const getSimpleTime = (dateStr: string | null) => {
         if (!dateStr) return '--';
         return new Date(dateStr).toLocaleTimeString('es-GT', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -51,11 +115,23 @@ export default function SolitJefeItem({
     const getStatusConfig = (status: string) => {
         switch (status) {
             case 'completado':
-                return { color: 'emerald', label: 'Confirmado', icon: <CheckCircle2 size={20} className="sm:w-6 sm:h-6" /> };
+                return {
+                    color: 'emerald',
+                    label: 'Confirmado',
+                    border: 'border-l-emerald-500 dark:border-l-emerald-500',
+                };
             case 'rechazado':
-                return { color: 'red', label: 'Rechazado', icon: <XCircle size={20} className="sm:w-6 sm:h-6" /> };
+                return {
+                    color: 'red',
+                    label: 'Rechazado',
+                    border: 'border-l-red-500 dark:border-l-red-500',
+                };
             default:
-                return { color: 'amber', label: 'Pendiente', icon: <Clock size={20} className="sm:w-6 sm:h-6" /> };
+                return {
+                    color: 'amber',
+                    label: 'Pendiente',
+                    border: 'border-l-amber-500 dark:border-l-amber-500',
+                };
         }
     };
 
@@ -81,7 +157,7 @@ export default function SolitJefeItem({
             default:
                 return {
                     text: 'Gestionar Solicitud',
-                    style: 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20 shadow-sm cursor-pointer border-none',
+                    style: 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer border-none',
                     action: 'cambiar_estado' as const,
                     icon: <CheckCircle2 size={16} />,
                 };
@@ -90,71 +166,104 @@ export default function SolitJefeItem({
 
     const btnProps = getButtonContent();
 
+    const menuAcciones = (
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <button
+                    type="button"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                    title="Acciones"
+                >
+                    <MoreVertical size={16} className="sm:w-[18px] sm:h-[18px]" />
+                </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+                align="end"
+                className="w-44 rounded-xl"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {sol.estado === 'pendiente' && (
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onCambiarEstado?.(sol);
+                        }}
+                        className="cursor-pointer font-medium text-blue-600 dark:text-blue-400"
+                    >
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Gestionar
+                    </DropdownMenuItem>
+                )}
+                <DropdownMenuItem
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onEditar?.(sol);
+                    }}
+                    className="cursor-pointer font-medium"
+                >
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Editar
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onEliminar?.(sol);
+                    }}
+                    className="cursor-pointer font-medium text-red-600 dark:text-red-400"
+                >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Eliminar
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+
     return (
         <div className={`
-        group w-full bg-white dark:bg-neutral-900 rounded-2xl border transition-all duration-300 overflow-hidden
+        group w-full bg-white dark:bg-neutral-900 rounded-lg border-l-[6px] ${statusConfig.border}
+        border-t border-r border-b transition-all duration-300 overflow-hidden
         ${isOpen
-                ? 'border-blue-500/30 shadow-xl ring-1 ring-blue-500/10'
-                : 'border-slate-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-neutral-700 hover:shadow-md'
+                ? 'border-t-blue-500/30 border-r-blue-500/30 border-b-blue-500/30 ring-1 ring-blue-500/10'
+                : 'border-t-slate-200 border-r-slate-200 border-b-slate-200 dark:border-t-neutral-800 dark:border-r-neutral-800 dark:border-b-neutral-800 hover:border-t-blue-300 hover:border-r-blue-300 hover:border-b-blue-300 dark:hover:border-t-neutral-700 dark:hover:border-r-neutral-700 dark:hover:border-b-neutral-700'
             }
     `}>
             <div
                 onClick={onToggle}
-                className="p-2 sm:p-5 cursor-pointer select-none relative z-10"
+                className="p-2.5 sm:p-5 cursor-pointer select-none relative z-10"
             >
-                <div className="flex flex-col sm:flex-row gap-0 sm:gap-4 sm:items-center justify-between">
-
-                    <div className="flex items-start gap-3 sm:gap-4 overflow-hidden">
-                        <div className={`
-                        w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl flex items-center justify-center border-2 transition-colors
-                        ${color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30' : ''}
-                        ${color === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30' : ''}
-                        ${color === 'red' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/10 dark:border-red-900/30' : ''}
-                    `}>
-                            {statusConfig.icon}
-                        </div>
-
-                        <div className="flex flex-col min-w-0 gap-0.5 sm:gap-1">
-                            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                <span className={`
-                                text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded border
+                <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-start justify-between">
+                    <div className="flex flex-col min-w-0 flex-1 gap-2.5 sm:gap-3 pr-20 sm:pr-0">
+                        <div className="flex items-center gap-2">
+                            <span className={`
+                                text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest px-1.5 py-0.5 rounded border shrink-0
                                 text-slate-400 dark:text-neutral-500 bg-slate-50 dark:bg-neutral-800 border-slate-100 dark:border-neutral-700
                             `}>
-                                    CÓD: {sol.id.slice(0, 3)}-{sol.id.slice(3, 6)}
-                                </span>
-                                <h3 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white truncate">
-                                    {sol.ubicacion || 'Sin título'}
-                                </h3>
-                            </div>
-                            {!isOpen && (
-                                <div className="flex flex-wrap items-center gap-x-1.5 sm:gap-x-2 gap-y-0.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                                    <span className="flex items-center gap-1 font-medium text-slate-500">
-                                        <Calendar size={11} className="sm:w-3 sm:h-3" />
-                                        {sol.fecha_solicitud ? new Date(sol.fecha_solicitud).toLocaleDateString('es-GT') : new Date(sol.created_at).toLocaleDateString('es-GT')}
-                                    </span>
-                                    {sol.solicitante && (
-                                        <>
-                                            <span className="hidden sm:inline text-slate-300 dark:text-neutral-600">•</span>
-                                            <span className="hidden sm:inline-block font-medium text-slate-700 dark:text-slate-300 truncate max-w-[140px] sm:max-w-none">
-                                                {sol.solicitante.nombre}
-                                            </span>
-                                        </>
-                                    )}
-                                    {sol.asignado && (
-                                        <>
-                                            <span className="hidden sm:inline text-slate-300 dark:text-neutral-600">•</span>
-                                            <span className="hidden sm:flex items-center gap-1 text-[11px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 truncate max-w-[120px] sm:max-w-none">
-                                                <User size={10} className="sm:w-[11px] sm:h-[11px] shrink-0" />
-                                                {sol.asignado.nombre}
-                                            </span>
-                                        </>
-                                    )}
-                                </div>
-                            )}
+                                CÓD: {sol.id.slice(0, 3)}-{sol.id.slice(3, 6)}
+                            </span>
                         </div>
+
+                        <h3 className="text-sm sm:text-lg font-bold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                            {sol.ubicacion || 'Sin título'}
+                        </h3>
+
+                        {!isOpen && (
+                            <div className="flex flex-col gap-2 sm:gap-2.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 min-w-0">
+                                <span className="font-medium text-slate-500">
+                                    Solicitud: <span className="font-bold text-slate-800 dark:text-slate-200">{getFechaNumerica(sol.created_at)}</span>
+                                    {' '}*{' '}
+                                    Actividad: <span className="font-bold text-slate-800 dark:text-slate-200">{getFechaNumerica(sol.fecha_solicitud)}</span>
+                                </span>
+                                {sol.solicitante && (
+                                    <span>
+                                        por <span className="font-bold text-slate-800 dark:text-slate-200">{nombreCorto(sol.solicitante.nombre)}</span>
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    <div className="hidden sm:flex items-center justify-end sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
+                    <div className="hidden sm:flex items-center justify-end gap-2 sm:gap-3 shrink-0">
                         <span className={`
                             text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-md border
                             ${color === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800' : ''}
@@ -164,28 +273,7 @@ export default function SolitJefeItem({
                             {statusConfig.label}
                         </span>
 
-                        <div className="flex items-center gap-0.5">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEditar?.(sol);
-                                }}
-                                className="p-1.5 sm:p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                                title="Editar"
-                            >
-                                <Pencil size={14} className="sm:w-4 sm:h-4" />
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onEliminar?.(sol);
-                                }}
-                                className="p-1.5 sm:p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                                title="Eliminar"
-                            >
-                                <Trash2 size={14} className="sm:w-4 sm:h-4" />
-                            </button>
-                        </div>
+                        {menuAcciones}
 
                         <ChevronDown
                             size={20}
@@ -194,29 +282,19 @@ export default function SolitJefeItem({
                     </div>
                 </div>
 
-                {/* Vista móvil */}
-                <div className="sm:hidden flex items-center gap-0.5 absolute top-2 right-2">
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEditar?.(sol);
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 transition-colors"
-                    >
-                        <Pencil size={14} />
-                    </button>
-                    <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onEliminar?.(sol);
-                        }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 transition-colors"
-                    >
-                        <Trash2 size={14} />
-                    </button>
+                <div className="sm:hidden flex items-center gap-0.5 absolute top-2.5 right-2">
+                    <span className={`
+                        text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded-md border mr-1
+                        ${color === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-200' : ''}
+                        ${color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : ''}
+                        ${color === 'red' ? 'bg-red-50 text-red-600 border-red-200' : ''}
+                    `}>
+                        {statusConfig.label}
+                    </span>
+                    {menuAcciones}
                     <ChevronDown
                         size={18}
-                        className={`ml-1 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`}
+                        className={`ml-0.5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180 text-blue-500' : ''}`}
                     />
                 </div>
             </div>
@@ -228,11 +306,9 @@ export default function SolitJefeItem({
                 <div className="p-2 sm:p-5 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-neutral-950/60 dark:via-neutral-900/40 dark:to-blue-950/10 border-t border-slate-200/60 dark:border-neutral-800/60">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
-                        {/* Columna izquierda: Descripción + Botón */}
                         <div className="lg:col-span-6 flex flex-col gap-3">
 
-                            {/* Descripción / Comentarios */}
-                            <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-3 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm flex-1">
+                            <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-3 border border-slate-200/70 dark:border-neutral-700/50 flex-1">
                                 <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400"></div>
                                 <div className="flex items-center gap-2 mb-2">
                                     <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -247,7 +323,6 @@ export default function SolitJefeItem({
                                 </div>
                             </div>
 
-                            {/* Botón */}
                             <div className="mt-auto">
                                 <button
                                     onClick={(e) => {
@@ -257,7 +332,7 @@ export default function SolitJefeItem({
                                         }
                                     }}
                                     disabled={btnProps.action === 'none'}
-                                    className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 transform active:scale-[0.98] disabled:active:scale-100 shadow-sm hover:shadow-md ${btnProps.style}`}
+                                    className={`w-full py-2.5 sm:py-3 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all duration-200 transform active:scale-[0.98] disabled:active:scale-100 ${btnProps.style}`}
                                 >
                                     {btnProps.icon}
                                     {btnProps.text}
@@ -265,7 +340,6 @@ export default function SolitJefeItem({
                             </div>
                         </div>
 
-                        {/* Columna derecha: Seguimiento y Subtareas */}
                         <div className="lg:col-span-6">
                             <div className="flex items-center gap-2 mb-3 px-1">
                                 <div className="w-5 h-5 rounded-md bg-slate-100 dark:bg-neutral-800 flex items-center justify-center">
@@ -274,18 +348,17 @@ export default function SolitJefeItem({
                                 <h4 className="text-[10px] font-bold text-slate-400 dark:text-neutral-500 uppercase tracking-[0.15em]">Detalles y Seguimiento</h4>
                             </div>
 
-                            <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm border border-slate-200/70 dark:border-neutral-700/50 rounded-xl p-2 sm:p-4 hover:shadow-lg transition-all duration-200">
+                            <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm border border-slate-200/70 dark:border-neutral-700/50 rounded-xl p-2 sm:p-4 transition-all duration-200">
 
                                 <div className="w-full space-y-3">
                                     <div className="bg-gradient-to-r from-slate-50 to-slate-100/50 dark:from-neutral-800/60 dark:to-neutral-800/30 p-2 sm:p-3 rounded-lg border border-slate-100/80 dark:border-neutral-700/50">
-                                        {/* Subtareas */}
                                         {sol.checklists?.items && Array.isArray(sol.checklists.items) && sol.checklists.items.length > 0 && (
                                             <div>
                                                 <span className="text-[10px] text-slate-400 uppercase font-bold tracking-[0.12em] mb-2 flex items-center gap-1.5">
                                                     <ListTodo size={11} /> Subtareas de la solicitud
                                                 </span>
                                                 <div className="flex flex-col gap-1.5 mt-2">
-                                                    {sol.checklists.items.map((item: any, i: number) => (
+                                                    {sol.checklists.items.map((item: { descripcion: string }, i: number) => (
                                                         <div key={i} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
                                                             <div className="mt-0.5">
                                                                 <CheckCircle2 size={14} className="text-blue-500/70" />
@@ -329,10 +402,10 @@ export default function SolitJefeItem({
                                         ${sol.estado === 'pendiente' ? 'border-slate-200/60 dark:border-neutral-700/50' : ''}
                                     `}>
                                         <div className="flex items-center gap-2.5">
-                                            <div className={`w-[10px] h-[10px] shrink-0 rounded-full ring-[3px] shadow-sm
-                                                ${sol.estado === 'completado' ? 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-900/40 shadow-emerald-500/30' : ''}
-                                                ${sol.estado === 'rechazado' ? 'bg-red-500 ring-red-100 dark:ring-red-900/40 shadow-red-500/30' : ''}
-                                                ${sol.estado === 'pendiente' ? 'bg-amber-500 ring-amber-100 dark:ring-amber-900/40 shadow-amber-500/30' : ''}
+                                            <div className={`w-[10px] h-[10px] shrink-0 rounded-full ring-[3px]
+                                                ${sol.estado === 'completado' ? 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-900/40' : ''}
+                                                ${sol.estado === 'rechazado' ? 'bg-red-500 ring-red-100 dark:ring-red-900/40' : ''}
+                                                ${sol.estado === 'pendiente' ? 'bg-amber-500 ring-amber-100 dark:ring-amber-900/40' : ''}
                                             `}></div>
                                             <div>
                                                 <h6 className="font-bold text-[12px] text-slate-800 dark:text-slate-100 uppercase tracking-wide">

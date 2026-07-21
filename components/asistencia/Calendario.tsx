@@ -59,6 +59,7 @@ import {
   getEstadoMarcajeMeta,
   esEntradaTardeMarcaje,
   resolverHorarioEntradaDia,
+  esTipoMarcajeLibre,
   ENTRADA_TARDE_TIME_CLASS,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
@@ -186,7 +187,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
       grupo.cantidad++;
       if (!grupo.representante) grupo.representante = registro;
 
-      if (registro.tipo_registro === 'Multiple' || registro.tipo_registro === 'Marca') {
+      if (esTipoMarcajeLibre(registro.tipo_registro)) {
           grupo.tieneMultiple = true;
       }
 

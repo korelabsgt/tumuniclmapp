@@ -18,11 +18,13 @@ export default async function GestorTareas({ tipoVista }: Props) {
   );
 
   return (
-    <div className="w-full max-w-7xl mx-auto px-3 py-4 sm:px-6 lg:px-8">
-      <TareaList 
-        initialData={datos} 
-        tipoVista={tipoVista}
-      />
+    <div className="w-full flex flex-col gap-6">
+      <div className="w-full">
+        <TareaList
+          initialData={datos}
+          tipoVista={tipoVista}
+        />
+      </div>
     </div>
   );
 }

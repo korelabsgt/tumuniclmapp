@@ -11,6 +11,7 @@ import NotificationListener from "@/components/push/Listener";
 import { ThemeProvider } from "@/components/themes/theme-provider";
 import { ThemeSwitcher } from "@/components/themes/theme-switcher";
 import QueryProvider from "@/components/providers/QueryProvider";
+import MouseBackNavigation from "@/components/providers/MouseBackNavigation";
 import SystemGuard from "@/components/system-guard";
 import DevBanner from "@/components/dev/DevBanner";
 import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
@@ -69,6 +70,7 @@ export default async function RootLayout({
           >
             <SystemGuard>
               <NotificationListener />
+              <MouseBackNavigation />
               <div className="flex flex-col min-h-screen">
                 <DevBanner />
                 <BloqueoCitacion />

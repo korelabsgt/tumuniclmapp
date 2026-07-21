@@ -91,6 +91,24 @@ export function esEntradaTardeMarcaje(params: {
   return (notas ?? "").toLowerCase().includes("entrada tarde");
 }
 
+export function esTipoMarcajeLibre(tipo: string | null | undefined): boolean {
+  const t = (tipo ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return t === "marca" || t === "multiple";
+}
+
+export function esNombreHorarioMultiple(nombre: string | null | undefined): boolean {
+  const n = (nombre ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return n === "multiple";
+}
+
 export function resolverEstadoMarcaje(params: {
   fechaStr: string;
   tieneEntrada: boolean;

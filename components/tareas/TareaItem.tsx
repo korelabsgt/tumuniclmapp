@@ -9,9 +9,15 @@ import TareaChecklist from './TareaChecklist';
 import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
 import { 
-  Edit2, Trash2, ChevronDown, MoreHorizontal, Calendar, 
+  Edit2, Trash2, ChevronDown, MoreVertical, MoreHorizontal, Calendar, 
   User, Clock, AlertCircle, Copy, ArrowRight, FileText
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useTareaMutations } from './hooks'; 
 
 interface Props {
@@ -178,6 +184,10 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
   const formatearSesion = (fechaISO: string) => {
     if (!fechaISO) return '';
     const d = new Date(fechaISO);
+    const diaSemana = d
+      .toLocaleDateString('es-GT', { weekday: 'short' })
+      .replace('.', '')
+      .toLowerCase();
     const day = String(d.getDate()).padStart(2, '0');
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const year = String(d.getFullYear()).slice(-2);
@@ -187,7 +197,7 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
     hora = hora % 12;
     hora = hora ? hora : 12;
     const horaStr = String(hora).padStart(2, '0');
-    return `${day}/${month}/${year} a las ${horaStr}:${minutos} ${period}`;
+    return `${diaSemana} ${day}/${month}/${year} a las ${horaStr}:${minutos} ${period}`;
   };
 
   const textoAsignacionConcejo = (
@@ -228,7 +238,7 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
     <>
     <div className={`
         bg-white dark:bg-neutral-900 
-        rounded-2xl 
+        rounded-lg 
         shadow-sm hover:shadow-md
         transition-all duration-300 
         border-l-[6px] ${border} 
@@ -236,38 +246,78 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
         overflow-hidden 
         ${isExpanded ? 'ring-2 ring-blue-400/50 dark:ring-blue-900/40 shadow-xl z-10' : 'hover:-translate-y-0.5'}
     `}>
-      <div onClick={onToggle} className="p-4 sm:p-5 cursor-pointer flex flex-col gap-1 sm:gap-0">
+      <div onClick={onToggle} className="p-4 sm:p-5 cursor-pointer flex flex-col gap-2.5 sm:gap-3">
         <div className="flex justify-between items-start gap-3 sm:gap-4 w-full">
-            <div className="flex-1 min-w-0">
-                <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider border ${badge}`}>
+            <div className="flex-1 min-w-0 flex flex-col gap-2.5 sm:gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                    <span className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider border ${badge}`}>
                         {esVencida && <AlertCircle size={12} strokeWidth={3} />}
                         {label}
-                    </span>
-                    <span className="flex items-center gap-1 text-[10px] font-medium text-slate-500 dark:text-gray-400">
-                        <Clock size={11} className="text-slate-400 dark:text-gray-500 shrink-0" />
-                        {formatearSesion(tarea.due_date)}
                     </span>
                 </div>
                 <h3 className="font-bold text-base text-slate-800 dark:text-gray-100 leading-snug break-words">
                     {tarea.title}
                 </h3>
+                <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-gray-400">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{formatearSesion(tarea.due_date)}</span>
+                </span>
             </div>
-            <div className="flex items-center gap-0 sm:gap-1 shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
-                {isJefe && (
-                    <button onClick={(e) => { e.stopPropagation(); setIsDuplicateModalOpen(true); }} className="p-2 text-slate-400 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all" title="Duplicar Tarea">
-                        <Copy size={18} />
-                    </button>
-                )}
-                {puedeEditar && (
-                    <button onClick={(e) => { e.stopPropagation(); setIsEditModalOpen(true); }} className="p-2 text-slate-400 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-slate-100 dark:hover:bg-blue-900/30 transition-all" title="Editar Tarea">
-                        <Edit2 size={18} />
-                    </button>
-                )}
-                {isJefe && (
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (e.nativeEvent) e.nativeEvent.stopImmediatePropagation(); handleEliminar(e); }} className="p-2 text-slate-400 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg hover:bg-slate-100 dark:hover:bg-red-900/30 transition-all" title="Eliminar tarea (Solo Jefe)">
-                        <Trash2 size={18} />
-                    </button>
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                {(isJefe || puedeEditar) && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                type="button"
+                                onClick={(e) => e.stopPropagation()}
+                                className="p-1.5 sm:p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-neutral-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                title="Acciones"
+                            >
+                                <MoreVertical size={16} className="sm:w-[18px] sm:h-[18px]" />
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-44 rounded-xl"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {isJefe && (
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsDuplicateModalOpen(true);
+                                    }}
+                                    className="cursor-pointer font-medium"
+                                >
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    Duplicar
+                                </DropdownMenuItem>
+                            )}
+                            {puedeEditar && (
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditModalOpen(true);
+                                    }}
+                                    className="cursor-pointer font-medium"
+                                >
+                                    <Edit2 className="mr-2 h-4 w-4" />
+                                    Editar
+                                </DropdownMenuItem>
+                            )}
+                            {isJefe && (
+                                <DropdownMenuItem
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        void handleEliminar();
+                                    }}
+                                    className="cursor-pointer font-medium text-red-600 dark:text-red-400"
+                                >
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Eliminar
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
                 <div className={`p-2 text-slate-400 dark:text-gray-500 transition-transform duration-300 ${isExpanded ? 'rotate-180 text-blue-500 dark:text-blue-400' : ''}`}>
                     <ChevronDown size={20} />
@@ -276,45 +326,42 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
         </div>
 
         {!isExpanded && (
-            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500 dark:text-gray-400 font-medium w-full border-t pt-3 sm:border-t-0 sm:pt-0 border-slate-100 dark:border-neutral-800 sm:mt-2">
+            <div className="flex flex-col gap-2.5 text-xs text-slate-500 dark:text-gray-400 font-medium w-full border-t pt-3 border-slate-100 dark:border-neutral-800">
                 {total > 0 && (
-                    <div className="flex items-center gap-2 mr-2 sm:mr-0">
+                    <div className="flex items-center gap-2">
                         <span className={`text-xs font-bold shrink-0 ${porcentaje === 100 ? 'text-green-600 dark:text-green-400' : 'text-slate-600 dark:text-gray-400'}`}>{porcentaje}%</span>
                         <div className="w-24 sm:w-32 md:w-52 bg-slate-200 dark:bg-neutral-700 h-1.5 rounded-full overflow-hidden flex-shrink-0">
                             <div className={`h-full rounded-full transition-all duration-500 ease-out ${colorBarra}`} style={{ width: `${porcentaje}%` }} />
                         </div>
                     </div>
                 )}
-                {total > 0 && <span className="text-slate-300 dark:text-gray-600 hidden sm:inline">•</span>}
-                <div className="w-full mt-2 pt-2 border-t border-dashed border-slate-200 dark:border-neutral-700 sm:w-auto sm:mt-0 sm:pt-0 sm:border-t-0 sm:border-none sm:flex-1">
+                <div className="w-full">
                     {tarea.es_concejo ? (
                         textoAsignacionConcejo
                     ) : esAutoAsignado ? (
-                        <div className="flex items-center gap-1.5 text-xs">
-                             <div className="bg-slate-100 dark:bg-neutral-800 p-1 rounded-full"><User size={10} className={esAsignadoAMi ? 'text-blue-500' : 'text-slate-400'}/></div>
+                        <div className="flex items-center gap-1.5 text-xs flex-wrap">
                              <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider">Creado y asignado por:</span>
-                             <span className={`truncate max-w-[200px] ${esAsignadoAMi ? 'text-blue-600 font-bold' : 'font-medium text-slate-700 dark:text-gray-300'}`}>
+                             <span className={`truncate max-w-[200px] ${esAsignadoAMi ? 'text-blue-600 font-bold' : 'font-bold text-slate-800 dark:text-slate-200'}`}>
                                 {esAsignadoAMi ? `${nombreAsignado} (Yo)` : nombreAsignado}
                              </span>
                         </div>
                     ) : (
-                        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2 text-xs w-full">
+                        <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2 text-xs w-full">
                             <div className="flex items-center gap-1.5 text-slate-700 dark:text-gray-300 w-full sm:w-auto">
-                                <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider shrink-0 sm:w-auto">Creado por: </span>
-                                <span className="font-medium truncate block w-full sm:w-auto">{nombreCreador}</span>
+                                <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider shrink-0">Creado por: </span>
+                                <span className="font-bold text-slate-800 dark:text-slate-200 truncate block w-full sm:w-auto">{nombreCreador}</span>
                             </div>
                             <ArrowRight size={12} className="hidden sm:block text-slate-300 dark:text-gray-600 shrink-0" />
                             <div className="flex items-center gap-1.5 text-slate-700 dark:text-gray-300 w-full sm:w-auto">
-                                <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider shrink-0 sm:w-auto">Asignado a: </span>
-                                <span className={`truncate block w-full sm:w-auto ${esAsignadoAMi ? 'text-blue-600 font-semibold' : ''}`}>
+                                <span className="text-[9px] font-extrabold uppercase text-slate-400 tracking-wider shrink-0">Asignado a: </span>
+                                <span className={`font-bold truncate block w-full sm:w-auto ${esAsignadoAMi ? 'text-blue-600' : 'text-slate-800 dark:text-slate-200'}`}>
                                     {esAsignadoAMi ? `${nombreAsignado} (Yo)` : nombreAsignado}
                                 </span>
                             </div>
                         </div>
                     )}
                 </div>
-                {!isExpanded && (
-                  <div className="w-full pt-2 mt-1 text-right sm:text-right">
+                <div className="w-full text-right">
                     {tarea.confirmed_at ? (
                       <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-semibold">
                         Confirmación: {formatearConfirmadoAt(tarea.confirmed_at)}
@@ -324,8 +371,7 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
                         Sin confirmar
                       </p>
                     ) : null}
-                  </div>
-                )}
+                </div>
             </div>
         )}
       </div>

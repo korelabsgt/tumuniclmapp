@@ -23,7 +23,7 @@ import { useAsuetos, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
 import { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
 import VerComision from '@/components/comisiones/VerComision';
 import { esOficinaSinMarcajeAsistencia } from '@/components/asistencia/lib/oficinas-sin-marcaje';
-import { esEntradaTardeMarcaje } from '@/components/asistencia/lib/estado-marcaje';
+import { esEntradaTardeMarcaje, esTipoMarcajeLibre } from '@/components/asistencia/lib/estado-marcaje';
 
 type Props = {
   registros: AsistenciaEnriquecida[];
@@ -286,7 +286,7 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
 
       const tipoRegistroStr = registro.tipo_registro as string;
 
-      if (tipoRegistroStr === 'Multiple' || tipoRegistroStr === 'Marca') {
+      if (esTipoMarcajeLibre(tipoRegistroStr)) {
         registrosTemp[oficinaNombre][claveUnica].multiple.push(registro);
       } else if (tipoRegistroStr === 'Entrada') {
         registrosTemp[oficinaNombre][claveUnica].entrada = registro;

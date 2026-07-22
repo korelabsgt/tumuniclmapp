@@ -7,6 +7,7 @@ import ModuleAccordion from "../modules/ModuleAccordion";
 import {
   checkIsAtencionVecino,
   checkIsElectricista,
+  checkIsDirectorServiciosPublicos,
 } from "@/components/solicitudes/lamparas/lib/actions";
 
 interface ModulesViewProps {
@@ -27,6 +28,7 @@ export default function ModulesView({
   const [loadingModule, setLoadingModule] = useState<string | null>(null);
   const [esAtencionVecino, setEsAtencionVecino] = useState(false);
   const [esElectricista, setEsElectricista] = useState(false);
+  const [esDirectorSP, setEsDirectorSP] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -37,6 +39,9 @@ export default function ModulesView({
         .catch(console.error);
       checkIsElectricista(dependenciaId)
         .then((isElec) => setEsElectricista(isElec))
+        .catch(console.error);
+      checkIsDirectorServiciosPublicos(dependenciaId)
+        .then((isDir) => setEsDirectorSP(isDir))
         .catch(console.error);
     }
   }, [dependenciaId]);
@@ -119,7 +124,8 @@ export default function ModulesView({
           return (
             ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) ||
             esAtencionVecino ||
-            esElectricista
+            esElectricista ||
+            esDirectorSP
           );
         }
         if (m.id === "SOLICITUDES_MOBILIARIO") {
@@ -136,7 +142,7 @@ export default function ModulesView({
         }
         return modulos.includes(m.permiso);
       }),
-    [rol, modulos, esjefe, esAtencionVecino, esElectricista],
+    [rol, modulos, esjefe, esAtencionVecino, esElectricista, esDirectorSP],
   );
 
   const modulosPoliticas = useMemo(
@@ -174,8 +180,9 @@ export default function ModulesView({
     () =>
       ["SECRETARIO", "SUPER", "RECEPCION"].includes(rol) ||
       esAtencionVecino ||
-      esElectricista,
-    [rol, esAtencionVecino, esElectricista],
+      esElectricista ||
+      esDirectorSP,
+    [rol, esAtencionVecino, esElectricista, esDirectorSP],
   );
 
   const MODULOS_NAVEGACION_DELAY_MS = 1500;

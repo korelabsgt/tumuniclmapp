@@ -178,18 +178,18 @@ export const asignarOperario = async (solicitudId: string, operarioUid: string) 
 
 /**
  * Actualiza el estado de una solicitud.
- * Usado por operarios para marcar como "completado" o "rechazado".
+ * Usado por operarios para marcar como "completado" o "en_revision".
  */
 export const actualizarEstadoSolicitudMobiliario = async (
   solicitudId: string,
-  nuevoEstado: 'completado' | 'rechazado',
+  nuevoEstado: 'completado' | 'en_revision',
   comentarios?: string
 ) => {
   const supabase = await createClient();
 
   const updateData: Record<string, any> = { estado: nuevoEstado };
 
-  if (nuevoEstado === 'completado' || nuevoEstado === 'rechazado') {
+  if (nuevoEstado === 'completado' || nuevoEstado === 'en_revision') {
     updateData.fecha_terminado = new Date().toISOString();
   }
 

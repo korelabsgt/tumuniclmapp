@@ -72,7 +72,7 @@ export const useSolicitudMutations = () => {
   });
 
   const actualizarEstado = useMutation({
-    mutationFn: ({ solicitudId, nuevoEstado, comentarios }: { solicitudId: string; nuevoEstado: 'completado' | 'rechazado'; comentarios?: string }) =>
+    mutationFn: ({ solicitudId, nuevoEstado, comentarios }: { solicitudId: string; nuevoEstado: 'completado' | 'en_revision'; comentarios?: string }) =>
       actualizarEstadoSolicitud(solicitudId, nuevoEstado, comentarios),
     onSuccess: invalidarLista,
   });

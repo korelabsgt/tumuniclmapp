@@ -80,7 +80,7 @@ export const useSolicitudMobiliarioMutations = () => {
   });
 
   const actualizarEstado = useMutation({
-    mutationFn: ({ solicitudId, nuevoEstado, comentarios }: { solicitudId: string; nuevoEstado: 'completado' | 'rechazado'; comentarios?: string }) =>
+    mutationFn: ({ solicitudId, nuevoEstado, comentarios }: { solicitudId: string; nuevoEstado: 'completado' | 'en_revision'; comentarios?: string }) =>
       actualizarEstadoSolicitudMobiliario(solicitudId, nuevoEstado, comentarios),
     onSuccess: invalidarLista,
   });

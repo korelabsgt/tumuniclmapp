@@ -182,18 +182,18 @@ export const asignarElectricista = async (solicitudId: string, electricistaUid: 
 
 /**
  * Actualiza el estado de una solicitud.
- * Usado por electricistas para marcar como "en_proceso", "completado", o "rechazado".
+ * Usado por electricistas para marcar como "en_proceso", "completado", o "en_revision".
  */
 export const actualizarEstadoSolicitud = async (
   solicitudId: string,
-  nuevoEstado: 'completado' | 'rechazado',
+  nuevoEstado: 'completado' | 'en_revision',
   comentarios?: string
 ) => {
   const supabase = await createClient();
 
   const updateData: Record<string, any> = { estado: nuevoEstado };
 
-  if (nuevoEstado === 'completado' || nuevoEstado === 'rechazado') {
+  if (nuevoEstado === 'completado' || nuevoEstado === 'en_revision') {
     updateData.fecha_terminado = new Date().toISOString();
   }
 
@@ -330,25 +330,26 @@ export const eliminarSolicitudLampara = async (solicitudId: string) => {
 export const getUsuariosAtencionVecino = async () => {
   const supabase = await createClient();
 
-  // 1. Obtener el departamento raíz
-  const { data: dept, error: deptError } = await supabase
+  // 1. Obtener los departamentos o puestos con permisos administrativos
+  const { data: depts, error: deptError } = await supabase
     .from('dependencias')
     .select('id')
-    .eq('nombre', 'Unidad de Atención al Vecino')
-    .single();
+    .in('nombre', ['Unidad de Atención al Vecino', 'Director de Servicios Públicos']);
 
-  if (deptError || !dept) {
-    console.error('No se encontró el departamento de Atención al Vecino:', deptError);
+  if (deptError || !depts || depts.length === 0) {
+    console.error('No se encontraron departamentos administrativos:', deptError);
     return [];
   }
+
+  const deptIds = depts.map(d => d.id);
 
   // 2. Obtener puestos hijos
   const { data: puestos } = await supabase
     .from('dependencias')
     .select('id')
-    .eq('parent_id', dept.id);
+    .in('parent_id', deptIds);
 
-  const puestoIds = puestos ? [dept.id, ...puestos.map(p => p.id)] : [dept.id];
+  const puestoIds = puestos ? [...deptIds, ...puestos.map(p => p.id)] : [...deptIds];
 
   // 3. Obtener usuarios
   const { data, error } = await supabase
@@ -421,6 +422,35 @@ export const checkIsElectricista = async (dependenciaId: string | null): Promise
 
     const nombre = (data.nombre || '').toLowerCase();
     if (nombre.includes('alumbrado')) {
+      return true;
+    }
+
+    currentId = data.parent_id;
+    depth++;
+  }
+
+  return false;
+};
+
+export const checkIsDirectorServiciosPublicos = async (dependenciaId: string | null): Promise<boolean> => {
+  if (!dependenciaId) return false;
+
+  const supabase = await createClient();
+  let currentId: string | null = dependenciaId;
+  let depth = 0;
+  const MAX_DEPTH = 5;
+
+  while (currentId && depth < MAX_DEPTH) {
+    const { data, error }: { data: any, error: any } = await supabase
+      .from('dependencias')
+      .select('id, nombre, parent_id')
+      .eq('id', currentId)
+      .single();
+
+    if (error || !data) break;
+
+    const nombre = (data.nombre || '').toLowerCase();
+    if (nombre.includes('servicios públicos') || nombre.includes('servicios publicos')) {
       return true;
     }
 

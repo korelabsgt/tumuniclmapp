@@ -104,11 +104,11 @@ export default function ResumenOperariosView({ solicitudes }: ResumenOperariosVi
         switch (estado) {
             case 'completado':
                 return <span className="bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Completada</span>;
-            case 'rechazado':
-                return <span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Rechazada</span>;
+            case 'en_revision':
+                return <span className="bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">En Revisión</span>;
             case 'pendiente':
             default:
-                return <span className="bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Pendiente</span>;
+                return <span className="bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-400 px-2 py-1 rounded text-xs font-bold uppercase tracking-wider">Pendiente</span>;
         }
     };
 

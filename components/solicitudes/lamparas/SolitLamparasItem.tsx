@@ -17,6 +17,7 @@ import {
     MoreVertical,
     MessageCircle,
     Printer,
+    AlertTriangle,
 } from 'lucide-react';
 
 interface Props {
@@ -42,6 +43,7 @@ export const SolitLamparasItem: React.FC<Props> = ({
     onImprimir,
     isElectricista = false
 }) => {
+    const [showPhoneMenu, setShowPhoneMenu] = React.useState(false);
 
     const getSimpleDate = (dateStr: string | null) => {
         if (!dateStr) return '--';
@@ -59,11 +61,11 @@ export const SolitLamparasItem: React.FC<Props> = ({
     const getStatusConfig = (status: string) => {
         switch (status) {
             case 'completado':
-                return { color: 'emerald', label: 'Completado', icon: <CheckCircle2 size={20} className="sm:w-6 sm:h-6" /> };
-            case 'rechazado':
-                return { color: 'red', label: 'Rechazado', icon: <XCircle size={20} className="sm:w-6 sm:h-6" /> };
+                return { color: 'emerald', label: 'Completado', icon: <CheckCircle2 size={14} className="shrink-0" /> };
+            case 'en_revision':
+                return { color: 'red', label: 'En Revisión', icon: <AlertTriangle size={14} className="shrink-0" /> };
             default:
-                return { color: 'amber', label: 'Pendiente', icon: <Clock size={20} className="sm:w-6 sm:h-6" /> };
+                return { color: 'amber', label: 'Pendiente', icon: <Clock size={14} className="shrink-0" /> };
         }
     };
 
@@ -91,12 +93,12 @@ export const SolitLamparasItem: React.FC<Props> = ({
                     action: 'none' as const,
                     icon: <CheckCircle2 size={16} />,
                 };
-            case 'rechazado':
+            case 'en_revision':
                 return {
-                    text: 'Solicitud Rechazada',
+                    text: 'En Revisión',
                     style: 'bg-red-100 text-red-700 border-red-200 cursor-not-allowed dark:bg-red-900/20 dark:text-red-400 dark:border-red-800 border',
                     action: 'none' as const,
-                    icon: <XCircle size={16} />,
+                    icon: <AlertTriangle size={16} />,
                 };
             default:
                 if (!sol.asignado_a_uid) {
@@ -122,10 +124,10 @@ export const SolitLamparasItem: React.FC<Props> = ({
     return (
         <div className={`
         group w-full bg-white dark:bg-neutral-900 rounded-2xl border transition-all duration-300 overflow-hidden
-        ${isOpen
-                ? 'border-blue-500/30 shadow-xl ring-1 ring-blue-500/10'
-                : 'border-slate-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-neutral-700 hover:shadow-md'
-            }
+        ${color === 'emerald' ? 'border-emerald-500/50 dark:border-emerald-500/40' : ''}
+        ${color === 'amber' ? 'border-amber-500/50 dark:border-amber-500/40' : ''}
+        ${color === 'red' ? 'border-red-500/50 dark:border-red-500/40' : ''}
+        ${isOpen ? 'border-blue-500/30 ring-1 ring-blue-500/10' : ''}
     `}>
             <div
                 onClick={onToggle}
@@ -134,15 +136,6 @@ export const SolitLamparasItem: React.FC<Props> = ({
                 <div className="flex flex-col sm:flex-row gap-0 sm:gap-4 sm:items-center justify-between">
 
                     <div className="flex items-start gap-3 sm:gap-4 overflow-hidden">
-                        <div className={`
-                        w-10 h-10 sm:w-12 sm:h-12 shrink-0 rounded-xl flex items-center justify-center border-2 transition-colors
-                        ${color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30' : ''}
-                        ${color === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30' : ''}
-                        ${color === 'red' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/10 dark:border-red-900/30' : ''}
-                    `}>
-                            {statusConfig.icon}
-                        </div>
-
                         <div className="flex flex-col min-w-0 gap-0.5 sm:gap-1">
                             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                 <span className={`
@@ -181,11 +174,12 @@ export const SolitLamparasItem: React.FC<Props> = ({
 
                     <div className="hidden sm:flex items-center justify-end sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
                         <span className={`
-                            text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-md border
+                            flex items-center gap-1.5 text-[11px] sm:text-[12px] uppercase font-extrabold px-3 py-1.5 rounded-md border
                             ${color === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800' : ''}
                             ${color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800' : ''}
                             ${color === 'red' ? 'bg-red-50 text-red-600 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800' : ''}
                         `}>
+                            {statusConfig.icon}
                             {statusConfig.label}
                         </span>
 
@@ -292,7 +286,7 @@ export const SolitLamparasItem: React.FC<Props> = ({
                         <div className="lg:col-span-5 flex flex-col gap-2.5 sm:gap-3">
 
                             {/* Información Principal */}
-                        <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-2 sm:p-4 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm hover:shadow-md transition-shadow">
+                        <div className="relative z-20 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-2 sm:p-4 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400"></div>
                                 <h4 className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-[0.15em] mb-3 flex items-center gap-2">
                                     <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -310,19 +304,48 @@ export const SolitLamparasItem: React.FC<Props> = ({
                                         </span>
                                     </div>
                                     {sol.telefono_contacto ? (
-                                        <a
-                                            href={`https://wa.me/502${sol.telefono_contacto.replace(/\D/g, '')}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="flex items-center gap-1.5 shrink-0 border-l border-slate-200/80 dark:border-neutral-600 pl-2.5 sm:pl-3 transition-all group"
-                                            title="Contactar por WhatsApp"
-                                        >
-                                            <MessageCircle size={12} className="text-emerald-500 dark:text-emerald-400 sm:w-[13px] sm:h-[13px] group-hover:scale-110 transition-transform" />
-                                            <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums group-hover:underline">
-                                                {sol.telefono_contacto}
-                                            </span>
-                                        </a>
+                                        <div className="relative shrink-0 border-l border-slate-200/80 dark:border-neutral-600 pl-2.5 sm:pl-3">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setShowPhoneMenu(!showPhoneMenu);
+                                                }}
+                                                className="flex items-center gap-1.5 transition-all group hover:opacity-80"
+                                                title="Contactar"
+                                            >
+                                                <Phone size={12} className="text-emerald-500 dark:text-emerald-400 sm:w-[13px] sm:h-[13px]" />
+                                                <span className="text-xs sm:text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums underline decoration-emerald-500/30 underline-offset-2">
+                                                    {sol.telefono_contacto}
+                                                </span>
+                                            </button>
+                                            
+                                            {showPhoneMenu && (
+                                                <>
+                                                    <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setShowPhoneMenu(false); }}></div>
+                                                    <div className="absolute right-0 sm:left-3 sm:right-auto top-full mt-2 w-44 bg-slate-900 dark:bg-neutral-800 rounded-xl shadow-xl border border-slate-700 dark:border-neutral-700 z-50 overflow-hidden text-slate-200 animate-in fade-in slide-in-from-top-2 duration-200">
+                                                        <a
+                                                            href={`tel:${sol.telefono_contacto.replace(/\D/g, '')}`}
+                                                            className="flex items-center gap-2.5 px-4 py-3 hover:bg-slate-800 dark:hover:bg-neutral-700 transition-colors"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <Phone size={14} className="text-blue-400" />
+                                                            <span className="text-sm font-semibold text-white">Llamar normal</span>
+                                                        </a>
+                                                        <div className="h-[1px] w-full bg-slate-800 dark:bg-neutral-700"></div>
+                                                        <a
+                                                            href={`https://wa.me/502${sol.telefono_contacto.replace(/\D/g, '')}`}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-2.5 px-4 py-3 hover:bg-slate-800 dark:hover:bg-neutral-700 transition-colors"
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <MessageCircle size={14} className="text-emerald-400" />
+                                                            <span className="text-sm font-semibold text-white">Por WhatsApp</span>
+                                                        </a>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     ) : (
                                         <div className="flex items-center gap-1.5 shrink-0 border-l border-slate-200/80 dark:border-neutral-600 pl-2.5 sm:pl-3 opacity-50">
                                             <span className="text-xs sm:text-sm font-medium text-slate-400">—</span>
@@ -349,22 +372,6 @@ export const SolitLamparasItem: React.FC<Props> = ({
                                     </span>
                                 </div>
                             </div>
-
-                            {/* Motivo del Rechazo */}
-                            {sol.estado === 'rechazado' && (
-                                <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-red-200/70 dark:border-red-900/40 shadow-sm">
-                                    <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400"></div>
-                                    <h4 className="text-[10px] text-red-500 dark:text-red-400 uppercase font-bold tracking-[0.15em] mb-2 flex items-center gap-2">
-                                        <div className="w-5 h-5 rounded-md bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                                            <FileText size={11} className="text-red-500 dark:text-red-400" />
-                                        </div>
-                                        Motivo del Rechazo
-                                    </h4>
-                                    <p className="text-xs text-red-700 dark:text-red-300 italic bg-red-50/80 dark:bg-red-900/15 p-2.5 sm:p-3 rounded-lg border border-red-100/80 dark:border-red-800/20 leading-relaxed font-medium">
-                                        &ldquo;{sol.comentarios || 'Sin comentarios'}&rdquo;
-                                    </p>
-                                </div>
-                            )}
 
                             {/* Botón principal */}
                             <button
@@ -465,18 +472,18 @@ export const SolitLamparasItem: React.FC<Props> = ({
                                         {/* Estado / Finalización (integrado) */}
                                         <div className={`border-t pt-3 mt-1
                                             ${sol.estado === 'completado' ? 'border-emerald-200/60 dark:border-emerald-800/30' : ''}
-                                            ${sol.estado === 'rechazado' ? 'border-red-200/60 dark:border-red-800/30' : ''}
+                                            ${sol.estado === 'en_revision' ? 'border-red-200/60 dark:border-red-800/30' : ''}
                                             ${sol.estado === 'pendiente' ? 'border-slate-200/60 dark:border-neutral-700/50' : ''}
                                         `}>
                                             <div className="flex items-center gap-2.5">
                                                 <div className={`w-[10px] h-[10px] shrink-0 rounded-full ring-[3px] shadow-sm
                                                     ${sol.estado === 'completado' ? 'bg-emerald-500 ring-emerald-100 dark:ring-emerald-900/40 shadow-emerald-500/30' : ''}
-                                                    ${sol.estado === 'rechazado' ? 'bg-red-500 ring-red-100 dark:ring-red-900/40 shadow-red-500/30' : ''}
+                                                    ${sol.estado === 'en_revision' ? 'bg-red-500 ring-red-100 dark:ring-red-900/40 shadow-red-500/30' : ''}
                                                     ${sol.estado === 'pendiente' ? 'bg-amber-500 ring-amber-100 dark:ring-amber-900/40 shadow-amber-500/30' : ''}
                                                 `}></div>
                                                 <div>
                                                     <h6 className="font-bold text-[12px] text-slate-800 dark:text-slate-100 uppercase tracking-wide">
-                                                        {sol.estado === 'completado' ? 'Trabajo Completado' : sol.estado === 'rechazado' ? 'Solicitud Rechazada' : 'Trabajo Pendiente'}
+                                                        {sol.estado === 'completado' ? 'Trabajo Completado' : sol.estado === 'en_revision' ? 'En Revisión' : 'Trabajo Pendiente'}
                                                     </h6>
                                                     {sol.fecha_terminado && (
                                                         <p className="text-[11px] text-slate-400 dark:text-slate-500">
@@ -485,6 +492,16 @@ export const SolitLamparasItem: React.FC<Props> = ({
                                                     )}
                                                 </div>
                                             </div>
+                                            {sol.estado === 'en_revision' && sol.comentarios && (
+                                                <div className="mt-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 rounded-lg p-2.5">
+                                                    <p className="text-xs text-red-700 dark:text-red-400">
+                                                        <span className="font-bold flex items-center gap-1.5 mb-1 text-red-800 dark:text-red-300">
+                                                            <AlertTriangle size={12} /> Motivo:
+                                                        </span>
+                                                        {sol.comentarios}
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
 
                                     </div>

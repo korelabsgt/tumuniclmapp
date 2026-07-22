@@ -26,7 +26,7 @@ export default async function GestorSolitLamparas() {
   const isElectricista = electricistas.some(e => e.user_id === user.id);
 
   // Lógica de carga de datos:
-  // - Si es Atención al Vecino o rol RECEPCION -> Carga todas las solicitudes (Aprobadas, Pendientes, Rechazadas)
+  // - Si es Atención al Vecino o rol RECEPCION -> Carga todas las solicitudes (Aprobadas, Pendientes, En Revisións)
   // - Si es Electricista -> Carga solo sus asignadas pendientes
   // - Por defecto (Admin General u otros) -> Carga todo
   const solicitudes = (isElectricista && !isAtencionVecino)

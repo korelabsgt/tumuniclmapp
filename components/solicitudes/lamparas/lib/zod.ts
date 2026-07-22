@@ -5,7 +5,7 @@ export const solicitudLamparaSchema = z.object({
   id: z.string().uuid(),
   created_at: z.string(),
   tipo_solicitud: z.literal("lamparas"),
-  estado: z.enum(["pendiente", "completado", "rechazado"]),
+  estado: z.enum(["pendiente", "completado", "en_revision"]),
   fecha_solicitud: z.string().nullable(),
   fecha_terminado: z.string().nullable(),
 

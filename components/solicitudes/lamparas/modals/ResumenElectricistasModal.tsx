@@ -17,12 +17,12 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                     total: 0,
                     completadas: 0,
                     pendientes: 0,
-                    rechazadas: 0,
+                    enRevision: 0,
                     reqs: {
-                        cambioBombilla: { comp: 0, pend: 0, rech: 0, total: 0 },
-                        revisionLampara: { comp: 0, pend: 0, rech: 0, total: 0 },
-                        cambioLampara: { comp: 0, pend: 0, rech: 0, total: 0 },
-                        lamparaNueva: { comp: 0, pend: 0, rech: 0, total: 0 },
+                        cambioBombilla: { comp: 0, pend: 0, enRev: 0, total: 0 },
+                        revisionLampara: { comp: 0, pend: 0, enRev: 0, total: 0 },
+                        cambioLampara: { comp: 0, pend: 0, enRev: 0, total: 0 },
+                        lamparaNueva: { comp: 0, pend: 0, enRev: 0, total: 0 },
                     }
                 };
             }
@@ -30,31 +30,31 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
             acc[uid].total++;
             if (sol.estado === 'completado') acc[uid].completadas++;
             if (sol.estado === 'pendiente') acc[uid].pendientes++;
-            if (sol.estado === 'rechazado') acc[uid].rechazadas++;
+            if (sol.estado === 'en_revision') acc[uid].enRevision++;
 
             if (sol.checklists?.cambio_bombilla) {
                 acc[uid].reqs.cambioBombilla.total++;
                 if (sol.estado === 'completado') acc[uid].reqs.cambioBombilla.comp++;
                 if (sol.estado === 'pendiente') acc[uid].reqs.cambioBombilla.pend++;
-                if (sol.estado === 'rechazado') acc[uid].reqs.cambioBombilla.rech++;
+                if (sol.estado === 'en_revision') acc[uid].reqs.cambioBombilla.enRev++;
             }
             if (sol.checklists?.revision_lampara) {
                 acc[uid].reqs.revisionLampara.total++;
                 if (sol.estado === 'completado') acc[uid].reqs.revisionLampara.comp++;
                 if (sol.estado === 'pendiente') acc[uid].reqs.revisionLampara.pend++;
-                if (sol.estado === 'rechazado') acc[uid].reqs.revisionLampara.rech++;
+                if (sol.estado === 'en_revision') acc[uid].reqs.revisionLampara.enRev++;
             }
             if (sol.checklists?.cambio_lampara) {
                 acc[uid].reqs.cambioLampara.total++;
                 if (sol.estado === 'completado') acc[uid].reqs.cambioLampara.comp++;
                 if (sol.estado === 'pendiente') acc[uid].reqs.cambioLampara.pend++;
-                if (sol.estado === 'rechazado') acc[uid].reqs.cambioLampara.rech++;
+                if (sol.estado === 'en_revision') acc[uid].reqs.cambioLampara.enRev++;
             }
             if (sol.checklists?.lampara_nueva) {
                 acc[uid].reqs.lamparaNueva.total++;
                 if (sol.estado === 'completado') acc[uid].reqs.lamparaNueva.comp++;
                 if (sol.estado === 'pendiente') acc[uid].reqs.lamparaNueva.pend++;
-                if (sol.estado === 'rechazado') acc[uid].reqs.lamparaNueva.rech++;
+                if (sol.estado === 'en_revision') acc[uid].reqs.lamparaNueva.enRev++;
             }
 
             return acc;
@@ -118,28 +118,28 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                     <td className="px-3 py-1.5 pl-8 text-slate-600 dark:text-slate-400 font-medium">Cambio bombilla</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.cambioBombilla.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.cambioBombilla.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.cambioBombilla.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.cambioBombilla.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.cambioBombilla.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioBombilla.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.cambioBombilla.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioBombilla.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.cambioBombilla.total}</span></td>
                                                 </tr>
                                                 <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30">
                                                     <td className="px-3 py-1.5 pl-8 text-slate-600 dark:text-slate-400 font-medium">Revisión lámpara</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.revisionLampara.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.revisionLampara.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.revisionLampara.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.revisionLampara.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.revisionLampara.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.revisionLampara.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.revisionLampara.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.revisionLampara.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.revisionLampara.total}</span></td>
                                                 </tr>
                                                 <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30">
                                                     <td className="px-3 py-1.5 pl-8 text-slate-600 dark:text-slate-400 font-medium">Cambio lámpara</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.cambioLampara.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.cambioLampara.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.cambioLampara.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.cambioLampara.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.cambioLampara.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioLampara.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.cambioLampara.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioLampara.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.cambioLampara.total}</span></td>
                                                 </tr>
                                                 <tr className="hover:bg-slate-50 dark:hover:bg-neutral-800/30">
                                                     <td className="px-3 py-1.5 pl-8 text-slate-600 dark:text-slate-400 font-medium">Lámpara nueva</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.lamparaNueva.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.lamparaNueva.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.lamparaNueva.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-2 py-1.5 text-center">{stat.reqs.lamparaNueva.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.lamparaNueva.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-2 py-1.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.lamparaNueva.total}</span></td>
                                                 </tr>
                                             </React.Fragment>
@@ -156,7 +156,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                             <th className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-300 w-1/3">Electricista / Requerimiento</th>
                                             <th className="px-4 py-3.5 font-bold text-emerald-700 dark:text-emerald-400 text-center">Completadas</th>
                                             <th className="px-4 py-3.5 font-bold text-amber-700 dark:text-amber-400 text-center">Pendientes</th>
-                                            <th className="px-4 py-3.5 font-bold text-red-700 dark:text-red-400 text-center">Rechazadas</th>
+                                            <th className="px-4 py-3.5 font-bold text-red-700 dark:text-red-400 text-center">En Revisións</th>
                                             <th className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-300 text-center">Total</th>
                                         </tr>
                                     </thead>
@@ -179,7 +179,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                     <td className="px-4 py-2.5 pl-12 text-slate-600 dark:text-slate-400 font-medium">Cambio de bombilla</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioBombilla.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.cambioBombilla.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioBombilla.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.cambioBombilla.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.cambioBombilla.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioBombilla.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.cambioBombilla.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioBombilla.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.cambioBombilla.total}</span></td>
                                                 </tr>
 
@@ -188,7 +188,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                     <td className="px-4 py-2.5 pl-12 text-slate-600 dark:text-slate-400 font-medium">Revisión de lámpara</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.revisionLampara.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.revisionLampara.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.revisionLampara.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.revisionLampara.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.revisionLampara.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.revisionLampara.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.revisionLampara.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.revisionLampara.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.revisionLampara.total}</span></td>
                                                 </tr>
 
@@ -197,7 +197,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                     <td className="px-4 py-2.5 pl-12 text-slate-600 dark:text-slate-400 font-medium">Cambio de lámpara</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.cambioLampara.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.cambioLampara.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioLampara.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.cambioLampara.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.cambioLampara.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.cambioLampara.total}</span></td>
                                                 </tr>
 
@@ -206,7 +206,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                                     <td className="px-4 py-2.5 pl-12 text-slate-600 dark:text-slate-400 font-medium">Lámpara nueva</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.comp > 0 ? <span className="font-bold text-emerald-600 dark:text-emerald-400">{stat.reqs.lamparaNueva.comp}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.pend > 0 ? <span className="font-bold text-amber-600 dark:text-amber-500">{stat.reqs.lamparaNueva.pend}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
-                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.rech > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.lamparaNueva.rech}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
+                                                    <td className="px-4 py-2.5 text-center">{stat.reqs.lamparaNueva.enRev > 0 ? <span className="font-bold text-red-600 dark:text-red-400">{stat.reqs.lamparaNueva.enRev}</span> : <span className="text-slate-300 dark:text-neutral-600">-</span>}</td>
                                                     <td className="px-4 py-2.5 text-center"><span className="font-bold text-slate-700 dark:text-slate-300">{stat.reqs.lamparaNueva.total}</span></td>
                                                 </tr>
                                             </React.Fragment>

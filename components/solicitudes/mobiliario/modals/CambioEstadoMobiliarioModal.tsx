@@ -8,7 +8,7 @@ import Swal from 'sweetalert2';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (nuevoEstado: 'completado' | 'rechazado', comentarios?: string) => void;
+  onSuccess: (nuevoEstado: 'completado' | 'en_revision', comentarios?: string) => void;
   solicitud: SolicitudMobiliario;
   isOperario?: boolean;
 }
@@ -56,13 +56,13 @@ export default function CambioEstadoMobiliarioModal({ isOpen, onClose, onSuccess
     try {
         const res = await actualizarEstado.mutateAsync({ 
             solicitudId: solicitud.id, 
-            nuevoEstado: 'rechazado',
+            nuevoEstado: 'en_revision',
             comentarios
         }); 
         
         if (res.success) {
-            Swal.fire({ title: 'Rechazada', text: 'La solicitud ha sido rechazada.', icon: 'info', timer: 1500, showConfirmButton: false });
-            onSuccess('rechazado', comentarios); 
+            Swal.fire({ title: 'En Revisión', text: 'La solicitud ha sido rechazada.', icon: 'info', timer: 1500, showConfirmButton: false });
+            onSuccess('en_revision', comentarios); 
         } else {
             Swal.fire('Error', res.error || 'No se pudo rechazar', 'error');
         }
@@ -119,8 +119,8 @@ export default function CambioEstadoMobiliarioModal({ isOpen, onClose, onSuccess
                             <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-red-100 dark:bg-red-800 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <svg className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 dark:text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </div>
-                            <span className="font-bold text-red-700 dark:text-red-300 text-base sm:text-lg text-center">Rechazar Solicitud</span>
-                            <span className="text-[10px] sm:text-xs text-red-600/70 text-center">Denegar la petición y registrar el motivo.</span>
+                            <span className="font-bold text-red-700 dark:text-red-300 text-base sm:text-lg text-center">Mandar a Revisión</span>
+                            <span className="text-[10px] sm:text-xs text-red-600/70 text-center">Mandar a revisión y registrar el motivo.</span>
                         </button>
                     )}
                 </div>
@@ -131,10 +131,10 @@ export default function CambioEstadoMobiliarioModal({ isOpen, onClose, onSuccess
             <div className="flex flex-col">
                 <div className="p-8 pb-4">
                     <button onClick={() => setStep('menu')} className="text-sm font-bold text-blue-600 hover:underline flex items-center gap-1 mb-6">← Volver al menú</button>
-                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Motivo del Rechazo</label>
+                    <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Motivo de Revisión</label>
                     <textarea 
                         className="w-full bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500 transition-all min-h-[120px] resize-none"
-                        placeholder="Explique por qué se rechaza la solicitud..."
+                        placeholder="Explique por qué se envía a revisión la solicitud..."
                         value={comentarios}
                         onChange={(e) => setComentarios(e.target.value)}
                         autoFocus
@@ -152,7 +152,7 @@ export default function CambioEstadoMobiliarioModal({ isOpen, onClose, onSuccess
                         disabled={loading || !comentarios.trim()} 
                         className="px-8 py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm shadow-xl shadow-red-200 dark:shadow-none flex items-center gap-2 transition-all transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? 'Procesando...' : 'Confirmar Rechazo'}
+                        {loading ? 'Procesando...' : 'Confirmar Revisión'}
                     </button>
                 </div>
             </div>

@@ -9,7 +9,7 @@ import CambioEstadoModal from './modals/CambioEstadoModal';
 import ResumenElectricistasView from './modals/ResumenElectricistasModal';
 import ImprimirReporteModal from './modals/ImprimirReporteModal';
 
-import { Search, Calendar as CalendarIcon, SearchX, CalendarDays, Plus, RefreshCw, BarChart2, List, ArrowRight, Printer } from 'lucide-react';
+import { Search, Calendar as CalendarIcon, SearchX, CalendarDays, Plus, AlertTriangle, CheckCircle2, Clock, RefreshCw, BarChart2, List, ArrowRight, Printer } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Calendario from '@/components/ui/Calendario';
 import { format } from 'date-fns';
@@ -31,16 +31,16 @@ const TAB_STYLES: Record<string, { active: string, inactive: string, badge: stri
     badge: 'bg-slate-200 text-slate-700 dark:bg-neutral-700 dark:text-neutral-300'
   },
   'pendiente': {
-    active: 'bg-amber-500 text-white shadow-sm',
-    inactive: 'text-amber-600 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-400',
-    badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40'
+    active: 'bg-yellow-500 text-black shadow-sm',
+    inactive: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400',
+    badge: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40'
   },
   'completado': {
     active: 'bg-emerald-600 text-white shadow-sm',
     inactive: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400',
     badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40'
   },
-  'rechazado': {
+  'en_revision': {
     active: 'bg-red-600 text-white shadow-sm',
     inactive: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400',
     badge: 'bg-red-100 text-red-700 dark:bg-red-900/40'
@@ -128,7 +128,7 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
   const [filtroEstado, setFiltroEstado] = useState<string>('Todos');
   const [filtroMantenimiento, setFiltroMantenimiento] = useState<string>('todos');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilterMode, setDateFilterMode] = useState<'dia' | 'semana' | 'rango'>('semana');
+  const [dateFilterMode, setDateFilterMode] = useState<'todos' | 'dia' | 'semana' | 'rango'>('todos');
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
@@ -206,7 +206,7 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
       const solDay = new Date(dateGT.getFullYear(), dateGT.getMonth(), dateGT.getDate()).getTime();
 
       let coincideFecha = false;
-      if (isElectricista) {
+      if (isElectricista || dateFilterMode === 'todos') {
         coincideFecha = true;
       } else if (dateFilterMode === 'dia') {
         const sel = new Date(selectedDate + 'T00:00:00');
@@ -259,15 +259,15 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
     'Todos': solicitudesFiltradasGlobal.length,
     'pendiente': solicitudesFiltradasGlobal.filter(s => s.estado === 'pendiente').length,
     'completado': solicitudesFiltradasGlobal.filter(s => s.estado === 'completado').length,
-    'rechazado': solicitudesFiltradasGlobal.filter(s => s.estado === 'rechazado').length,
+    'en_revision': solicitudesFiltradasGlobal.filter(s => s.estado === 'en_revision').length,
   }), [solicitudesFiltradasGlobal]);
 
-  const pestañas = ['Todos', 'pendiente', 'completado', 'rechazado'];
+  const pestañas = ['Todos', 'pendiente', 'completado', 'en_revision'];
   const pestañasLabel: Record<string, string> = {
     'Todos': 'Todos',
     'pendiente': 'Pendiente',
     'completado': 'Completado',
-    'rechazado': 'Rechazado',
+    'en_revision': 'En Revisión',
   };
 
   const listaVisual = useMemo(() => {
@@ -336,7 +336,7 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
     setSelectedSolicitud(sol);
   };
 
-  const handleCloseModal = (nuevoEstado?: 'completado' | 'rechazado', comentarios?: string) => {
+  const handleCloseModal = (nuevoEstado?: 'completado' | 'en_revision', comentarios?: string) => {
     if (nuevoEstado && selectedSolicitud) {
       updateLocalSolicitud(selectedSolicitud.id, {
         estado: nuevoEstado as any,
@@ -467,8 +467,11 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
                           className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap uppercase tracking-tight
                       ${isActive ? styles.active : styles.inactive}`}
                         >
-                          {pestañasLabel[tab]}
-                          <span className={`px-1.5 py-0.5 rounded-md text-[10px] min-w-[18px] text-center font-extrabold
+                          {tab === 'pendiente' && <Clock size={12} className="sm:w-[14px] sm:h-[14px]" />}
+                      {tab === 'completado' && <CheckCircle2 size={12} className="sm:w-[14px] sm:h-[14px]" />}
+                      {tab === 'en_revision' && <AlertTriangle size={12} className="sm:w-[14px] sm:h-[14px]" />}
+                      {pestañasLabel[tab]}
+                          <span className={`px-1 sm:px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] min-w-[14px] sm:min-w-[18px] text-center font-extrabold
                       ${isActive ? 'bg-white/20 text-white' : styles.badge}`}>
                             {conteos[tab as keyof typeof conteos]}
                           </span>
@@ -518,10 +521,11 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
                 <div className="flex-1 sm:flex-none min-w-0 sm:min-w-[110px]">
                   <select
                     value={dateFilterMode}
-                    onChange={(e) => setDateFilterMode(e.target.value as 'dia' | 'semana' | 'rango')}
+                    onChange={(e) => setDateFilterMode(e.target.value as 'todos' | 'dia' | 'semana' | 'rango')}
                     className="w-full px-4 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-medium text-slate-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all appearance-none cursor-pointer pr-10"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 0.5rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.5em 1.5em' }}
                   >
+                    <option value="todos">Todas las Fechas</option>
                     <option value="dia">Por Día</option>
                     <option value="semana">Por Semana</option>
                     <option value="rango">Por Rango</option>
@@ -529,9 +533,9 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
                 </div>
               </div>
 
-              <div className="flex flex-row items-center gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+              <div className="flex flex-row items-center justify-center sm:justify-start gap-2 w-full sm:w-auto mt-2 sm:mt-0">
 
-                {dateFilterMode === 'dia' ? (
+                {dateFilterMode === 'todos' ? null : dateFilterMode === 'dia' ? (
                   <Popover>
                     <PopoverTrigger asChild>
                       <button className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors shadow-sm">

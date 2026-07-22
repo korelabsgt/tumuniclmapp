@@ -4,6 +4,13 @@ import { createClient } from '@/utils/supabase/server';
 import { revalidatePath } from 'next/cache';
 import { SolicitudJefe, CrearSolicitudJefeValues, crearSolicitudJefeSchema } from './zod';
 
+const toFechaActividadGT = (fecha: string) => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
+    return `${fecha}T12:00:00-06:00`;
+  }
+  return fecha;
+};
+
 export const getSolicitudesJefes = async (): Promise<SolicitudJefe[]> => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -64,7 +71,7 @@ export const crearSolicitudJefe = async (values: CrearSolicitudJefeValues) => {
     .insert({
       tipo_solicitud: 'oficinas',
       estado: 'pendiente',
-      fecha_solicitud: fecha_actividad, // fecha de actividad mapeada aquí
+      fecha_solicitud: toFechaActividadGT(fecha_actividad),
       solicitante_uid: user.id,
       asignado_a_uid: asignado_a_uid || null,
       ubicacion: titulo, // Guardamos el titulo en ubicacion
@@ -119,7 +126,9 @@ export const editarSolicitudJefe = async (
   const updateData: Record<string, any> = {};
   if (values.titulo !== undefined) updateData.ubicacion = values.titulo;
   if (values.descripcion !== undefined) updateData.comentarios = values.descripcion;
-  if (values.fecha_actividad !== undefined) updateData.fecha_solicitud = values.fecha_actividad;
+  if (values.fecha_actividad !== undefined) {
+    updateData.fecha_solicitud = toFechaActividadGT(values.fecha_actividad);
+  }
   if (values.asignado_a_uid !== undefined) updateData.asignado_a_uid = values.asignado_a_uid;
   if (values.subtareas !== undefined) updateData.checklists = { items: values.subtareas };
 

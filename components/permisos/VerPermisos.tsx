@@ -127,6 +127,12 @@ export default function VerPermisos({ tipoVista }: Props) {
   const [calendarInicioOpen, setCalendarInicioOpen] = React.useState(false);
   const [calendarFinOpen, setCalendarFinOpen] = React.useState(false);
   const mesInputRef = React.useRef<HTMLInputElement>(null);
+  const puedeSubirJustificacion = [
+    "RRHH",
+    "ADMINISTRADOR",
+    "SUPER",
+    "SECRETARIO",
+  ].includes(perfilUsuario?.rol || "");
 
   const [mesSemanas, setMesSemanas] = React.useState(
     format(new Date(), "yyyy-MM"),
@@ -822,6 +828,9 @@ export default function VerPermisos({ tipoVista }: Props) {
                                   }
                                   usuarioGrupo={usuarioGrupo}
                                   tipoVista={tipoVista}
+                                  puedeSubirJustificacion={
+                                    puedeSubirJustificacion
+                                  }
                                   handleVerPreview={handleVerPreview}
                                   handleAbrirJustificacion={
                                     handleAbrirJustificacion
@@ -886,6 +895,7 @@ export default function VerPermisos({ tipoVista }: Props) {
 function UsuarioGrupoPermisos({
   usuarioGrupo,
   tipoVista,
+  puedeSubirJustificacion,
   handleVerPreview,
   handleAbrirJustificacion,
   handleClickFila,
@@ -900,6 +910,7 @@ function UsuarioGrupoPermisos({
 }: {
   usuarioGrupo: { usuario: any; permisos: PermisoEmpleado[] };
   tipoVista: TipoVistaPermisos;
+  puedeSubirJustificacion: boolean;
   handleVerPreview: (e: React.MouseEvent, p: PermisoEmpleado) => void;
   handleAbrirJustificacion: (e: React.MouseEvent, p: PermisoEmpleado) => void;
   handleClickFila: (p: PermisoEmpleado) => void;
@@ -1224,28 +1235,34 @@ function UsuarioGrupoPermisos({
                           <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-orange-500/70 shrink-0" />
                           <span>{textoHora}</span>
                         </div>
-                        <button
-                          type="button"
-                          onClick={(e) => handleAbrirJustificacion(e, permiso)}
-                          className={cn(
-                            "flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold rounded-md transition-colors border-2 cursor-pointer shrink-0",
-                            permiso.comprobante_url
-                              ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-600 dark:border-emerald-400"
-                              : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-600 dark:border-indigo-400",
-                          )}
-                          title={
-                            permiso.comprobante_url
-                              ? "Ver comprobante"
-                              : "Subir comprobante"
-                          }
-                        >
-                          {permiso.comprobante_url ? (
-                            <Eye className="w-3 h-3 shrink-0" />
-                          ) : (
-                            <Upload className="w-3 h-3 shrink-0" />
-                          )}
-                          <span className="hidden sm:inline">Justificación</span>
-                        </button>
+                        {puedeSubirJustificacion && (
+                          <button
+                            type="button"
+                            onClick={(e) =>
+                              handleAbrirJustificacion(e, permiso)
+                            }
+                            className={cn(
+                              "flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold rounded-md transition-colors border-2 cursor-pointer shrink-0",
+                              permiso.comprobante_url
+                                ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-600 dark:border-emerald-400"
+                                : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-600 dark:border-indigo-400",
+                            )}
+                            title={
+                              permiso.comprobante_url
+                                ? "Ver comprobante"
+                                : "Subir comprobante"
+                            }
+                          >
+                            {permiso.comprobante_url ? (
+                              <Eye className="w-3 h-3 shrink-0" />
+                            ) : (
+                              <Upload className="w-3 h-3 shrink-0" />
+                            )}
+                            <span className="hidden sm:inline">
+                              Justificación
+                            </span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

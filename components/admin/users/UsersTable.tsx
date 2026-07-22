@@ -35,8 +35,6 @@ import {
   Trash2,
   Search,
   ChevronDown,
-  ChevronsDown,
-  ChevronsUp,
   Settings2,
   UserPlus,
   Crown,
@@ -83,7 +81,6 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
   const [oficinasAbiertas, setOficinasAbiertas] = useState<
     Record<string, boolean>
   >({});
-  const [todosAbiertos, setTodosAbiertos] = useState(false);
 
   const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -302,14 +299,12 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
     setNivel2Id(newId);
     setNivel3Id(null);
     setOficinasAbiertas({});
-    setTodosAbiertos(false);
   };
 
   const handleNivel3Change = (value: string) => {
     const newId = value === "todos" ? null : value;
     setNivel3Id(newId);
     setOficinasAbiertas({});
-    setTodosAbiertos(false);
   };
 
   const toggleOficina = (nombreOficina: string) => {
@@ -319,41 +314,11 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
     }));
   };
 
-  const toggleTodos = () => {
-    const nuevoEstado = !todosAbiertos;
-    setTodosAbiertos(nuevoEstado);
-    const nuevasOficinasAbiertas: Record<string, boolean> = {};
-    usuariosAgrupados.forEach((grupo) => {
-      nuevasOficinasAbiertas[grupo.oficina_nombre] = nuevoEstado;
-    });
-    setOficinasAbiertas(nuevasOficinasAbiertas);
-  };
-
   return (
     <>
       <div className="w-full xl:w-4/5 mx-auto md:px-4">
         <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md border border-gray-100 dark:border-neutral-800 space-y-4 w-full transition-colors duration-200">
           <div className="flex flex-col xl:flex-row gap-2 w-full items-center p-2 bg-slate-50 dark:bg-neutral-900 rounded-lg">
-            <div className="flex shrink-0">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleTodos}
-                className="h-9 w-9 bg-white dark:bg-neutral-800 dark:text-gray-200 dark:border-neutral-700 dark:hover:bg-neutral-700"
-                title={
-                  todosAbiertos
-                    ? "Cerrar todas las oficinas"
-                    : "Abrir todas las oficinas"
-                }
-              >
-                {todosAbiertos ? (
-                  <ChevronsUp className="h-4 w-4" />
-                ) : (
-                  <ChevronsDown className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-
             <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0">
               {cargandoDependencias ? (
                 <Cargando texto="Cargando..." />

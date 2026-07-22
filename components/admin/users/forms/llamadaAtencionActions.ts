@@ -42,6 +42,27 @@ export async function obtenerLlamadasAtencion(id_usuario: string) {
   return { success: true, data };
 }
 
+export async function obtenerTodasFaltas() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'No autorizado', data: null };
+  }
+
+  const { data, error } = await supabase
+    .from('llamada_atencion')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Fetch error todas faltas:', error);
+    return { success: false, error: 'No se pudieron cargar las faltas', data: null };
+  }
+
+  return { success: true, data: data ?? [] };
+}
+
 export async function actualizarLlamadaAtencion(
   id: string, 
   tipo: string, 

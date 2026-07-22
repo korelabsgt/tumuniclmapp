@@ -3,8 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { actualizarInfoPersonal, obtenerInfoUsuario } from './action';
-import { obtenerLlamadasAtencion, eliminarLlamadaAtencion } from './llamadaAtencionActions';
-import { obtenerCitacionesUsuario, confirmarCitacion, eliminarCitacion } from './citacionActions';
+import { obtenerLlamadasAtencion, eliminarLlamadaAtencion, obtenerTodasFaltas } from './llamadaAtencionActions';
+import { obtenerCitacionesUsuario, obtenerTodasCitaciones, confirmarCitacion, eliminarCitacion } from './citacionActions';
 import Swal from 'sweetalert2';
 
 export function useLlamadasAtencion(userId: string) {
@@ -42,6 +42,33 @@ export function useLlamadasAtencion(userId: string) {
   };
 }
 
+export function useTodasFaltas(enabled = true) {
+  const queryClient = useQueryClient();
+  const queryKey = ['faltas-todas'];
+
+  const { data: faltas = [], isLoading: loading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const result = await obtenerTodasFaltas();
+      if (!result.success) return [];
+      return result.data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ['llamadasAtencion'] });
+  };
+
+  return {
+    faltas,
+    loading,
+    invalidate,
+  };
+}
+
 export function useCitaciones(userId: string) {
   const queryClient = useQueryClient();
   const queryKey = ['citaciones', userId];
@@ -59,6 +86,7 @@ export function useCitaciones(userId: string) {
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ['citaciones-todas'] });
   };
 
   const confirmar = async (idCitacion: string) => {
@@ -83,6 +111,33 @@ export function useCitaciones(userId: string) {
     invalidate,
     confirmar,
     eliminar
+  };
+}
+
+export function useTodasCitaciones(enabled = true) {
+  const queryClient = useQueryClient();
+  const queryKey = ['citaciones-todas'];
+
+  const { data: citaciones = [], isLoading: loading } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      const result = await obtenerTodasCitaciones();
+      if (!result.success) return [];
+      return result.data || [];
+    },
+    staleTime: 5 * 60 * 1000,
+    enabled,
+  });
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey });
+    queryClient.invalidateQueries({ queryKey: ['citaciones'] });
+  };
+
+  return {
+    citaciones,
+    loading,
+    invalidate,
   };
 }
 

@@ -38,7 +38,7 @@ async function getRolInterno(userId: string, supabase: any) {
     .select(`roles (nombre)`)
     .eq("user_id", userId);
   const rolesUsuario = data?.map((item: any) => item.roles?.nombre) || [];
-  const rolesPermitidos = ["RRHH", "SECRETARIO", "SUPER"];
+  const rolesPermitidos = ["RRHH", "SECRETARIO", "SUPER", "ADMINISTRADOR"];
   return (
     rolesUsuario.find((rol: string) => rolesPermitidos.includes(rol)) || null
   );
@@ -451,6 +451,12 @@ export async function actualizarComprobantePermiso(
   permisoId: string,
   path: string | null,
 ) {
+  const perfil = await obtenerPerfilUsuario();
+  const rolesPermitidos = ["RRHH", "ADMINISTRADOR", "SUPER", "SECRETARIO"];
+  if (!perfil || !rolesPermitidos.includes(perfil.rol || "")) {
+    throw new Error("No tiene permiso para subir justificaciones");
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase

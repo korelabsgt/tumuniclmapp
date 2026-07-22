@@ -4,9 +4,8 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence } from 'framer-motion';
 import Mapa from '@/components/ui/modals/Mapa';
-import { format, endOfDay, parseISO, startOfWeek, endOfWeek, addWeeks, eachDayOfInterval, isAfter, startOfToday } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { ChevronsDown, ChevronsUp, AlertTriangle, XCircle, Calendar, Clock } from 'lucide-react';
+import { format, endOfDay, parseISO, eachDayOfInterval } from 'date-fns';
+import { AlertTriangle, XCircle, Calendar, Clock } from 'lucide-react';
 import { useDependencias } from '@/hooks/dependencias/useDependencias';
 import Cargando from '@/components/ui/animations/Cargando';
 import { AsistenciaEnriquecida } from '@/hooks/asistencia/useObtenerAsistencias';
@@ -56,9 +55,11 @@ export type UsuarioAgrupado = {
   asistencias: RegistrosAgrupados[];
 };
 
-const getWeekLabel = (startDate: Date) => {
-  const end = endOfWeek(startDate, { weekStartsOn: 1 });
-  return `Del ${format(startDate, 'd', { locale: es })} al ${format(end, 'd \'de\' MMM', { locale: es })}`;
+const rangoMes = (mes: number, anio: number) => {
+  const start = `${anio}-${String(mes + 1).padStart(2, '0')}-01`;
+  const lastDay = new Date(anio, mes + 1, 0).getDate();
+  const end = `${anio}-${String(mes + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  return { start, end };
 };
 
 export default function AsistenciaTable({ registros, loading, setOficinaId, setFechaInicio, setFechaFinal }: Props) {
@@ -78,8 +79,15 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
   const [mapaComisionRegistros, setMapaComisionRegistros] = useState<any>(null);
   const [mapaComisionNombre, setMapaComisionNombre] = useState('');
   
-  const [fechaInicialRango, setFechaInicialRango] = useState(() => format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'));
-  const [fechaFinalRango, setFechaFinalRango] = useState(() => format(endOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'));
+  const ahora = new Date();
+  const [mesSeleccionado, setMesSeleccionado] = useState(() => ahora.getMonth());
+  const [anioSeleccionado, setAnioSeleccionado] = useState(() => ahora.getFullYear());
+  const [fechaInicialRango, setFechaInicialRango] = useState(
+    () => rangoMes(ahora.getMonth(), ahora.getFullYear()).start,
+  );
+  const [fechaFinalRango, setFechaFinalRango] = useState(
+    () => rangoMes(ahora.getMonth(), ahora.getFullYear()).end,
+  );
   const [searchTerm, setSearchTerm] = useState('');
   const [busquedaPor, setBusquedaPor] = useState<'dependencia' | 'nombre'>(() =>
     typeof window !== 'undefined'
@@ -93,15 +101,12 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
   const [nivel3Id, setNivel3Id] = useState<string | null>(null);
 
   const [oficinasAbiertas, setOficinasAbiertas] = useState<Record<string, boolean>>({});
-  const [todosAbiertos, setTodosAbiertos] = useState(false);
   
   const [vistaAgrupada, setVistaAgrupada] = useState<'nombre' | 'fecha'>(() =>
     typeof window !== 'undefined'
       ? ((localStorage.getItem('asistencia_vista') as 'nombre' | 'fecha') || 'fecha')
       : 'fecha'
   );
-  const [weekLabel, setWeekLabel] = useState(() => getWeekLabel(startOfWeek(new Date(), { weekStartsOn: 1 })));
-  const [isNextWeekFuture, setIsNextWeekFuture] = useState(true);
 
   const [incluirFinesSemana, setIncluirFinesSemana] = useState(false);
   const [ordenDescendente, setOrdenDescendente] = useState(false); 
@@ -614,76 +619,23 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
     } else setFechaFinal(null);
 
     setOficinasAbiertas({});
-    setTodosAbiertos(false);
   };
 
-  const checkNextWeekDisabled = (startDate: Date) => {
-    setIsNextWeekFuture(addWeeks(startDate, 1) > startOfWeek(new Date(), { weekStartsOn: 1 }));
-  };
-
-  const updateWeekLabel = (startDate: Date) => {
-    setWeekLabel(getWeekLabel(startDate));
-    checkNextWeekDisabled(startDate);
-  };
-
-  const jumpToCurrentWeek = () => {
-    const start = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const end = endOfWeek(new Date(), { weekStartsOn: 1 });
-    const sStr = format(start, 'yyyy-MM-dd');
-    const eStr = format(end, 'yyyy-MM-dd');
-    setFechaInicialRango(sStr);
-    setFechaFinalRango(eStr);
-    setWeekLabel(getWeekLabel(start));
-    aplicarFiltros(sStr, eStr);
-    checkNextWeekDisabled(start);
-  };
-
-  const handleWeekChange = (direction: 'prev' | 'next') => {
-    const currentStart = parseISO(fechaInicialRango);
-    if (isNaN(currentStart.getTime())) return jumpToCurrentWeek();
-
-    if (direction === 'next' && addWeeks(currentStart, 1) > startOfWeek(new Date(), { weekStartsOn: 1 })) return;
-    
-    const newStart = addWeeks(currentStart, direction === 'prev' ? -1 : 1);
-    const newEnd = endOfWeek(newStart, { weekStartsOn: 1 });
-    const sStr = format(newStart, 'yyyy-MM-dd');
-    const eStr = format(newEnd, 'yyyy-MM-dd');
-
-    setFechaInicialRango(sStr);
-    setFechaFinalRango(eStr);
-    updateWeekLabel(newStart);
-    aplicarFiltros(sStr, eStr);
+  const handleSeleccionMes = (mes: number, anio: number) => {
+    setMesSeleccionado(mes);
+    setAnioSeleccionado(anio);
+    const { start, end } = rangoMes(mes, anio);
+    setFechaInicialRango(start);
+    setFechaFinalRango(end);
+    aplicarFiltros(start, end);
   };
 
   const handleAplicarFechaManual = () => {
-    updateWeekLabel(parseISO(fechaInicialRango));
     aplicarFiltros(fechaInicialRango, fechaFinalRango);
-  };
-
-  const handleBorrarFiltro = () => {
-    setFechaInicialRango('');
-    setFechaFinalRango('');
-    setSearchTerm('');
-    setNivel2Id(null);
-    setNivel3Id(null);
-    aplicarFiltros(null, null);
-    setWeekLabel("Mostrando Todos");
-    setIsNextWeekFuture(false);
-    setIncluirFinesSemana(false);
-    setFiltroRapido('todos');
-    localStorage.removeItem('asistencia_filtro');
   };
 
   const toggleOficina = (nombreOficina: string) => {
     setOficinasAbiertas(prev => ({ ...prev, [nombreOficina]: !prev[nombreOficina] }));
-  };
-
-  const toggleTodos = () => {
-    const nuevoEstado = !todosAbiertos;
-    setTodosAbiertos(nuevoEstado);
-    const nuevasOficinas: Record<string, boolean> = {};
-    oficinasOrdenadas.forEach(of => nuevasOficinas[of] = nuevoEstado);
-    setOficinasAbiertas(nuevasOficinas);
   };
 
   useEffect(() => {
@@ -698,14 +650,16 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
         <div className="p-2 bg-white dark:bg-neutral-950 rounded-lg shadow-md w-full border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
           
           <AsistenciaControls 
+            mesSeleccionado={mesSeleccionado}
+            anioSeleccionado={anioSeleccionado}
+            onMesChange={handleSeleccionMes}
             nivel2Id={nivel2Id} setNivel2Id={setNivel2Id}
             nivel3Id={nivel3Id} setNivel3Id={setNivel3Id}
             oficinasNivel2={oficinasNivel2} oficinasNivel3={oficinasNivel3}
             handleMostrarOficina={() => aplicarFiltros()}
-            weekLabel={weekLabel} handleWeekChange={handleWeekChange} jumpToCurrentWeek={jumpToCurrentWeek} isNextWeekFuture={isNextWeekFuture}
             fechaInicialRango={fechaInicialRango} setFechaInicialRango={setFechaInicialRango}
             fechaFinalRango={fechaFinalRango} setFechaFinalRango={setFechaFinalRango}
-            handleAplicarFechaManual={handleAplicarFechaManual} handleBorrarFiltro={handleBorrarFiltro}
+            handleAplicarFechaManual={handleAplicarFechaManual}
             vistaAgrupada={vistaAgrupada} setVistaAgrupada={setVistaAgrupada}
             searchTerm={searchTerm} setSearchTerm={setSearchTerm}
             busquedaPor={busquedaPor} setBusquedaPor={setBusquedaPor}
@@ -720,74 +674,58 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
             ) : (
               <div className="w-full">
                 
-                <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-3">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <Button
-                        size="sm"
-                        onClick={() => setIncluirFinesSemana(!incluirFinesSemana)}
-                        className={`h-7 px-3 text-[10px] rounded-sm border transition-all ${
-                            incluirFinesSemana
-                            ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
-                            : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30'
-                        }`}
-                    >
-                        <Calendar className="w-3 h-3 mr-1.5" />
-                        Incluir fines de semana
-                    </Button>
+                <div className="flex flex-wrap items-center gap-4 mb-3">
+                  <Button
+                    size="sm"
+                    onClick={() => setIncluirFinesSemana(!incluirFinesSemana)}
+                    className={`h-7 px-3 text-[10px] rounded-sm border transition-all cursor-pointer ${
+                      incluirFinesSemana
+                        ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                        : 'bg-blue-50 text-blue-600 border-blue-100 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-900/30'
+                    }`}
+                  >
+                    <Calendar className="w-3 h-3 mr-1.5" />
+                    Incluir fines de semana
+                  </Button>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Button
-                           size="sm"
-                           onClick={() => setFiltroRapido(prev => prev === 'inasistencia' ? 'todos' : 'inasistencia')}
-                           className={`h-7 px-3 text-[10px] rounded-sm border transition-all ${
-                               filtroRapido === 'inasistencia'
-                                ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
-                                : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'
-                           }`}
-                        >
-                           <XCircle className="w-3 h-3 mr-1.5" />
-                           Inasistencias: {estadisticas.inasistencias}
-                        </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setFiltroRapido(prev => prev === 'inasistencia' ? 'todos' : 'inasistencia')}
+                    className={`h-7 px-3 text-[10px] rounded-sm border transition-all cursor-pointer ${
+                      filtroRapido === 'inasistencia'
+                        ? 'bg-red-600 text-white border-red-600 hover:bg-red-700'
+                        : 'bg-red-50 text-red-600 border-red-100 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/30'
+                    }`}
+                  >
+                    <XCircle className="w-3 h-3 mr-1.5" />
+                    Inasistencias: {estadisticas.inasistencias}
+                  </Button>
 
-                        <Button
-                           size="sm"
-                           onClick={() => setFiltroRapido(prev => prev === 'entrada_tarde' ? 'todos' : 'entrada_tarde')}
-                           className={`h-7 px-3 text-[10px] rounded-sm border transition-all ${
-                               filtroRapido === 'entrada_tarde'
-                                ? 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
-                                : 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30'
-                           }`}
-                        >
-                           <Clock className="w-3 h-3 mr-1.5" />
-                           Entrada tarde: {estadisticas.entradasTarde}
-                        </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => setFiltroRapido(prev => prev === 'entrada_tarde' ? 'todos' : 'entrada_tarde')}
+                    className={`h-7 px-3 text-[10px] rounded-sm border transition-all cursor-pointer ${
+                      filtroRapido === 'entrada_tarde'
+                        ? 'bg-orange-600 text-white border-orange-600 hover:bg-orange-700'
+                        : 'bg-orange-50 text-orange-600 border-orange-100 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-900/30'
+                    }`}
+                  >
+                    <Clock className="w-3 h-3 mr-1.5" />
+                    Entrada tarde: {estadisticas.entradasTarde}
+                  </Button>
 
-                        <Button
-                           size="sm"
-                           onClick={() => setFiltroRapido(prev => prev === 'sin_salida' ? 'todos' : 'sin_salida')}
-                           className={`h-7 px-3 text-[10px] rounded-sm border transition-all ${
-                               filtroRapido === 'sin_salida'
-                                ? 'bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600'
-                                : 'bg-yellow-50 text-yellow-700 border-yellow-100 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/30'
-                           }`}
-                        >
-                           <AlertTriangle className="w-3 h-3 mr-1.5" />
-                           Sin salida: {estadisticas.salidasSinMarcaje}
-                        </Button>
-                    </div>
-                  </div>
-
-                  {oficinasOrdenadas.length > 1 && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={toggleTodos}
-                      className="w-full md:w-auto text-xs flex items-center justify-center gap-2 h-8 px-4 rounded-sm bg-white dark:bg-neutral-800 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-700"
-                    >
-                      {todosAbiertos ? <ChevronsUp className="h-3.5 w-3.5" /> : <ChevronsDown className="h-3.5 w-3.5" />}
-                      {todosAbiertos ? 'Cerrar oficinas' : 'Abrir oficinas'}
-                    </Button>
-                  )}
+                  <Button
+                    size="sm"
+                    onClick={() => setFiltroRapido(prev => prev === 'sin_salida' ? 'todos' : 'sin_salida')}
+                    className={`h-7 px-3 text-[10px] rounded-sm border transition-all cursor-pointer ${
+                      filtroRapido === 'sin_salida'
+                        ? 'bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600'
+                        : 'bg-yellow-50 text-yellow-700 border-yellow-100 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/30'
+                    }`}
+                  >
+                    <AlertTriangle className="w-3 h-3 mr-1.5" />
+                    Sin salida: {estadisticas.salidasSinMarcaje}
+                  </Button>
                 </div>
 
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-neutral-800">

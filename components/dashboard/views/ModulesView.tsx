@@ -41,7 +41,7 @@ export default function ModulesView({
         .then((isElec) => setEsElectricista(isElec))
         .catch(console.error);
       checkIsDirectorServiciosPublicos(dependenciaId)
-        .then((isDir) => setEsDirectorSP(isDir))
+        .then((isDir) => setEsDirectorSP(isDir && esjefe))
         .catch(console.error);
     }
   }, [dependenciaId]);

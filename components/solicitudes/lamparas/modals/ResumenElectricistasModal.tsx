@@ -100,7 +100,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                             <th className="px-3 py-2.5 font-bold text-slate-700 dark:text-slate-300">Electricista / Req.</th>
                                             <th className="px-2 py-2.5 font-bold text-emerald-700 dark:text-emerald-400 text-center">Comp.</th>
                                             <th className="px-2 py-2.5 font-bold text-amber-700 dark:text-amber-400 text-center">Pend.</th>
-                                            <th className="px-2 py-2.5 font-bold text-red-700 dark:text-red-400 text-center">Rech.</th>
+                                            <th className="px-2 py-2.5 font-bold text-red-700 dark:text-red-400 text-center">Rev.</th>
                                             <th className="px-2 py-2.5 font-bold text-slate-700 dark:text-slate-300 text-center">Total</th>
                                         </tr>
                                     </thead>
@@ -156,7 +156,7 @@ export default function ResumenElectricistasView({ solicitudes }: ResumenElectri
                                             <th className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-300 w-1/3">Electricista / Requerimiento</th>
                                             <th className="px-4 py-3.5 font-bold text-emerald-700 dark:text-emerald-400 text-center">Completadas</th>
                                             <th className="px-4 py-3.5 font-bold text-amber-700 dark:text-amber-400 text-center">Pendientes</th>
-                                            <th className="px-4 py-3.5 font-bold text-red-700 dark:text-red-400 text-center">En Revisións</th>
+                                            <th className="px-4 py-3.5 font-bold text-red-700 dark:text-red-400 text-center">En Revisión</th>
                                             <th className="px-4 py-3.5 font-bold text-slate-700 dark:text-slate-300 text-center">Total</th>
                                         </tr>
                                     </thead>

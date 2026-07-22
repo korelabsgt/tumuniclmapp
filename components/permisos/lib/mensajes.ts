@@ -161,10 +161,8 @@ async function usuarioPuedeVerBloqueoPermiso(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
   permisoUserId: string,
-  rol: string | null,
 ): Promise<boolean> {
   if (permisoUserId === userId) return true;
-  if (rol === "RRHH") return true;
   const jefeId = await obtenerJefeIdEmpleado(supabase, permisoUserId);
   return jefeId === userId;
 }
@@ -177,43 +175,40 @@ export async function obtenerMensajePendientePermiso() {
 
   if (!user) return { success: false, data: null };
 
-  const { data, error } = await supabase
+  const { data: pendientes, error } = await supabase
     .from("permisos_mensajes")
     .select("id, permiso_id, evento, titulo, mensaje, created_at")
     .eq("user_id", user.id)
     .is("leido_at", null)
     .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .limit(20);
 
   if (error) {
     console.error("Error fetching permiso mensaje:", error);
     return { success: false, data: null };
   }
 
-  if (!data) return { success: true, data: null };
+  if (!pendientes || pendientes.length === 0) {
+    return { success: true, data: null };
+  }
 
-  let empleadoNombre: string | null = null;
-  let permisoTipo: string | null = null;
+  for (const data of pendientes) {
+    let empleadoNombre: string | null = null;
+    let permisoTipo: string | null = null;
 
-  const { data: permiso } = await supabase
-    .from("permisos_empleado")
-    .select("tipo, user_id")
-    .eq("id", data.permiso_id)
-    .maybeSingle();
+    const { data: permiso } = await supabase
+      .from("permisos_empleado")
+      .select("tipo, user_id")
+      .eq("id", data.permiso_id)
+      .maybeSingle();
 
-  if (permiso) {
-    permisoTipo = permiso.tipo ?? null;
-    if (permiso.user_id) {
-      const perfil = await obtenerPerfilUsuario();
-      const puedeVer = perfil
-        ? await usuarioPuedeVerBloqueoPermiso(
-            supabase,
-            user.id,
-            permiso.user_id,
-            perfil.rol,
-          )
-        : false;
+    if (permiso?.user_id) {
+      permisoTipo = permiso.tipo ?? null;
+      const puedeVer = await usuarioPuedeVerBloqueoPermiso(
+        supabase,
+        user.id,
+        permiso.user_id,
+      );
 
       if (!puedeVer) {
         await supabase
@@ -222,7 +217,7 @@ export async function obtenerMensajePendientePermiso() {
           .eq("id", data.id)
           .eq("user_id", user.id)
           .is("leido_at", null);
-        return { success: true, data: null };
+        continue;
       }
 
       const { data: info } = await supabase
@@ -232,16 +227,18 @@ export async function obtenerMensajePendientePermiso() {
         .maybeSingle();
       empleadoNombre = info?.nombre?.trim() ?? null;
     }
+
+    return {
+      success: true,
+      data: {
+        ...data,
+        empleado_nombre: empleadoNombre,
+        permiso_tipo: permisoTipo,
+      },
+    };
   }
 
-  return {
-    success: true,
-    data: {
-      ...data,
-      empleado_nombre: empleadoNombre,
-      permiso_tipo: permisoTipo,
-    },
-  };
+  return { success: true, data: null };
 }
 
 export async function confirmarMensajePermiso(id: string) {

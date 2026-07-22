@@ -1,13 +1,24 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Search, User, Calendar, ChevronsUp, ChevronsDown } from 'lucide-react';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
+import { Search, ChevronsUp, ChevronsDown, Plus } from 'lucide-react';
 import SelectorMesAnio from '@/components/tareas/SelectorMesAnio';
 
-interface AsistenciaControlsProps {
+type DependenciaOption = {
+  id: string;
+  nombre: string | null;
+};
+
+interface CitacionesControlsProps {
   mesSeleccionado: number;
   anioSeleccionado: number;
   onMesChange: (mes: number, anio: number) => void;
@@ -15,25 +26,25 @@ interface AsistenciaControlsProps {
   setNivel2Id: (val: string | null) => void;
   nivel3Id: string | null;
   setNivel3Id: (val: string | null) => void;
-  oficinasNivel2: { id: string; nombre: string | null }[];
-  oficinasNivel3: { id: string; nombre: string | null }[];
+  oficinasNivel2: DependenciaOption[];
+  oficinasNivel3: DependenciaOption[];
   handleMostrarOficina: () => void;
   fechaInicialRango: string;
   setFechaInicialRango: (val: string) => void;
   fechaFinalRango: string;
   setFechaFinalRango: (val: string) => void;
-  handleAplicarFechaManual: () => void;
-  vistaAgrupada: 'nombre' | 'fecha';
-  setVistaAgrupada: (val: 'nombre' | 'fecha') => void;
   searchTerm: string;
   setSearchTerm: (val: string) => void;
   busquedaPor: 'dependencia' | 'nombre';
   setBusquedaPor: (val: 'dependencia' | 'nombre') => void;
   ordenDescendente: boolean;
   setOrdenDescendente: (val: boolean) => void;
+  mostrarBotonNuevo?: boolean;
+  etiquetaBotonNuevo?: string;
+  onNuevo?: () => void;
 }
 
-export default function AsistenciaControls({
+export default function CitacionesControls({
   mesSeleccionado,
   anioSeleccionado,
   onMesChange,
@@ -48,54 +59,20 @@ export default function AsistenciaControls({
   setFechaInicialRango,
   fechaFinalRango,
   setFechaFinalRango,
-  handleAplicarFechaManual,
-  vistaAgrupada,
-  setVistaAgrupada,
   searchTerm,
   setSearchTerm,
   busquedaPor,
   setBusquedaPor,
   ordenDescendente,
   setOrdenDescendente,
-}: AsistenciaControlsProps) {
-  useEffect(() => {
-    if (fechaInicialRango && fechaFinalRango) {
-      const timer = setTimeout(() => {
-        handleAplicarFechaManual();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [fechaInicialRango, fechaFinalRango]);
-
+  mostrarBotonNuevo = false,
+  etiquetaBotonNuevo = 'Nuevo',
+  onNuevo,
+}: CitacionesControlsProps) {
   return (
     <div className="bg-gray-50 dark:bg-neutral-900 rounded-md p-3 space-y-2.5 border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
       <div className="flex items-center justify-between gap-2 w-full min-w-0 flex-wrap sm:flex-nowrap">
-        <div className="flex shrink-0 rounded-md border border-gray-200 dark:border-neutral-700 p-0.5 bg-gray-200 dark:bg-neutral-900 h-9 items-center">
-          <Button
-            size="sm"
-            onClick={() => setVistaAgrupada('nombre')}
-            className={`h-7 px-2 sm:px-3 text-[11px] sm:text-xs gap-1 transition-all duration-200 rounded-sm cursor-pointer ${
-              vistaAgrupada === 'nombre'
-                ? 'bg-white text-blue-600 shadow-sm font-bold hover:bg-white dark:bg-neutral-700 dark:text-blue-400 dark:hover:bg-neutral-700'
-                : 'bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-300/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <User size={13} /> Nombre
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setVistaAgrupada('fecha')}
-            className={`h-7 px-2 sm:px-3 text-[11px] sm:text-xs gap-1 transition-all duration-200 rounded-sm cursor-pointer ${
-              vistaAgrupada === 'fecha'
-                ? 'bg-white text-blue-600 shadow-sm font-bold hover:bg-white dark:bg-neutral-700 dark:text-blue-400 dark:hover:bg-neutral-700'
-                : 'bg-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-300/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-neutral-800'
-            }`}
-          >
-            <Calendar size={13} /> Fecha
-          </Button>
-        </div>
-
-        <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+        <div className="flex items-center gap-1.5 shrink-0 min-w-0">
           <SelectorMesAnio
             mes={mesSeleccionado}
             anio={anioSeleccionado}
@@ -115,6 +92,17 @@ export default function AsistenciaControls({
             className="h-9 w-[6.6rem] sm:w-[7.75rem] shrink-0 text-[11px] px-1.5 rounded-sm bg-white dark:bg-neutral-800 dark:border-neutral-700 dark:text-gray-100"
           />
         </div>
+
+        {mostrarBotonNuevo && onNuevo && (
+          <Button
+            type="button"
+            onClick={onNuevo}
+            className="h-9 shrink-0 ml-auto text-[11px] sm:text-xs rounded-sm bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-700 dark:hover:bg-blue-600 cursor-pointer flex items-center justify-center gap-1 px-2 sm:px-4 whitespace-nowrap"
+          >
+            <Plus size={14} className="shrink-0" />
+            <span>{etiquetaBotonNuevo}</span>
+          </Button>
+        )}
       </div>
 
       <div className="flex items-center gap-2 w-full min-w-0">
@@ -147,9 +135,6 @@ export default function AsistenciaControls({
             }
           />
         </div>
-      </div>
-
-      <div className="flex items-center w-full min-w-0">
         <Button
           type="button"
           variant="outline"
@@ -168,27 +153,50 @@ export default function AsistenciaControls({
       {oficinasNivel3.length > 1 && (
         <div className="flex w-full flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-neutral-800">
           <div className="w-full sm:flex-1">
-            <Select onValueChange={(val) => setNivel2Id(val === 'todos' ? null : val)} value={nivel2Id || 'todos'}>
+            <Select
+              onValueChange={(val) => setNivel2Id(val === 'todos' ? null : val)}
+              value={nivel2Id || 'todos'}
+            >
               <SelectTrigger className="bg-white dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700 text-xs rounded-sm h-9">
                 <SelectValue placeholder="Seleccionar Dependencia" />
               </SelectTrigger>
               <SelectContent className="dark:bg-neutral-800 dark:border-neutral-700">
-                <SelectItem value="todos" className="dark:text-gray-200 dark:focus:bg-neutral-700">Todas las dependencias</SelectItem>
+                <SelectItem value="todos" className="dark:text-gray-200 dark:focus:bg-neutral-700">
+                  Todas las dependencias
+                </SelectItem>
                 {oficinasNivel2.map((of) => (
-                  <SelectItem key={of.id} value={of.id} className="dark:text-gray-200 dark:focus:bg-neutral-700">{of.nombre}</SelectItem>
+                  <SelectItem
+                    key={of.id}
+                    value={of.id}
+                    className="dark:text-gray-200 dark:focus:bg-neutral-700"
+                  >
+                    {of.nombre}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="w-full sm:flex-1">
-            <Select onValueChange={(val) => setNivel3Id(val === 'todos' ? null : val)} value={nivel3Id || 'todos'} disabled={!nivel2Id}>
+            <Select
+              onValueChange={(val) => setNivel3Id(val === 'todos' ? null : val)}
+              value={nivel3Id || 'todos'}
+              disabled={!nivel2Id}
+            >
               <SelectTrigger className="bg-white dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700 text-xs rounded-sm h-9">
                 <SelectValue placeholder="Seleccionar Oficina" />
               </SelectTrigger>
               <SelectContent className="dark:bg-neutral-800 dark:border-neutral-700">
-                <SelectItem value="todos" className="dark:text-gray-200 dark:focus:bg-neutral-700">Todas las oficinas</SelectItem>
+                <SelectItem value="todos" className="dark:text-gray-200 dark:focus:bg-neutral-700">
+                  Todas las oficinas
+                </SelectItem>
                 {oficinasNivel3.map((of) => (
-                  <SelectItem key={of.id} value={of.id} className="dark:text-gray-200 dark:focus:bg-neutral-700">{of.nombre}</SelectItem>
+                  <SelectItem
+                    key={of.id}
+                    value={of.id}
+                    className="dark:text-gray-200 dark:focus:bg-neutral-700"
+                  >
+                    {of.nombre}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>

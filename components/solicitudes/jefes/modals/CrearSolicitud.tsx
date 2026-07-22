@@ -33,11 +33,18 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
     if (isOpen) {
       document.body.style.overflow = 'hidden';
       if (editData) {
+        const fechaRaw = editData.fecha_solicitud || '';
+        const fechaActividad = fechaRaw.includes('T')
+          ? fechaRaw.split('T')[0]
+          : fechaRaw.includes(' ')
+            ? fechaRaw.split(' ')[0]
+            : fechaRaw;
+
         setFormData({
           titulo: editData.ubicacion || '',
           descripcion: editData.comentarios || '',
           asignado_a_uid: editData.asignado_a_uid || '',
-          fecha_actividad: editData.fecha_solicitud || '',
+          fecha_actividad: fechaActividad,
           subtareas: editData.checklists?.items || [{ descripcion: '', completado: false }],
         });
       } else {

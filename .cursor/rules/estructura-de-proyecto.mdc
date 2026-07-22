@@ -1,5 +1,5 @@
 ---
-description: Stack, estructura de carpetas, código y enrutamiento
+description: Stack, estructura de carpetas, código, enrutamiento y fechas timestamptz
 alwaysApply: true
 ---
 
@@ -35,6 +35,29 @@ Prohibido dispersar lógica del módulo fuera de esa carpeta.
 - Validar sesión Supabase antes de mutar o leer datos privados.
 - Validar input con `.safeParse()` de `lib/zod.ts`; nunca pasar formularios directo a Supabase.
 - `try/catch`; devolver códigos/mensajes controlados, no errores internos de DB/OS.
+
+## Fechas y `timestamptz` (Guatemala UTC-6)
+
+La app opera en Guatemala (`America/Guatemala`, UTC-6, sin horario de verano). En Supabase las fechas de actividad suelen ser `timestamptz`. Un `YYYY-MM-DD` del `<input type="date">` guardado tal cual se interpreta como medianoche UTC y al mostrarlo con `new Date()` en local baja un día.
+
+### Guardar (Server Actions)
+
+- Fechas de **día calendario** (actividad, inicio/fin de evento, etc.): no persistir solo `YYYY-MM-DD`.
+- Convertir a mediodía Guatemala antes del insert/update: `` `${fecha}T12:00:00-06:00` ``.
+- Instantes reales (`created_at`, confirmación, terminado): usar `toISOString()` o el valor temporal completo; no forzar mediodía.
+
+### Mostrar y filtrar (UI)
+
+- Día calendario desde `timestamptz`: tomar la parte `YYYY-MM-DD` (`split('T')[0]` o equivalente) y formatear con `new Date(y, m - 1, d)`. No usar `getDate()` / `toLocaleDateString` sobre el instante UTC crudo.
+- `<input type="date">` al editar: hidratar solo con `YYYY-MM-DD` (normalizar si viene ISO).
+- Instantes reales (creación, confirmación): sí convertir a zona local Guatemala.
+- Agrupar/filtrar por fecha de actividad con la misma clave calendario `YYYY-MM-DD`, no con el offset local del timestamp.
+
+### Prohibido
+
+- `new Date(iso).getDate()` / `getMonth()` para fechas de solo día.
+- Asumir que el string ISO completo es seguro en un `type="date"` sin normalizar.
+- Guardar `YYYY-MM-DD` crudo en columnas `timestamptz` de fechas de actividad.
 
 ## Enrutamiento (`app/`)
 

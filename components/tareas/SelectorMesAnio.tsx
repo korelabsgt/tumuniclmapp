@@ -79,13 +79,13 @@ export default function SelectorMesAnio({
   const flechaClass = 'h-full px-2 flex items-center justify-center text-slate-500 hover:text-slate-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-slate-100 dark:hover:bg-neutral-800 disabled:opacity-30 disabled:pointer-events-none transition-colors shrink-0 cursor-pointer';
 
   return (
-    <div className={`flex items-center md:w-fit h-9 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-lg overflow-hidden ${mostrarFlechas ? 'w-full' : 'w-auto'} ${className}`}>
+    <div className={`flex items-center h-9 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 rounded-lg ${mostrarFlechas ? 'w-full md:w-auto' : 'w-auto'} ${className}`}>
       {mostrarFlechas && (
         <button
           type="button"
           onClick={irMesAnterior}
           disabled={!puedeMesAnterior}
-          className={flechaClass}
+          className={`${flechaClass} rounded-l-lg border-r border-slate-200 dark:border-neutral-800`}
           aria-label="Mes anterior"
         >
           <ChevronLeft size={18} />
@@ -102,8 +102,10 @@ export default function SelectorMesAnio({
         <PopoverTrigger asChild>
           <button
             type="button"
-            className={`min-w-0 w-full h-full flex items-center justify-center gap-1 px-2.5 sm:px-3 text-[11px] sm:text-xs font-bold outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap cursor-pointer ${
-              mostrarFlechas ? 'flex-1 md:flex-none border-x border-slate-200 dark:border-neutral-800 px-1.5 sm:px-2 md:px-4' : ''
+            className={`h-full flex items-center justify-center gap-1 px-2.5 sm:px-3 text-[11px] sm:text-xs font-bold outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500/20 text-slate-700 dark:text-gray-200 hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors whitespace-nowrap cursor-pointer ${
+              mostrarFlechas
+                ? 'min-w-[7.5rem] flex-1 md:flex-none md:min-w-[8.5rem] border-x border-slate-200 dark:border-neutral-800 px-1.5 sm:px-2 md:px-4'
+                : 'w-full'
             }`}
           >
             <span className="truncate capitalize">{etiqueta ?? `${MESES[mes]} ${anio}`}</span>
@@ -172,7 +174,7 @@ export default function SelectorMesAnio({
           type="button"
           onClick={irMesSiguiente}
           disabled={!puedeMesSiguiente}
-          className={flechaClass}
+          className={`${flechaClass} rounded-r-lg border-l border-slate-200 dark:border-neutral-800`}
           aria-label="Mes siguiente"
         >
           <ChevronRight size={18} />

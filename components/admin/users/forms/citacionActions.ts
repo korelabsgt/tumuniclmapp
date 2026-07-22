@@ -30,6 +30,11 @@ export async function crearCitacion(
 export async function obtenerCitacionesUsuario(id_usuario: string) {
   const supabase = await createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'No autorizado', data: null };
+  }
+
   const { data, error } = await supabase
     .from('citaciones')
     .select('*')
@@ -38,10 +43,31 @@ export async function obtenerCitacionesUsuario(id_usuario: string) {
 
   if (error) {
     console.error('Fetch error citaciones:', error);
-    return { success: false, error: error.message, data: null };
+    return { success: false, error: 'No se pudieron cargar las citaciones', data: null };
   }
 
   return { success: true, data };
+}
+
+export async function obtenerTodasCitaciones() {
+  const supabase = await createClient();
+
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { success: false, error: 'No autorizado', data: null };
+  }
+
+  const { data, error } = await supabase
+    .from('citaciones')
+    .select('*')
+    .order('fecha_cita', { ascending: false });
+
+  if (error) {
+    console.error('Fetch error todas citaciones:', error);
+    return { success: false, error: 'No se pudieron cargar las citaciones', data: null };
+  }
+
+  return { success: true, data: data ?? [] };
 }
 
 export async function obtenerCitacionPendienteActual() {

@@ -172,6 +172,7 @@ export default function LlamadaAtencionManager({ id, onClose, readOnly = false }
       <CitacionForm
         id={id}
         initialData={editingRecord}
+        nombreEmpleado={nombreEmpleado}
         onSuccess={() => {
           invalidateCitaciones();
           setView("list");

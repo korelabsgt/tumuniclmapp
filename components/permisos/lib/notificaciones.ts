@@ -61,24 +61,6 @@ export async function obtenerIdsRRHH(
   return data.map((u: { id: string }) => u.id);
 }
 
-export async function obtenerIdsRRHHBloqueo(
-  supabase: Awaited<ReturnType<typeof import("@/utils/supabase/server").createClient>>,
-): Promise<string[]> {
-  const { data, error } = await supabase.rpc("obtener_ids_usuarios_por_rol", {
-    roles_filtro: ["RRHH"],
-  });
-
-  if (error || !data) return [];
-  return data.map((u: { id: string }) => u.id);
-}
-
-function destinatariosBloqueoJefeRRHH(
-  jefeId: string | null,
-  rrhhBloqueoIds: string[],
-): string[] {
-  return [...new Set([...(jefeId ? [jefeId] : []), ...rrhhBloqueoIds])];
-}
-
 function clasificarActor(
   perfil: PerfilUsuario,
   empleadoId: string,
@@ -203,7 +185,6 @@ export async function notificarCreacionPermiso(params: {
   const actor = clasificarActor(perfil, empleadoId, crearAprobadoRRHH);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
-  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
   const titulo = esAcuerdo ? "Nuevo acuerdo municipal" : "Nueva solicitud de permiso";
   const mensaje = `Se registró un ${resumen} que requiere su atención.`;
@@ -235,7 +216,7 @@ export async function notificarCreacionPermiso(params: {
       mensaje: `Su jefe registró un ${resumen} a su nombre.`,
       actorId: perfil.id,
       pushIds: [empleadoId, ...rrhhIds],
-      bloqueoIds: [empleadoId, ...rrhhBloqueoIds],
+      bloqueoIds: [empleadoId],
       jefeId,
       rrhhIds,
     });
@@ -270,7 +251,6 @@ export async function notificarModificacionPermiso(params: {
   const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
-  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
   const destinatariosPush = [
     empleadoId,
@@ -287,7 +267,7 @@ export async function notificarModificacionPermiso(params: {
     mensaje: `Se modificó un ${resumen} en el que usted está involucrado.`,
     actorId: perfil.id,
     pushIds: destinatariosPush,
-    bloqueoIds: destinatariosBloqueoJefeRRHH(jefeId, rrhhBloqueoIds),
+    bloqueoIds: jefeId ? [jefeId] : [],
     jefeId,
     rrhhIds,
   });
@@ -307,7 +287,6 @@ export async function notificarGestionPermiso(params: {
   const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
-  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
   if (nuevoEstado === "aprobado_jefe") {
     await dispararNotificaciones({
@@ -319,7 +298,7 @@ export async function notificarGestionPermiso(params: {
       mensaje: `Un ${resumen} fue avalado por el jefe y requiere revisión de RRHH.`,
       actorId: perfil.id,
       pushIds: rrhhIds,
-      bloqueoIds: rrhhBloqueoIds,
+      bloqueoIds: [],
       jefeId,
       rrhhIds,
     });
@@ -390,7 +369,6 @@ export async function notificarEliminacionPermiso(params: {
   const resumen = resumenPermisoAcuerdo(nombreEmpleado, tipo, esAcuerdo);
   const jefeId = await obtenerJefeIdEmpleado(supabase, empleadoId);
   const rrhhIds = await obtenerIdsRRHH(supabase);
-  const rrhhBloqueoIds = await obtenerIdsRRHHBloqueo(supabase);
 
   const destinatariosPush = [
     empleadoId,
@@ -407,7 +385,7 @@ export async function notificarEliminacionPermiso(params: {
     mensaje: `Se eliminó un ${resumen} del sistema.`,
     actorId: perfil.id,
     pushIds: destinatariosPush,
-    bloqueoIds: destinatariosBloqueoJefeRRHH(jefeId, rrhhBloqueoIds),
+    bloqueoIds: jefeId ? [jefeId] : [],
     jefeId,
     rrhhIds,
   });

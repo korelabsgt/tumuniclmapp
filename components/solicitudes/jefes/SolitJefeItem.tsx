@@ -38,25 +38,39 @@ export default function SolitJefeItem({
     onEliminar,
 }: Props) {
 
-    const getSimpleDate = (dateStr: string | null) => {
+    const parseCalendarDate = (dateStr: string) => {
+        const datePart = dateStr.includes('T')
+            ? dateStr.split('T')[0]
+            : dateStr.includes(' ')
+                ? dateStr.split(' ')[0]
+                : dateStr;
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return null;
+        const [y, m, d] = datePart.split('-').map(Number);
+        return new Date(y, m - 1, d);
+    };
+
+    const getSimpleDate = (dateStr: string | null, asCalendarDate = false) => {
         if (!dateStr) return '--';
-        const date = new Date(dateStr);
+        const date = asCalendarDate ? parseCalendarDate(dateStr) : new Date(dateStr);
+        if (!date || Number.isNaN(date.getTime())) return '--';
         const day = date.getDate().toString().padStart(2, '0');
         const month = date.toLocaleDateString('es-GT', { month: 'short' }).replace('.', '');
         const year = date.getFullYear().toString().slice(-2);
         return `${day}/${month}/${year}`;
     };
 
-    const getFechaNumerica = (dateStr: string | null | undefined) => {
+    const getFechaNumerica = (dateStr: string | null | undefined, asCalendarDate = false) => {
         if (!dateStr) return '--';
-        let date: Date;
-        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        let date: Date | null;
+        if (asCalendarDate) {
+            date = parseCalendarDate(dateStr);
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
             const [y, m, d] = dateStr.split('-').map(Number);
             date = new Date(y, m - 1, d);
         } else {
             date = new Date(dateStr);
         }
-        if (Number.isNaN(date.getTime())) return '--';
+        if (!date || Number.isNaN(date.getTime())) return '--';
         const diaSemana = date
             .toLocaleDateString('es-GT', { weekday: 'short' })
             .replace('.', '')
@@ -252,7 +266,7 @@ export default function SolitJefeItem({
                                 <span className="font-medium text-slate-500">
                                     Solicitud: <span className="font-bold text-slate-800 dark:text-slate-200">{getFechaNumerica(sol.created_at)}</span>
                                     {' '}*{' '}
-                                    Actividad: <span className="font-bold text-slate-800 dark:text-slate-200">{getFechaNumerica(sol.fecha_solicitud)}</span>
+                                    Actividad: <span className="font-bold text-slate-800 dark:text-slate-200">{getFechaNumerica(sol.fecha_solicitud, true)}</span>
                                 </span>
                                 {sol.solicitante && (
                                     <span>
@@ -381,7 +395,7 @@ export default function SolitJefeItem({
                                             <p>Asignado a: <span className="font-semibold text-blue-600 dark:text-blue-400">{sol.asignado.nombre}</span></p>
                                         )}
                                         <p>
-                                            Fecha de actividad: <span className="font-semibold text-slate-600 dark:text-slate-300">{sol.fecha_solicitud ? getSimpleDate(sol.fecha_solicitud) : '-'}</span>
+                                            Fecha de actividad: <span className="font-semibold text-slate-600 dark:text-slate-300">{sol.fecha_solicitud ? getSimpleDate(sol.fecha_solicitud, true) : '-'}</span>
                                         </p>
                                     </div>
 

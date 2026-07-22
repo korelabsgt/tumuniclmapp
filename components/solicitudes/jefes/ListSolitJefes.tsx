@@ -52,7 +52,24 @@ const getGTDate = (dateString: string) => {
   return new Date(utc.getTime() + GT_OFFSET_MS);
 };
 
-const getLocalDayParts = (dateString: string) => {
+const getCalendarDayParts = (dateString: string) => {
+  const datePart = dateString.includes('T')
+    ? dateString.split('T')[0]
+    : dateString.includes(' ')
+      ? dateString.split(' ')[0]
+      : dateString;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(datePart)) {
+    const [y, m, d] = datePart.split('-').map(Number);
+    return { year: y, month: m - 1, day: d };
+  }
+  return null;
+};
+
+const getLocalDayParts = (dateString: string, asCalendarDate = false) => {
+  if (asCalendarDate) {
+    const calendar = getCalendarDayParts(dateString);
+    if (calendar) return calendar;
+  }
   if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
     const [y, m, d] = dateString.split('-').map(Number);
     return { year: y, month: m - 1, day: d };
@@ -66,8 +83,8 @@ const getFechaCriterio = (sol: SolicitudJefe, criterio: 'actividad' | 'solicitud
   return sol.created_at;
 };
 
-const toFechaKey = (dateString: string) => {
-  const parts = getLocalDayParts(dateString);
+const toFechaKey = (dateString: string, criterio: 'actividad' | 'solicitud' = 'solicitud') => {
+  const parts = getLocalDayParts(dateString, criterio === 'actividad');
   return `${parts.year}-${String(parts.month + 1).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 };
 
@@ -175,7 +192,7 @@ export default function ListSolitJefes({ initialData }: Props) {
     solicitudesBase.forEach((sol) => {
       const fechaRef = getFechaCriterio(sol, criterioFecha);
       if (!fechaRef) return;
-      const key = toFechaKey(fechaRef);
+      const key = toFechaKey(fechaRef, criterioFecha);
       map[key] = (map[key] || 0) + 1;
     });
     return map;
@@ -185,7 +202,7 @@ export default function ListSolitJefes({ initialData }: Props) {
     return solicitudesBase.filter((sol) => {
       const fechaRef = getFechaCriterio(sol, criterioFecha);
       if (!fechaRef) return false;
-      const key = toFechaKey(fechaRef);
+      const key = toFechaKey(fechaRef, criterioFecha);
       const solDay = parseISO(key + 'T00:00:00');
 
       if (filtroTipo === 'mes') {
@@ -206,8 +223,8 @@ export default function ListSolitJefes({ initialData }: Props) {
       const fin = parseISO(fechaFinalRango + 'T00:00:00');
       return solDay >= inicio && solDay <= fin;
     }).sort((a, b) => {
-      const aKey = toFechaKey(getFechaCriterio(a, criterioFecha));
-      const bKey = toFechaKey(getFechaCriterio(b, criterioFecha));
+      const aKey = toFechaKey(getFechaCriterio(a, criterioFecha), criterioFecha);
+      const bKey = toFechaKey(getFechaCriterio(b, criterioFecha), criterioFecha);
       if (bKey !== aKey) return bKey.localeCompare(aKey);
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
@@ -240,7 +257,7 @@ export default function ListSolitJefes({ initialData }: Props) {
     const groups: { key: string; label: string; items: SolicitudJefe[] }[] = [];
     solicitudesFiltradas.forEach((sol) => {
       const fechaRef = getFechaCriterio(sol, criterioFecha);
-      const key = toFechaKey(fechaRef);
+      const key = toFechaKey(fechaRef, criterioFecha);
       let group = groups.find((g) => g.key === key);
       if (!group) {
         const dateObj = parseISO(key + 'T00:00:00');

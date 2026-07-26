@@ -24,6 +24,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onSaved?: () => void | Promise<void>;
+  soloLectura?: boolean;
 }
 
 const BUCKET = "Permisos_empleados";
@@ -33,6 +34,7 @@ export default function JustificacionPermiso({
   isOpen,
   onClose,
   onSaved,
+  soloLectura = false,
 }: Props) {
   const uploaderRef = useRef<ImageUploaderHandle>(null);
   const [imgPath, setImgPath] = useState<string | null>(
@@ -140,7 +142,7 @@ export default function JustificacionPermiso({
             onDeleteSuccess={async () => {
               await guardarPath(null);
             }}
-            disabled={guardando}
+            disabled={guardando || soloLectura}
             aspect={3 / 4}
             aspectLabel="Vertical 3:4"
             permitirTodos
@@ -153,41 +155,45 @@ export default function JustificacionPermiso({
         </div>
 
         <div className="px-5 py-3 border-t border-gray-200 dark:border-neutral-700 flex gap-2 justify-end flex-wrap">
-          {tieneImagen ? (
-            <button
-              onClick={() => uploaderRef.current?.deleteImage()}
-              disabled={procesando}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
-            >
-              {eliminando ? (
-                <Loader2 size={14} className="animate-spin" />
-              ) : (
-                <Trash2 size={14} />
-              )}
-              Eliminar
-            </button>
-          ) : (
+          {!soloLectura && (
             <>
-              <button
-                onClick={() => uploaderRef.current?.openGallery()}
-                disabled={procesando}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
-              >
-                {subiendo ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Upload size={14} />
-                )}
-                Galería
-              </button>
-              <button
-                onClick={() => uploaderRef.current?.openCamera()}
-                disabled={procesando}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
-              >
-                <Camera size={14} />
-                Cámara
-              </button>
+              {tieneImagen ? (
+                <button
+                  onClick={() => uploaderRef.current?.deleteImage()}
+                  disabled={procesando}
+                  className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors disabled:opacity-50"
+                >
+                  {eliminando ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  Eliminar
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={() => uploaderRef.current?.openGallery()}
+                    disabled={procesando}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
+                    {subiendo ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Upload size={14} />
+                    )}
+                    Galería
+                  </button>
+                  <button
+                    onClick={() => uploaderRef.current?.openCamera()}
+                    disabled={procesando}
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    <Camera size={14} />
+                    Cámara
+                  </button>
+                </>
+              )}
             </>
           )}
           <button

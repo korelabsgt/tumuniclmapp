@@ -33,6 +33,7 @@ import {
   Shield,
   Umbrella,
   GraduationCap,
+  CreditCard,
   type LucideIcon,
 } from "lucide-react";
 import PreviewPermiso from "./modals/PreviewPermiso";
@@ -73,6 +74,41 @@ const CATEGORIA_ORDEN: Record<CategoriaPermiso, number> = {
   vacaciones: 3,
   permisos: 4,
 };
+
+function getEstadoTextoPlain(estado: string) {
+  switch (estado) {
+    case "aprobado":
+      return (
+        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm lg:text-base">
+          Aprobado RRHH
+        </span>
+      );
+    case "aprobado_jefe":
+      return (
+        <span className="text-blue-600 dark:text-blue-400 font-bold text-sm lg:text-base">
+          Preaprobado Jefe
+        </span>
+      );
+    case "rechazado_jefe":
+    case "rechazado_rrhh":
+    case "rechazado":
+      return (
+        <span className="text-red-600 dark:text-red-400 font-bold text-sm lg:text-base">
+          {estado === "rechazado_jefe"
+            ? "Rechazado Jefe"
+            : estado === "rechazado_rrhh"
+              ? "Rechazado RRHH"
+              : "Rechazado"}
+        </span>
+      );
+    default:
+      return (
+        <span className="text-amber-600 dark:text-amber-400 font-bold text-sm lg:text-base">
+          Pendiente Jefe
+        </span>
+      );
+  }
+}
 
 interface Props {
   tipoVista: TipoVistaPermisos;
@@ -127,12 +163,9 @@ export default function VerPermisos({ tipoVista }: Props) {
   const [calendarInicioOpen, setCalendarInicioOpen] = React.useState(false);
   const [calendarFinOpen, setCalendarFinOpen] = React.useState(false);
   const mesInputRef = React.useRef<HTMLInputElement>(null);
-  const puedeSubirJustificacion = [
-    "RRHH",
-    "ADMINISTRADOR",
-    "SUPER",
-    "SECRETARIO",
-  ].includes(perfilUsuario?.rol || "");
+  const puedeGestionarEvidencia = ["RRHH", "SUPER", "SECRETARIO"].includes(
+    perfilUsuario?.rol || "",
+  );
 
   const [mesSemanas, setMesSemanas] = React.useState(
     format(new Date(), "yyyy-MM"),
@@ -172,7 +205,7 @@ export default function VerPermisos({ tipoVista }: Props) {
 
   const formatMes = (mesYear: string) => {
     const d = parseISO(mesYear + "-01");
-    let str = format(d, "MMMM yyyy", { locale: es });
+    const str = format(d, "MMMM yyyy", { locale: es });
     return str.charAt(0).toUpperCase() + str.slice(1);
   };
 
@@ -195,47 +228,6 @@ export default function VerPermisos({ tipoVista }: Props) {
   const gruposConDatos = useMemo(() => {
     return datosAgrupados.filter((grupo) => grupo.permisos.length > 0);
   }, [datosAgrupados]);
-
-  const getEstadoBadge = (estado: string) => {
-    switch (estado) {
-      case "aprobado":
-        return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800">
-            Aprobado RRHH
-          </span>
-        );
-      case "aprobado_jefe":
-        return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-blue-100 text-blue-700 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">
-            Preaprobado Jefe
-          </span>
-        );
-      case "rechazado_jefe":
-        return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
-            Rechazado Jefe
-          </span>
-        );
-      case "rechazado_rrhh":
-        return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
-            Rechazado RRHH
-          </span>
-        );
-      case "rechazado":
-        return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-red-100 text-red-700 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">
-            Rechazado
-          </span>
-        );
-      default:
-        return (
-          <span className="inline-flex items-center px-2.5 lg:px-3 py-0.5 lg:py-1 rounded-md text-[10px] lg:text-xs font-bold bg-amber-100 text-amber-700 border border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">
-            Pendiente Jefe
-          </span>
-        );
-    }
-  };
 
   const esAcademicasTexto = (t: string, d: string) =>
     t.includes("académ") ||
@@ -270,11 +262,11 @@ export default function VerPermisos({ tipoVista }: Props) {
     const d = (descripcion || "").toLowerCase();
     const cat = getCategoriaFromTexto(t, d);
 
-    if (cat === "igss") return "border-l-4 border-l-amber-500";
-    if (cat === "vacaciones") return "border-l-4 border-l-purple-500";
-    if (cat === "academicas") return "border-l-4 border-l-green-500";
-    if (cat === "extras") return "border-l-4 border-l-slate-500";
-    return "border-l-4 border-l-blue-500";
+    if (cat === "igss") return "border-t-[3px] border-t-amber-500";
+    if (cat === "vacaciones") return "border-t-[3px] border-t-purple-500";
+    if (cat === "academicas") return "border-t-[3px] border-t-green-500";
+    if (cat === "extras") return "border-t-[3px] border-t-slate-500";
+    return "border-t-[3px] border-t-blue-500";
   };
 
   const getCategoria = (p: PermisoEmpleado): CategoriaPermiso => {
@@ -369,22 +361,96 @@ export default function VerPermisos({ tipoVista }: Props) {
         ? "jefe"
         : "rrhh";
 
+  const aplicarModoSemana = () => {
+    setModoFiltro("semana");
+    setMesSemanas(format(new Date(), "yyyy-MM"));
+    const hoy = format(new Date(), "yyyy-MM-dd");
+    const semActual = getSemanasDelMes(format(new Date(), "yyyy-MM")).find(
+      (s) => s.inicio <= hoy && s.fin >= hoy,
+    );
+    if (semActual) {
+      setFechaInicio(semActual.inicio);
+      setFechaFin(semActual.fin);
+    }
+  };
+
+  const handleCambioModoFiltro = (modo: "dia" | "semana" | "rango") => {
+    setFiltroEstado("todos");
+    if (modo === "semana") {
+      aplicarModoSemana();
+      return;
+    }
+    setModoFiltro(modo);
+  };
+
+  const modoFiltroSelect =
+    modoFiltro === "dia" || modoFiltro === "semana" || modoFiltro === "rango"
+      ? modoFiltro
+      : "semana";
+
+  const selectFiltroFechaClass =
+    "w-full min-w-0 appearance-none [&::-ms-expand]:hidden bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-3 py-2.5 sm:py-3 text-sm sm:text-base font-semibold focus:outline-none focus:border-blue-400 transition-all shadow-sm cursor-pointer dark:text-gray-200";
+
+  const botonFechaRangoClass = cn(
+    selectFiltroFechaClass,
+    "flex items-center justify-center gap-1.5 flex-1 min-w-0 lg:min-w-[8.5rem] whitespace-nowrap px-2 text-center",
+  );
+
+  const modoSelectMobileClass = cn(
+    selectFiltroFechaClass,
+    "shrink-0 w-[5.75rem] min-w-[5.75rem] text-center lg:hidden",
+  );
+
+  const modoSelectDesktopClass = cn(
+    selectFiltroFechaClass,
+    "hidden lg:block flex-1 text-center",
+    modoFiltro === "rango" && "lg:flex-none lg:w-[5.75rem] lg:min-w-[5.75rem]",
+  );
+
+  const modoSelectEl = (
+    <select
+      value={modoFiltroSelect}
+      onChange={(e) =>
+        handleCambioModoFiltro(e.target.value as "dia" | "semana" | "rango")
+      }
+      className={modoSelectDesktopClass}
+    >
+      <option value="dia">Día</option>
+      <option value="semana">Semana</option>
+      <option value="rango">Rango</option>
+    </select>
+  );
+
+  const modoSelectMobileEl = (
+    <select
+      value={modoFiltroSelect}
+      onChange={(e) =>
+        handleCambioModoFiltro(e.target.value as "dia" | "semana" | "rango")
+      }
+      className={modoSelectMobileClass}
+    >
+      <option value="dia">Día</option>
+      <option value="semana">Semana</option>
+      <option value="rango">Rango</option>
+    </select>
+  );
+
   return (
     <>
       <div className="w-full lg:w-[95%] mx-auto md:px-4 pb-10 transition-all">
         <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md w-full border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
           <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4 p-1 sm:p-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
               <PermisosNav tipoVista={navTipoVista} />
-              <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex gap-2 w-full sm:w-auto">
                 {tipoVista === "gestion_rrhh" && (
                   <button
                     type="button"
                     onClick={() => setModalAsuetoAbierto(true)}
-                    className="flex items-center justify-center gap-1.5 h-8 lg:h-10 px-2.5 lg:px-3 text-xs lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
+                    className="flex flex-1 sm:flex-initial min-w-0 items-center justify-center gap-1.5 h-8 lg:h-10 px-2 sm:px-2.5 lg:px-3 text-[11px] sm:text-xs lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
                   >
                     <PartyPopper className="w-3 h-3 lg:w-4 lg:h-4 shrink-0" />
-                    Gestionar Asuetos
+                    <span className="truncate">Gestionar Asuetos</span>
                   </button>
                 )}
                 {(tipoVista === "mis_permisos" ||
@@ -392,16 +458,16 @@ export default function VerPermisos({ tipoVista }: Props) {
                   <button
                     type="button"
                     onClick={handleNuevoPermiso}
-                    className="flex items-center justify-center gap-1.5 h-8 lg:h-10 px-2.5 lg:px-3 text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
+                    className="flex flex-1 sm:flex-initial min-w-0 items-center justify-center gap-1.5 h-8 lg:h-10 px-2 sm:px-2.5 lg:px-3 text-[11px] sm:text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    Nuevo Permiso
+                    <span className="truncate">Nuevo Permiso</span>
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 sm:gap-3 bg-gray-50/50 dark:bg-neutral-900/30 p-2 sm:p-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
+            <div className="flex flex-col gap-3 sm:gap-4 bg-gray-50/50 dark:bg-neutral-900/30 py-4 sm:py-5 px-2 sm:px-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
               {/* Buscador + Ocultar */}
               <div className="flex items-center gap-2 w-full">
                 <div className="relative flex-1 min-w-0">
@@ -429,145 +495,105 @@ export default function VerPermisos({ tipoVista }: Props) {
                 </Button>
               </div>
 
+              {(tipoVista === "gestion_jefe" || tipoVista === "gestion_rrhh") &&
+                (conteosPendientes.pendientes > 0 ||
+                  conteosPendientes.avalados > 0) && (
+                  <div className="flex gap-2 w-full">
+                    {conteosPendientes.pendientes > 0 && (
+                      <button
+                        onClick={() => {
+                          if (
+                            filtroEstado === "pendiente" &&
+                            modoFiltro === "pendientes"
+                          ) {
+                            setFiltroEstado("todos");
+                            aplicarModoSemana();
+                          } else {
+                            setFiltroEstado("pendiente");
+                            setModoFiltro("pendientes");
+                          }
+                        }}
+                        className={cn(
+                          "flex-1 h-9 flex items-center justify-center gap-1 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer",
+                          modoFiltro === "pendientes" &&
+                            filtroEstado === "pendiente"
+                            ? "bg-amber-50 text-amber-600 border-amber-300 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-700"
+                            : "bg-white dark:bg-neutral-950 text-gray-500 border-gray-200 dark:border-neutral-800 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+                        )}
+                      >
+                        <span className="truncate">P. Jefe</span>
+                        <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-600 text-[10px] font-bold text-amber-600 dark:text-amber-400 px-1">
+                          {conteosPendientes.pendientes}
+                        </span>
+                      </button>
+                    )}
+                    {conteosPendientes.avalados > 0 && (
+                      <button
+                        onClick={() => {
+                          if (
+                            filtroEstado === "aprobado_jefe" &&
+                            modoFiltro === "pendientes"
+                          ) {
+                            setFiltroEstado("todos");
+                            aplicarModoSemana();
+                          } else {
+                            setFiltroEstado("aprobado_jefe");
+                            setModoFiltro("pendientes");
+                          }
+                        }}
+                        className={cn(
+                          "flex-1 h-9 flex items-center justify-center gap-1 px-2 text-xs font-bold rounded-lg border transition-all cursor-pointer",
+                          modoFiltro === "pendientes" &&
+                            filtroEstado === "aprobado_jefe"
+                            ? "bg-purple-50 text-purple-600 border-purple-300 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-700"
+                            : "bg-white dark:bg-neutral-950 text-gray-500 border-gray-200 dark:border-neutral-800 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
+                        )}
+                      >
+                        <span className="truncate">P. RRHH</span>
+                        <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-600 text-[10px] font-bold text-purple-600 dark:text-purple-400 px-1">
+                          {conteosPendientes.avalados}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )}
+
               <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-end lg:gap-3 w-full">
-                <div
-                  className={cn(
-                    "order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:justify-self-center flex items-stretch h-11 w-full shrink-0 bg-gray-200/50 dark:bg-neutral-800 p-1 rounded-lg gap-1",
-                    (tipoVista === "gestion_jefe" || tipoVista === "gestion_rrhh") &&
-                      (conteosPendientes.pendientes > 0 || conteosPendientes.avalados > 0)
-                      ? "lg:w-[30rem]"
-                      : "lg:w-80",
-                  )}
-                >
-                <button
-                  onClick={() => {
-                    setModoFiltro("dia");
-                    setFiltroEstado("todos");
-                  }}
-                  className={cn(
-                    "flex-1 min-w-0 basis-0 h-full flex items-center justify-center text-sm sm:text-base font-bold rounded-md transition-all",
-                    modoFiltro === "dia"
-                      ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                  )}
-                >
-                  Día
-                </button>
-                <button
-                  onClick={() => {
-                    setModoFiltro("semana");
-                    setFiltroEstado("todos");
-                    setMesSemanas(format(new Date(), "yyyy-MM"));
-                    const hoy = format(new Date(), "yyyy-MM-dd");
-                    const semActual = getSemanasDelMes(
-                      format(new Date(), "yyyy-MM"),
-                    ).find((s) => s.inicio <= hoy && s.fin >= hoy);
-                    if (semActual) {
-                      setFechaInicio(semActual.inicio);
-                      setFechaFin(semActual.fin);
-                    }
-                  }}
-                  className={cn(
-                    "flex-1 min-w-0 basis-0 h-full flex items-center justify-center text-sm sm:text-base font-bold rounded-md transition-all",
-                    modoFiltro === "semana"
-                      ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                  )}
-                >
-                  Semana
-                </button>
-                <button
-                  onClick={() => {
-                    setModoFiltro("rango");
-                    setFiltroEstado("todos");
-                  }}
-                  className={cn(
-                    "flex-1 min-w-0 basis-0 h-full flex items-center justify-center text-sm sm:text-base font-bold rounded-md transition-all",
-                    modoFiltro === "rango"
-                      ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                  )}
-                >
-                  Rango
-                </button>
-
-                {(tipoVista === "gestion_jefe" ||
-                  tipoVista === "gestion_rrhh") &&
-                  conteosPendientes.pendientes > 0 && (
-                    <button
-                      onClick={() => {
-                        if (
-                          filtroEstado === "pendiente" &&
-                          modoFiltro === "pendientes"
-                        ) {
-                          setFiltroEstado("todos");
-                          setModoFiltro("dia");
-                        } else {
-                          setFiltroEstado("pendiente");
-                          setModoFiltro("pendientes");
-                        }
-                      }}
-                      className={cn(
-                        "flex-1 min-w-0 basis-0 h-full flex items-center justify-center gap-1 text-sm sm:text-base font-bold rounded-md transition-all",
-                        modoFiltro === "pendientes" &&
-                          filtroEstado === "pendiente"
-                          ? "bg-white dark:bg-neutral-700 text-amber-600 dark:text-amber-400 shadow-sm"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                      )}
-                    >
-                      <span className="truncate">P. Jefe</span>
-                      <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-600 text-[10px] font-bold text-amber-600 dark:text-amber-400 px-1">
-                        {conteosPendientes.pendientes}
+                <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full flex flex-col items-center gap-2 py-1">
+                  {modoFiltro !== "pendientes" && (
+                    <div className="flex items-center gap-2 w-full min-w-0 lg:justify-center">
+                      {modoSelectMobileEl}
+                      <span className="text-xs sm:text-sm font-bold text-blue-600 dark:text-blue-400 flex-1 min-w-0 text-left lg:flex-none lg:text-center lg:w-full">
+                        Selecciona la fecha para mostrar
                       </span>
-                    </button>
+                    </div>
                   )}
 
-                {(tipoVista === "gestion_jefe" ||
-                  tipoVista === "gestion_rrhh") &&
-                  conteosPendientes.avalados > 0 && (
-                    <button
-                      onClick={() => {
-                        if (
-                          filtroEstado === "aprobado_jefe" &&
-                          modoFiltro === "pendientes"
-                        ) {
-                          setFiltroEstado("todos");
-                          setModoFiltro("dia");
-                        } else {
-                          setFiltroEstado("aprobado_jefe");
-                          setModoFiltro("pendientes");
-                        }
-                      }}
-                      className={cn(
-                        "flex-1 min-w-0 basis-0 h-full flex items-center justify-center gap-1 text-sm sm:text-base font-bold rounded-md transition-all",
-                        modoFiltro === "pendientes" &&
-                          filtroEstado === "aprobado_jefe"
-                          ? "bg-white dark:bg-neutral-700 text-purple-600 dark:text-purple-400 shadow-sm"
-                          : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                      )}
-                    >
-                      <span className="truncate">P. RRHH</span>
-                      <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-gray-200 dark:bg-neutral-600 text-[10px] font-bold text-purple-600 dark:text-purple-400 px-1">
-                        {conteosPendientes.avalados}
-                      </span>
-                    </button>
-                  )}
-                </div>
+                  <div
+                    className={cn(
+                      "flex justify-center gap-2 w-full min-w-0",
+                      modoFiltro === "rango"
+                        ? "items-center"
+                        : "items-stretch",
+                    )}
+                  >
+                    {modoSelectEl}
 
-                <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full">
-                  {modoFiltro === "dia" && (
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                        Seleccione un día para mostrar
-                      </span>
+                    {modoFiltro === "dia" && (
                       <Popover
                         open={calendarOpen}
                         onOpenChange={setCalendarOpen}
                       >
                         <PopoverTrigger asChild>
-                          <button className="flex items-center gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm">
-                            <Calendar className="w-4 h-4 text-blue-500" />
-                            <span className="dark:text-gray-200 capitalize">
+                          <button
+                            type="button"
+                            className={cn(
+                              selectFiltroFechaClass,
+                              "flex items-center justify-center gap-1.5 flex-1",
+                            )}
+                          >
+                            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+                            <span className="capitalize truncate">
                               {formatearFechaFiltro(fechaSeleccionada)}
                             </span>
                           </button>
@@ -582,17 +608,15 @@ export default function VerPermisos({ tipoVista }: Props) {
                           />
                         </PopoverContent>
                       </Popover>
-                    </div>
-                  )}
+                    )}
 
-                  {modoFiltro === "semana" && (
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                        Seleccione una semana para mostrar
-                      </span>
-                      <div className="flex items-center gap-2 flex-wrap">
+                    {modoFiltro === "semana" && (
+                      <>
                         <select
-                          className="max-w-[130px] sm:max-w-none bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold focus:outline-none focus:border-blue-400 transition-all shadow-sm cursor-pointer"
+                          className={cn(
+                            selectFiltroFechaClass,
+                            "flex-1 text-center min-w-0",
+                          )}
                           onChange={(e) => {
                             const idx = parseInt(e.target.value, 10);
                             const sem = semanasDisponibles[idx];
@@ -607,7 +631,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                           )}
                         >
                           <option value="-1" disabled>
-                            Seleccione semana
+                            Semana
                           </option>
                           {semanasDisponibles.map((sem, idx) => (
                             <option key={idx} value={idx}>
@@ -620,9 +644,15 @@ export default function VerPermisos({ tipoVista }: Props) {
                           onOpenChange={setCalendarSemanaOpen}
                         >
                           <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1.5 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold hover:border-blue-400 transition-all shadow-sm min-w-0 sm:min-w-[120px]">
-                              <Calendar className="w-4 h-4 text-blue-500" />
-                              <span className="dark:text-gray-200">
+                            <button
+                              type="button"
+                              className={cn(
+                                selectFiltroFechaClass,
+                                "flex items-center justify-center gap-1.5 flex-1",
+                              )}
+                            >
+                              <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+                              <span className="truncate">
                                 {formatMes(mesSemanas)}
                               </span>
                             </button>
@@ -634,11 +664,8 @@ export default function VerPermisos({ tipoVista }: Props) {
                                 fechaInicio || format(new Date(), "yyyy-MM-dd")
                               }
                               onSelectDate={(date) => {
-                                // Extraemos el yyyy-MM
                                 const newMes = date.substring(0, 7);
                                 setMesSemanas(newMes);
-
-                                // Al elegir un mes, seleccionamos la primera semana de ese mes
                                 const semanasDelMes = getSemanasDelMes(newMes);
                                 if (semanasDelMes.length > 0) {
                                   setFechaInicio(semanasDelMes[0].inicio);
@@ -649,26 +676,19 @@ export default function VerPermisos({ tipoVista }: Props) {
                             />
                           </PopoverContent>
                         </Popover>
-                      </div>
-                    </div>
-                  )}
+                      </>
+                    )}
 
-                  {modoFiltro === "rango" && (
-                    <div className="flex flex-col items-start gap-1 w-full min-w-0">
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                        Selecciona las fechas que deseas ver
-                      </span>
-                      <div className="flex items-center gap-1 sm:gap-2 flex-nowrap w-full min-w-0">
+                    {modoFiltro === "rango" && (
+                      <div className="flex flex-1 min-w-0 w-full items-center justify-center gap-1.5 sm:gap-2">
                         <Popover
                           open={calendarInicioOpen}
                           onOpenChange={setCalendarInicioOpen}
                         >
                           <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-emerald-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
-                              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
-                              <span className="dark:text-gray-200">
-                                {formatearFechaFiltro(fechaInicio)}
-                              </span>
+                            <button type="button" className={botonFechaRangoClass}>
+                              <Calendar className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <span>{formatearFechaFiltro(fechaInicio)}</span>
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -681,17 +701,15 @@ export default function VerPermisos({ tipoVista }: Props) {
                             />
                           </PopoverContent>
                         </Popover>
-                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
+                        <ArrowRight className="w-5 h-5 text-gray-400 dark:text-gray-500 shrink-0" />
                         <Popover
                           open={calendarFinOpen}
                           onOpenChange={setCalendarFinOpen}
                         >
                           <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-red-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
-                              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
-                              <span className="dark:text-gray-200">
-                                {formatearFechaFiltro(fechaFin)}
-                              </span>
+                            <button type="button" className={botonFechaRangoClass}>
+                              <Calendar className="w-4 h-4 text-red-500 shrink-0" />
+                              <span>{formatearFechaFiltro(fechaFin)}</span>
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -705,8 +723,8 @@ export default function VerPermisos({ tipoVista }: Props) {
                           </PopoverContent>
                         </Popover>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1 shrink-0 w-full lg:w-auto justify-start">
@@ -717,7 +735,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                         setFiltroEstado("todos");
                       } else {
                         setFiltroEstado("aprobado");
-                        if (modoFiltro === "pendientes") setModoFiltro("dia");
+                        if (modoFiltro === "pendientes") aplicarModoSemana();
                       }
                     }}
                     className={cn(
@@ -737,7 +755,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                         setFiltroEstado("todos");
                       } else {
                         setFiltroEstado("rechazado");
-                        if (modoFiltro === "pendientes") setModoFiltro("dia");
+                        if (modoFiltro === "pendientes") aplicarModoSemana();
                       }
                     }}
                     className={cn(
@@ -800,7 +818,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                             transition={{ duration: 0.3 }}
                             className="bg-white dark:bg-neutral-900"
                           >
-                            <div className="p-3 flex flex-col gap-4">
+                            <div className="p-2 sm:p-2.5 flex flex-col gap-3">
                               {Object.values(
                                 grupo.permisos.reduce(
                                   (acc, p) => {
@@ -828,9 +846,7 @@ export default function VerPermisos({ tipoVista }: Props) {
                                   }
                                   usuarioGrupo={usuarioGrupo}
                                   tipoVista={tipoVista}
-                                  puedeSubirJustificacion={
-                                    puedeSubirJustificacion
-                                  }
+                                  puedeGestionarEvidencia={puedeGestionarEvidencia}
                                   handleVerPreview={handleVerPreview}
                                   handleAbrirJustificacion={
                                     handleAbrirJustificacion
@@ -845,7 +861,6 @@ export default function VerPermisos({ tipoVista }: Props) {
                                   getCategoriaBadgeClass={
                                     getCategoriaBadgeClass
                                   }
-                                  getEstadoBadge={getEstadoBadge}
                                   getHorasTrabajo={getHorasTrabajo}
                                   formatHorasLabel={formatHorasLabel}
                                 />
@@ -873,6 +888,7 @@ export default function VerPermisos({ tipoVista }: Props) {
         onClose={() => setModalJustificacionAbierto(false)}
         permiso={permisoParaJustificar}
         onSaved={cargarDatos}
+        soloLectura={!puedeGestionarEvidencia}
       />
       <CrearEditarPermiso
         isOpen={modalAbierto}
@@ -895,7 +911,7 @@ export default function VerPermisos({ tipoVista }: Props) {
 function UsuarioGrupoPermisos({
   usuarioGrupo,
   tipoVista,
-  puedeSubirJustificacion,
+  puedeGestionarEvidencia,
   handleVerPreview,
   handleAbrirJustificacion,
   handleClickFila,
@@ -904,13 +920,12 @@ function UsuarioGrupoPermisos({
   getCategoria,
   getCategoriaIcon,
   getCategoriaBadgeClass,
-  getEstadoBadge,
   getHorasTrabajo,
   formatHorasLabel,
 }: {
   usuarioGrupo: { usuario: any; permisos: PermisoEmpleado[] };
   tipoVista: TipoVistaPermisos;
-  puedeSubirJustificacion: boolean;
+  puedeGestionarEvidencia: boolean;
   handleVerPreview: (e: React.MouseEvent, p: PermisoEmpleado) => void;
   handleAbrirJustificacion: (e: React.MouseEvent, p: PermisoEmpleado) => void;
   handleClickFila: (p: PermisoEmpleado) => void;
@@ -919,7 +934,6 @@ function UsuarioGrupoPermisos({
   getCategoria: (p: PermisoEmpleado) => CategoriaPermiso;
   getCategoriaIcon: (cat: CategoriaPermiso) => LucideIcon;
   getCategoriaBadgeClass: (cat: CategoriaPermiso) => string;
-  getEstadoBadge: (e: string) => React.ReactNode;
   getHorasTrabajo: (start: Date, end: Date) => number;
   formatHorasLabel: (horas: number) => string;
 }) {
@@ -992,115 +1006,138 @@ function UsuarioGrupoPermisos({
     );
   }, [filtro, orden, usuarioGrupo.permisos, getCategoria]);
 
+  const chipTipo = (activo: boolean, activoCls: string, inactivoCls: string) =>
+    cn(
+      "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[11px] lg:text-xs font-semibold transition-colors cursor-pointer select-none",
+      activo ? activoCls : inactivoCls,
+    );
+
   return (
     <div className="flex flex-col gap-2">
-      {/* Encabezado de Usuario Agrupado con Filtros Interactivos */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between px-2 py-1 bg-slate-100/50 dark:bg-neutral-800/50 rounded-md border border-slate-200 dark:border-neutral-700">
-        <div className="flex items-center gap-2">
-          <div className="p-1 bg-blue-100 dark:bg-blue-900/30 rounded-full">
-            <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xs lg:text-base font-bold text-slate-800 dark:text-gray-200">
-              {usuarioGrupo.usuario?.nombre}
-            </span>
-            <span className="text-[10px] lg:text-xs text-slate-500 dark:text-gray-500 flex items-center gap-1">
-              <Briefcase className="w-2.5 h-2.5 lg:w-4 lg:h-4" />
+      <div className="flex items-center gap-2.5 px-2 py-2 bg-slate-100/50 dark:bg-neutral-800/50 rounded-md border border-slate-200 dark:border-neutral-700">
+        <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-full shrink-0">
+          <User className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600 dark:text-blue-400" />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <span className="text-base lg:text-lg font-bold text-slate-800 dark:text-gray-100 leading-tight">
+            {usuarioGrupo.usuario?.nombre}
+          </span>
+          <span className="text-xs lg:text-sm text-slate-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+            <Briefcase className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+            <span className="truncate">
               {usuarioGrupo.usuario?.puesto_nombre || "Sin puesto"}
             </span>
-          </div>
+          </span>
         </div>
+      </div>
 
-        <div className="mt-1 md:mt-0 flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
+      <div className="rounded-lg bg-slate-100/60 dark:bg-neutral-800/40 px-2.5 py-2 flex flex-col gap-2 w-full">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-neutral-500 mr-0.5 shrink-0">
+            Tipo
+          </span>
           {stats.e > 0 && (
             <button
+              type="button"
               onClick={() =>
                 setFiltro(filtro === "extras" ? "todos" : "extras")
               }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "extras"
-                  ? "bg-slate-600 text-white border-slate-700 scale-105"
-                  : "bg-slate-100 text-slate-700 dark:bg-slate-900/40 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:bg-slate-200",
+              className={chipTipo(
+                filtro === "extras",
+                "bg-slate-500/25 text-slate-800 dark:text-slate-100",
+                "text-slate-500 dark:text-neutral-400 hover:bg-white/50 dark:hover:bg-neutral-700/40",
               )}
             >
-              <Clock className="w-3 h-3 shrink-0" />
-              {stats.e} Ext {stats.ed > 0 && `= ${formatHorasLabel(stats.ed)}`}
+              <Clock className="w-3 h-3 shrink-0 opacity-70" />
+              {stats.e} Ext {stats.ed > 0 && `· ${formatHorasLabel(stats.ed)}`}
             </button>
           )}
           {stats.i > 0 && (
             <button
+              type="button"
               onClick={() => setFiltro(filtro === "igss" ? "todos" : "igss")}
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "igss"
-                  ? "bg-yellow-500 text-yellow-950 border-yellow-600 scale-105"
-                  : "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800 hover:bg-yellow-200",
+              className={chipTipo(
+                filtro === "igss",
+                "bg-amber-500/20 text-amber-700 dark:text-amber-300",
+                "text-slate-500 dark:text-neutral-400 hover:bg-amber-500/10",
               )}
             >
-              <Shield className="w-3 h-3 shrink-0" />
-              {stats.i} IGSS {stats.id > 0 && `= ${formatHorasLabel(stats.id)}`}
+              <Shield className="w-3 h-3 shrink-0 text-amber-500" />
+              {stats.i} IGSS {stats.id > 0 && `· ${formatHorasLabel(stats.id)}`}
             </button>
           )}
           {stats.a > 0 && (
             <button
+              type="button"
               onClick={() =>
                 setFiltro(filtro === "academicas" ? "todos" : "academicas")
               }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "academicas"
-                  ? "bg-green-600 text-white border-green-700 scale-105"
-                  : "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border-green-200 dark:border-green-800 hover:bg-green-200",
+              className={chipTipo(
+                filtro === "academicas",
+                "bg-green-500/20 text-green-700 dark:text-green-300",
+                "text-slate-500 dark:text-neutral-400 hover:bg-green-500/10",
               )}
             >
-              <GraduationCap className="w-3 h-3 shrink-0" />
-              {stats.a} Educ {stats.ad > 0 && `= ${formatHorasLabel(stats.ad)}`}
+              <GraduationCap className="w-3 h-3 shrink-0 text-green-500" />
+              {stats.a} Educ {stats.ad > 0 && `· ${formatHorasLabel(stats.ad)}`}
             </button>
           )}
           {stats.v > 0 && (
             <button
+              type="button"
               onClick={() =>
                 setFiltro(filtro === "vacaciones" ? "todos" : "vacaciones")
               }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "vacaciones"
-                  ? "bg-purple-600 text-white border-purple-700 scale-105"
-                  : "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-400 border-purple-200 dark:border-purple-800 hover:bg-purple-200",
+              className={chipTipo(
+                filtro === "vacaciones",
+                "bg-purple-500/20 text-purple-700 dark:text-purple-300",
+                "text-slate-500 dark:text-neutral-400 hover:bg-purple-500/10",
               )}
             >
-              <Umbrella className="w-3 h-3 shrink-0" />
-              {stats.v} Vac {stats.vd > 0 && `= ${formatHorasLabel(stats.vd)}`}
+              <Umbrella className="w-3 h-3 shrink-0 text-purple-500" />
+              {stats.v} Vac {stats.vd > 0 && `· ${formatHorasLabel(stats.vd)}`}
             </button>
           )}
           {stats.o > 0 && (
             <button
+              type="button"
               onClick={() =>
                 setFiltro(filtro === "permisos" ? "todos" : "permisos")
               }
-              className={cn(
-                "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded transition-all border inline-flex items-center gap-1",
-                filtro === "permisos"
-                  ? "bg-blue-600 text-white border-blue-700 scale-105"
-                  : "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 border-blue-200 dark:border-blue-800 hover:bg-blue-200",
+              className={chipTipo(
+                filtro === "permisos",
+                "bg-blue-500/20 text-blue-700 dark:text-blue-300",
+                "text-slate-500 dark:text-neutral-400 hover:bg-blue-500/10",
               )}
             >
-              <FileText className="w-3 h-3 shrink-0" />
-              {stats.o} Perm {stats.od > 0 && `= ${formatHorasLabel(stats.od)}`}
+              <FileText className="w-3 h-3 shrink-0 text-blue-500" />
+              {stats.o} Perm {stats.od > 0 && `· ${formatHorasLabel(stats.od)}`}
             </button>
           )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1.5 border-t border-slate-200/70 dark:border-neutral-700/70">
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 dark:text-neutral-500 shrink-0">
+            Vista
+          </span>
           <button
+            type="button"
             onClick={() => setFiltro("todos")}
             className={cn(
-              "text-[10px] lg:text-xs font-bold px-2 lg:px-2.5 py-0.5 lg:py-1 rounded border shrink-0 transition-all",
+              "text-sm lg:text-base font-medium transition-colors cursor-pointer tabular-nums",
               filtro === "todos"
-                ? "bg-slate-200 text-slate-800 border-slate-300 dark:bg-neutral-700 dark:text-white"
-                : "bg-white text-slate-500 border-slate-100 dark:bg-neutral-900 dark:border-neutral-800 hover:bg-slate-50",
+                ? "text-slate-900 dark:text-slate-100 underline decoration-blue-500 decoration-2 underline-offset-[3px]"
+                : "text-slate-500 dark:text-neutral-400 hover:text-slate-700 dark:hover:text-neutral-200",
             )}
           >
-            Total: {stats.td > 0 ? formatHorasLabel(stats.td) : "0h"}
+            Total{" "}
+            <span className="font-semibold">
+              {stats.td > 0 ? formatHorasLabel(stats.td) : "0h"}
+            </span>
           </button>
+          <span className="text-slate-300 dark:text-neutral-600 select-none">
+            ·
+          </span>
           <button
             type="button"
             onClick={() => setOrden(orden === "fecha" ? "tipo" : "fecha")}
@@ -1109,20 +1146,17 @@ function UsuarioGrupoPermisos({
                 ? "Ordenado por fecha. Clic para ordenar por tipo"
                 : "Ordenado por tipo. Clic para ordenar por fecha"
             }
-            className={cn(
-              "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2 py-0.5 lg:py-1 rounded border shrink-0 transition-all inline-flex items-center gap-1",
-              "bg-white text-slate-600 border-slate-200 dark:bg-neutral-900 dark:text-slate-300 dark:border-neutral-700 hover:bg-slate-50 dark:hover:bg-neutral-800",
-            )}
+            className="inline-flex items-center gap-1 text-sm lg:text-base font-medium text-cyan-700 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-300 transition-colors cursor-pointer"
           >
             {orden === "fecha" ? (
               <>
-                <CalendarDays className="w-3 h-3 shrink-0" />
-                Fecha
+                <CalendarDays className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                Por fecha
               </>
             ) : (
               <>
-                <ArrowUpDown className="w-3 h-3 shrink-0" />
-                Tipo
+                <ArrowUpDown className="w-3.5 h-3.5 shrink-0 opacity-80" />
+                Por tipo
               </>
             )}
           </button>
@@ -1130,7 +1164,7 @@ function UsuarioGrupoPermisos({
       </div>
 
       {/* Listado de permisos para este usuario (Filtrado) */}
-      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 pl-2 md:pl-4 border-l-2 border-slate-100 dark:border-neutral-800 ml-3">
+      <div className="grid grid-cols-1 2xl:grid-cols-2 gap-4 pl-1.5 ml-0.5 border-l border-slate-200 dark:border-neutral-700">
         <AnimatePresence mode="popLayout">
           {permisosFiltrados.map((permiso) => {
             const esPendiente = permiso.estado === "pendiente";
@@ -1165,6 +1199,8 @@ function UsuarioGrupoPermisos({
               permiso.tipo,
               permiso.descripcion,
             );
+            const muestraEvidencia =
+              puedeGestionarEvidencia || !!permiso.comprobante_url;
 
             return (
               <motion.div
@@ -1174,7 +1210,7 @@ function UsuarioGrupoPermisos({
                 exit={{ opacity: 0, scale: 0.95 }}
                 key={permiso.id}
                 className={cn(
-                  "group relative flex flex-col justify-between bg-white dark:bg-neutral-900 rounded-lg p-3 shadow-sm hover:shadow-md transition-all w-full border border-gray-200 dark:border-neutral-800",
+                  "group relative flex flex-col justify-between bg-white dark:bg-neutral-900 rounded-xl p-3.5 shadow-md hover:shadow-lg transition-all w-full border-2 border-slate-300 dark:border-neutral-600 ring-1 ring-slate-200/80 dark:ring-neutral-700/80",
                   borderClass,
                 )}
               >
@@ -1185,7 +1221,7 @@ function UsuarioGrupoPermisos({
                     return (
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1 text-[10px] lg:text-sm px-2 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider",
+                          "inline-flex items-center gap-1.5 text-xs lg:text-base px-2.5 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider",
                           getCategoriaBadgeClass(cat),
                         )}
                       >
@@ -1198,7 +1234,7 @@ function UsuarioGrupoPermisos({
                     );
                   })()}
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[9px] lg:text-xs text-gray-400 font-medium whitespace-nowrap">
+                    <span className="text-xs lg:text-sm text-gray-400 font-medium whitespace-nowrap">
                       {formatearFechaTarjetaDesdeISO(permiso.created_at)}
                     </span>
                   </div>
@@ -1209,7 +1245,7 @@ function UsuarioGrupoPermisos({
                     <p className="text-xs lg:text-lg font-bold text-slate-700 dark:text-slate-300 capitalize mb-1">
                       {permiso.tipo.replace("_", " ")}
                     </p>
-                    <div className="flex flex-col gap-1 text-[10px] lg:text-sm text-slate-600 dark:text-slate-400">
+                    <div className="flex flex-col gap-1.5 text-sm lg:text-base text-slate-600 dark:text-slate-400">
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
                           <CalendarDays className="w-3 h-3 lg:w-4 lg:h-4 text-blue-500/70" />
@@ -1235,32 +1271,30 @@ function UsuarioGrupoPermisos({
                           <Clock className="w-3 h-3 lg:w-4 lg:h-4 text-orange-500/70 shrink-0" />
                           <span>{textoHora}</span>
                         </div>
-                        {puedeSubirJustificacion && (
+                        {muestraEvidencia && (
                           <button
                             type="button"
                             onClick={(e) =>
                               handleAbrirJustificacion(e, permiso)
                             }
                             className={cn(
-                              "flex items-center justify-center gap-1 px-2 py-1 text-[9px] lg:text-xs font-bold rounded-md transition-colors border-2 cursor-pointer shrink-0",
+                              "flex items-center justify-center gap-1.5 px-2 py-2.5 text-xs lg:text-sm font-bold rounded-md transition-colors border-2 cursor-pointer shrink-0",
                               permiso.comprobante_url
                                 ? "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-600 dark:border-emerald-400"
                                 : "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 border-indigo-600 dark:border-indigo-400",
                             )}
                             title={
                               permiso.comprobante_url
-                                ? "Ver comprobante"
-                                : "Subir comprobante"
+                                ? "Ver evidencia"
+                                : "Subir evidencia"
                             }
                           >
                             {permiso.comprobante_url ? (
-                              <Eye className="w-3 h-3 shrink-0" />
+                              <Eye className="w-4 h-4 shrink-0" />
                             ) : (
-                              <Upload className="w-3 h-3 shrink-0" />
+                              <Upload className="w-4 h-4 shrink-0" />
                             )}
-                            <span className="hidden sm:inline">
-                              Justificación
-                            </span>
+                            Evidencia
                           </button>
                         )}
                       </div>
@@ -1268,13 +1302,13 @@ function UsuarioGrupoPermisos({
                   </div>
                   {permiso.descripcion && (
                     <div className="p-1.5 rounded bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100/50 dark:border-amber-900/20">
-                      <p className="text-[10px] lg:text-sm text-gray-600 dark:text-gray-400 italic line-clamp-2">
+                      <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400 italic line-clamp-2">
                         {permiso.descripcion}
                       </p>
                     </div>
                   )}
                   {(permiso.aprobado_jefe_nombre || permiso.aprobado_rrhh_nombre) && (
-                    <div className="flex flex-col gap-0.5 text-[10px] lg:text-xs text-slate-600 dark:text-slate-400">
+                    <div className="flex flex-col gap-0.5 text-sm lg:text-base text-slate-600 dark:text-slate-400">
                       {permiso.aprobado_jefe_nombre && (
                         <p>
                           <span className="font-bold text-slate-500 dark:text-slate-500">
@@ -1293,56 +1327,54 @@ function UsuarioGrupoPermisos({
                       )}
                     </div>
                   )}
-                </div>
-
-                <div className="flex flex-col gap-2 mt-auto pt-2 border-t border-gray-50 dark:border-neutral-800 md:flex-row md:items-center md:justify-between md:gap-3">
-                  <div className="flex items-center justify-center md:justify-start gap-1.5 flex-nowrap overflow-x-auto">
-                    {getEstadoBadge(permiso.estado)}
+                  <div className="flex items-center justify-between w-full gap-2">
+                    {getEstadoTextoPlain(permiso.estado)}
                     {permiso.estado === "aprobado" &&
                       permiso.remunerado !== null && (
                         <span
                           className={cn(
-                            "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2.5 py-0.5 lg:py-1 rounded border inline-flex items-center shrink-0",
+                            "font-bold text-sm lg:text-base shrink-0",
                             permiso.remunerado
-                              ? "text-emerald-700 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800"
-                              : "text-gray-600 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-neutral-800 dark:border-neutral-700",
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-blue-600 dark:text-blue-400",
                           )}
                         >
                           {permiso.remunerado ? "REMUNERADO" : "NO REM"}
                         </span>
                       )}
                   </div>
-                  <div className="flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
+                </div>
+
+                <div className="flex w-full gap-2 mt-auto pt-3 border-t border-gray-200 dark:border-neutral-700">
+                  <button
+                    onClick={(e) => handleVerPreview(e, permiso)}
+                    className="flex flex-1 min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 lg:py-3 text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
+                  >
+                    <CreditCard className="w-4 h-4 shrink-0" />
+                    Permiso
+                  </button>
+
+                  {puedeEditar && (
                     <button
-                      onClick={(e) => handleVerPreview(e, permiso)}
-                      className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
+                      onClick={() => handleClickFila(permiso)}
+                      className="flex flex-1 min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 lg:py-3 text-xs lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
                     >
-                      <Eye className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                      Ver
+                      <Pencil className="w-4 h-4 shrink-0" />
+                      <span className="truncate">Editar / Aprobar</span>
                     </button>
+                  )}
 
-                    {puedeEditar && (
-                      <button
-                        onClick={() => handleClickFila(permiso)}
-                        className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
-                      >
-                        <Pencil className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                        Editar / Aprobar
-                      </button>
-                    )}
-
-                    {puedeEliminar && (
-                      <button
-                        onClick={(e) => handleEliminarPermiso(e, permiso.id)}
-                        className="flex items-center justify-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer"
-                        title="Borrar"
-                        aria-label="Borrar"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                        <span className="hidden md:inline">Borrar</span>
-                      </button>
-                    )}
-                  </div>
+                  {puedeEliminar && (
+                    <button
+                      onClick={(e) => handleEliminarPermiso(e, permiso.id)}
+                      className="flex flex-1 min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 lg:py-3 text-xs lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer"
+                      title="Borrar"
+                      aria-label="Borrar"
+                    >
+                      <Trash2 className="w-4 h-4 shrink-0" />
+                      Borrar
+                    </button>
+                  )}
                 </div>
               </motion.div>
             );

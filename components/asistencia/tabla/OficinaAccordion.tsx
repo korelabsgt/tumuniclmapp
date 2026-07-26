@@ -26,7 +26,7 @@ import {
   getCategoriaAcuerdoJustificacionClass,
   getCategoriaAcuerdoTextClass,
 } from '@/components/permisos/acuerdos/categorias';
-import { Asueto, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
+import { Asueto, getAsuetoPorFecha, ParentByDependenciaId } from '@/hooks/asistencia/useAsuetos';
 import type { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
 import {
   resolverEstadoMarcaje,
@@ -55,6 +55,8 @@ interface OficinaAccordionProps {
   onVerAcuerdo?: (acuerdo: PermisoEmpleado) => void;
   onVerComision?: (comision: ComisionInfo) => void;
   asuetos?: Asueto[];
+  parentByDependenciaId?: ParentByDependenciaId;
+  dependenciaPorUsuario?: Record<string, string | null>;
   usuarios?: Usuario[];
   horariosMap?: Record<string, { entrada: string; salida: string | null }>;
 }
@@ -72,9 +74,18 @@ export default function OficinaAccordion({
   onVerAcuerdo,
   onVerComision,
   asuetos = [],
+  parentByDependenciaId,
+  dependenciaPorUsuario = {},
   usuarios = [],
   horariosMap = {},
 }: OficinaAccordionProps) {
+  const resolverAsueto = (userId: string, diaString: string) =>
+    getAsuetoPorFecha(
+      asuetos,
+      diaString,
+      dependenciaPorUsuario[userId],
+      parentByDependenciaId,
+    );
 
   const horariosPorUsuario = useMemo(() => {
     const map: Record<string, { entrada: string; salida: string | null }> = {
@@ -350,7 +361,7 @@ export default function OficinaAccordion({
 
                       const esVacio = registro.esDiaVacio || registro.esAusencia;
                       const permiso = getPermisoParaDia(registro.userId, registro.diaString);
-                      const asueto = getAsuetoPorFecha(asuetos, registro.diaString);
+                      const asueto = resolverAsueto(registro.userId, registro.diaString);
                       const comision = !asueto && !permiso ? getComisionParaDia(registro.userId, registro.diaString) : null;
                       const esMultiple = registro.multiple && registro.multiple.length > 0;
                       const totalRegistros = (registro.entrada ? 1 : 0) + (registro.salida ? 1 : 0) + (registro.multiple?.length || 0);
@@ -439,7 +450,7 @@ export default function OficinaAccordion({
                           permisoAplicaEnDia(p, a.diaString),
                         );
                         if (tienePermiso) return false;
-                        const tieneAsueto = !!getAsuetoPorFecha(asuetos, a.diaString);
+                        const tieneAsueto = !!resolverAsueto(usuario.userId, a.diaString);
                         return !tieneAsueto;
                       }).length;
                       const totalSinEntrada = usuario.asistencias.filter((a: any) => !a.esAusencia && !a.entrada && (!a.multiple || a.multiple.length === 0)).length;
@@ -478,7 +489,7 @@ export default function OficinaAccordion({
                              const esAusencia = asistencia.esAusencia;
                              const totalRegistros = (asistencia.entrada ? 1 : 0) + (asistencia.salida ? 1 : 0) + (asistencia.multiple?.length || 0);
                              const permiso = getPermisoParaDia(usuario.userId, asistencia.diaString);
-                             const asueto = getAsuetoPorFecha(asuetos, asistencia.diaString);
+                             const asueto = resolverAsueto(usuario.userId, asistencia.diaString);
                              const comision = !asueto && !permiso ? getComisionParaDia(usuario.userId, asistencia.diaString) : null;
                              if (isAfter(parseISO(asistencia.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
 

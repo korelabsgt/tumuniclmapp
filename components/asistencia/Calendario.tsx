@@ -31,7 +31,9 @@ import PreviewAcuerdo from '@/components/permisos/acuerdos/modals/PreviewAcuerdo
 import { obtenerJustificacionParaDia } from '@/components/permisos/justificaciones';
 import VerComision from '@/components/comisiones/VerComision';
 import Mapa from '@/components/ui/modals/Mapa';
-import { useAsuetos, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
+import { useAsuetos, getAsuetoPorFecha, buildParentByDependenciaId } from '@/hooks/asistencia/useAsuetos';
+import useUserData from '@/hooks/sesion/useUserData';
+import { useDependencias } from '@/hooks/dependencias/useDependencias';
 import {
   getCategoriaIcon,
   getCategoriaJustificacionClass,
@@ -129,6 +131,12 @@ const TiempoSkeleton = () => (
 );
 
 export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaHoraGt, esHorarioMultiple = false, permisosEmpleado = [], comisionesEmpleado = [], horarioDias, horarioEntrada, horarioSalida, cargandoJustificaciones = false }: CalendarioProps) {
+  const { dependencia_id } = useUserData();
+  const { dependencias } = useDependencias();
+  const parentByDependenciaId = useMemo(
+    () => buildParentByDependenciaId(dependencias),
+    [dependencias],
+  );
   const [fechaDeReferencia, setFechaDeReferencia] = useState(new Date());
   const [diaSeleccionado, setDiaSeleccionado] = useState<Date | undefined>(undefined);
   const [filtroTipo, setFiltroTipo] = useState<'semanal' | 'rango'>('semanal');
@@ -154,6 +162,9 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
 
   const { asuetos, loading: cargandoAsuetos } = useAsuetos(rangoInicio, rangoFin);
   const esperandoJustificaciones = cargandoJustificaciones || cargandoAsuetos;
+
+  const resolverAsueto = (diaStr: string) =>
+    getAsuetoPorFecha(asuetos, diaStr, dependencia_id, parentByDependenciaId);
 
   /** ¿Este día está dentro del horario laboral del empleado? */
   const esDiaLaboral = (dia: Date): boolean => {
@@ -229,7 +240,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
 
     eachDayOfInterval({ start, end }).forEach((d) => {
       const diaStr = format(d, 'yyyy-MM-dd');
-      const tieneAsueto = getAsuetoPorFecha(asuetos, diaStr) !== null;
+      const tieneAsueto = resolverAsueto(diaStr) !== null;
       const tieneJustificacion =
         obtenerJustificacionParaDia(permisosEmpleado, diaStr) !== null;
       const tieneComision =
@@ -258,6 +269,8 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
     permisosEmpleado,
     asuetos,
     comisionesEmpleado,
+    dependencia_id,
+    parentByDependenciaId,
   ]);
 
   const irSemanaSiguiente = () => setFechaDeReferencia(addDays(fechaDeReferencia, 7));
@@ -533,7 +546,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
             const diaStr = format(dia, 'yyyy-MM-dd');
             const esDiaSeleccionado = diaSeleccionado ? isSameDay(dia, diaSeleccionado) : false;
             const justificacionDia = getJustificacionParaDia(diaStr);
-            const tieneAsueto = getAsuetoPorFecha(asuetos, diaStr) !== null;
+            const tieneAsueto = resolverAsueto(diaStr) !== null;
             const tieneComision = getComisionParaDia(diaStr) !== null;
             const esLaboral = esDiaLaboral(dia);
             if (!esLaboral && !tieneAsueto && !justificacionDia && !tieneComision) return null;
@@ -590,7 +603,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                 const fechaDia = parseISO(diaString + 'T00:00:00');
                 const esFuturo = isAfter(fechaDia, startOfToday());
                 const justificacionDelDia = getJustificacionParaDia(diaString);
-                const asuetoDelDia = getAsuetoPorFecha(asuetos, diaString);
+                const asuetoDelDia = resolverAsueto(diaString);
                 const esAsueto = !!asuetoDelDia;
                 const comisionDelDia = getComisionParaDia(diaString);
                 const tieneEventoJustificable =

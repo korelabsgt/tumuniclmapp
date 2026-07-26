@@ -18,11 +18,21 @@ import { permisoAplicaEnDia } from '@/components/permisos/utilidades';
 import { createClient } from '@/utils/supabase/client';
 import { useListaUsuarios } from '@/hooks/usuarios/useListarUsuarios';
 import { useHorariosUsuarios } from '@/hooks/asistencia/useHorariosUsuarios';
-import { useAsuetos, getAsuetoPorFecha } from '@/hooks/asistencia/useAsuetos';
+import { useAsuetos, getAsuetoPorFecha, buildParentByDependenciaId } from '@/hooks/asistencia/useAsuetos';
 import { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
 import VerComision from '@/components/comisiones/VerComision';
 import { esOficinaSinMarcajeAsistencia } from '@/components/asistencia/lib/oficinas-sin-marcaje';
 import { esEntradaTardeMarcaje, esTipoMarcajeLibre } from '@/components/asistencia/lib/estado-marcaje';
+
+type UsuarioConDependencia = {
+  id?: string;
+  user_id?: string;
+  dependencia_id?: string | null;
+  oficina_nombre?: string | null;
+  nombre?: string | null;
+  puesto_nombre?: string | null;
+  oficina_path_orden?: string | null;
+};
 
 type Props = {
   registros: AsistenciaEnriquecida[];
@@ -96,6 +106,19 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
   );
 
   const { asuetos } = useAsuetos(fechaInicialRango, fechaFinalRango);
+  const parentByDependenciaId = useMemo(
+    () => buildParentByDependenciaId(dependencias),
+    [dependencias],
+  );
+  const dependenciaPorUsuario = useMemo(() => {
+    const map: Record<string, string | null> = {};
+    (todosLosUsuarios as UsuarioConDependencia[]).forEach((u) => {
+      const id = u.id || u.user_id;
+      if (!id) return;
+      map[id] = u.dependencia_id ?? null;
+    });
+    return map;
+  }, [todosLosUsuarios]);
 
   const [nivel2Id, setNivel2Id] = useState<string | null>(null);
   const [nivel3Id, setNivel3Id] = useState<string | null>(null);
@@ -491,9 +514,14 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
       if (tieneComision) return true;
       const tienePermiso = (permisosMap[userId] || []).some(p => permisoAplicaEnDia(p, diaString));
       if (tienePermiso) return true;
-      return !!getAsuetoPorFecha(asuetos, diaString);
+      return !!getAsuetoPorFecha(
+        asuetos,
+        diaString,
+        dependenciaPorUsuario[userId],
+        parentByDependenciaId,
+      );
     };
-  }, [comisionesMap, permisosMap, asuetos]);
+  }, [comisionesMap, permisosMap, asuetos, dependenciaPorUsuario, parentByDependenciaId]);
 
   const estadisticas = useMemo(() => {
     let inasistencias = 0;
@@ -762,6 +790,8 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
                           onVerAcuerdo={setAcuerdoPreview}
                           onVerComision={setComisionPreview}
                           asuetos={asuetos}
+                          parentByDependenciaId={parentByDependenciaId}
+                          dependenciaPorUsuario={dependenciaPorUsuario}
                           usuarios={usuariosMunicipales as typeof todosLosUsuarios}
                           horariosMap={horariosMap}
                         />

@@ -251,7 +251,7 @@ export default function VerLecturasNotificaciones({ tipoVista }: Props) {
     <div className="w-full lg:w-[95%] mx-auto md:px-4 pb-10 transition-all">
       <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md w-full border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
         <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4 p-1 sm:p-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-col items-center sm:flex-row sm:items-center sm:justify-between gap-2 w-full">
             <PermisosNav tipoVista={navTipoVista} />
             <div className="flex items-center gap-1 p-1 bg-gray-200/50 dark:bg-neutral-800 rounded-lg shrink-0">
               <button

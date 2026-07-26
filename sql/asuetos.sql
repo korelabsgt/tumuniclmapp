@@ -1,20 +1,23 @@
 -- ================================================
 -- 🗓️ TABLA DE ASUETOS GLOBALES
--- Aplica a TODOS los empleados del sistema
+-- Aplica a todo el personal salvo dependencias excluidas
 -- Solo RRHH puede crear/editar/eliminar asuetos
 -- ================================================
 
 CREATE TABLE IF NOT EXISTS public.asuetos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  fecha DATE NOT NULL,
+  fecha_inicio DATE NOT NULL,
+  fecha_fin DATE NOT NULL,
   nombre TEXT NOT NULL,
   descripcion TEXT,
+  dependencias_excluidas UUID[] NOT NULL DEFAULT '{}',
   creado_por UUID REFERENCES auth.users(id),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Índice por fecha para búsquedas rápidas
-CREATE INDEX IF NOT EXISTS idx_asuetos_fecha ON public.asuetos (fecha);
+CREATE INDEX IF NOT EXISTS idx_asuetos_fecha_inicio ON public.asuetos (fecha_inicio);
+CREATE INDEX IF NOT EXISTS idx_asuetos_fecha_fin ON public.asuetos (fecha_fin);
 
 -- Habilitar RLS
 ALTER TABLE public.asuetos ENABLE ROW LEVEL SECURITY;

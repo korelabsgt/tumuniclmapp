@@ -206,18 +206,92 @@ export default function VerAcuerdos({ tipoVista }: Props) {
         ? "jefe"
         : "rrhh";
 
+  const aplicarModoSemana = () => {
+    setModoFiltro("semana");
+    setMesSemanas(format(new Date(), "yyyy-MM"));
+    const hoy = format(new Date(), "yyyy-MM-dd");
+    const semActual = getSemanasDelMes(format(new Date(), "yyyy-MM")).find(
+      (s) => s.inicio <= hoy && s.fin >= hoy,
+    );
+    if (semActual) {
+      setFechaInicio(semActual.inicio);
+      setFechaFin(semActual.fin);
+    }
+  };
+
+  const handleCambioModoFiltro = (modo: "dia" | "semana" | "rango") => {
+    setFiltroEstado("todos");
+    if (modo === "semana") {
+      aplicarModoSemana();
+      return;
+    }
+    setModoFiltro(modo);
+  };
+
+  const modoFiltroSelect =
+    modoFiltro === "dia" || modoFiltro === "semana" || modoFiltro === "rango"
+      ? modoFiltro
+      : "semana";
+
+  const selectFiltroFechaClass =
+    "shrink-0 appearance-none [&::-ms-expand]:hidden bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold focus:outline-none focus:border-blue-400 transition-all shadow-sm cursor-pointer dark:text-gray-200";
+
+  const botonFechaRangoClass = cn(
+    selectFiltroFechaClass,
+    "flex items-center justify-center gap-1.5 flex-1 min-w-0 lg:min-w-[7.5rem] whitespace-nowrap px-2 text-center",
+  );
+
+  const modoSelectMobileClass = cn(
+    selectFiltroFechaClass,
+    "shrink-0 w-[5.25rem] min-w-[5.25rem] text-center lg:hidden",
+  );
+
+  const modoSelectDesktopClass = cn(
+    selectFiltroFechaClass,
+    "hidden lg:block text-center",
+    modoFiltro === "rango" && "lg:flex-none lg:w-[5.25rem] lg:min-w-[5.25rem]",
+  );
+
+  const modoSelectEl = (
+    <select
+      value={modoFiltroSelect}
+      onChange={(e) =>
+        handleCambioModoFiltro(e.target.value as "dia" | "semana" | "rango")
+      }
+      className={modoSelectDesktopClass}
+    >
+      <option value="dia">Día</option>
+      <option value="semana">Semana</option>
+      <option value="rango">Rango</option>
+    </select>
+  );
+
+  const modoSelectMobileEl = (
+    <select
+      value={modoFiltroSelect}
+      onChange={(e) =>
+        handleCambioModoFiltro(e.target.value as "dia" | "semana" | "rango")
+      }
+      className={modoSelectMobileClass}
+    >
+      <option value="dia">Día</option>
+      <option value="semana">Semana</option>
+      <option value="rango">Rango</option>
+    </select>
+  );
+
   return (
     <>
       <div className="w-full lg:w-[95%] mx-auto md:px-4 pb-10 transition-all">
         <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md w-full border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
           <div className="flex flex-col gap-2 sm:gap-3 mb-3 sm:mb-4 p-1 sm:p-2">
-            <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
               <PermisosNav tipoVista={navTipoVista} />
               {tipoVista === "gestion_rrhh" && (
                 <button
                   type="button"
                   onClick={handleNuevoAcuerdo}
-                  className="flex items-center justify-center gap-1.5 h-8 lg:h-10 px-2.5 lg:px-3 text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
+                  className="flex w-full sm:w-auto items-center justify-center gap-1.5 h-8 lg:h-10 px-2.5 lg:px-3 text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
                 >
                   <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
                   Nuevo Acuerdo
@@ -249,71 +323,38 @@ export default function VerAcuerdos({ tipoVista }: Props) {
               </div>
 
               <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-end lg:gap-3 w-full">
-                <div className="order-1 lg:order-none lg:col-start-2 lg:row-start-1 lg:justify-self-center flex items-stretch h-11 w-full shrink-0 lg:w-80 bg-gray-200/50 dark:bg-neutral-800 p-1 rounded-lg gap-1">
-                <button
-                  onClick={() => {
-                    setModoFiltro("dia");
-                    setFiltroEstado("todos");
-                  }}
-                  className={cn(
-                    "flex-1 min-w-0 basis-0 h-full flex items-center justify-center text-sm sm:text-base font-bold rounded-md transition-all",
-                    modoFiltro === "dia"
-                      ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                  )}
-                >
-                  Día
-                </button>
-                <button
-                  onClick={() => {
-                    setModoFiltro("semana");
-                    setFiltroEstado("todos");
-                    setMesSemanas(format(new Date(), "yyyy-MM"));
-                    const hoy = format(new Date(), "yyyy-MM-dd");
-                    const semActual = getSemanasDelMes(format(new Date(), "yyyy-MM")).find(
-                      (s) => s.inicio <= hoy && s.fin >= hoy,
-                    );
-                    if (semActual) {
-                      setFechaInicio(semActual.inicio);
-                      setFechaFin(semActual.fin);
-                    }
-                  }}
-                  className={cn(
-                    "flex-1 min-w-0 basis-0 h-full flex items-center justify-center text-sm sm:text-base font-bold rounded-md transition-all",
-                    modoFiltro === "semana"
-                      ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                  )}
-                >
-                  Semana
-                </button>
-                <button
-                  onClick={() => {
-                    setModoFiltro("rango");
-                    setFiltroEstado("todos");
-                  }}
-                  className={cn(
-                    "flex-1 min-w-0 basis-0 h-full flex items-center justify-center text-sm sm:text-base font-bold rounded-md transition-all",
-                    modoFiltro === "rango"
-                      ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
-                  )}
-                >
-                  Rango
-                </button>
-                </div>
-
-                <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full">
-                  {modoFiltro === "dia" && (
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                        Seleccione un día para mostrar
+                <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full flex flex-col items-center gap-1">
+                  {modoFiltro !== "pendientes" && (
+                    <div className="flex items-center gap-2 w-full min-w-0 lg:justify-center">
+                      {modoSelectMobileEl}
+                      <span className="text-[10px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 flex-1 min-w-0 text-left lg:flex-none lg:text-center lg:w-full">
+                        Selecciona la fecha para mostrar
                       </span>
+                    </div>
+                  )}
+
+                  <div
+                    className={cn(
+                      "flex justify-center gap-2 w-full min-w-0",
+                      modoFiltro === "rango"
+                        ? "items-center"
+                        : "items-center overflow-x-auto",
+                    )}
+                  >
+                    {modoSelectEl}
+
+                    {modoFiltro === "dia" && (
                       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                         <PopoverTrigger asChild>
-                          <button className="flex items-center gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer hover:border-blue-400 dark:hover:border-blue-500 transition-all shadow-sm">
-                            <Calendar className="w-4 h-4 text-blue-500" />
-                            <span className="dark:text-gray-200 capitalize">
+                          <button
+                            type="button"
+                            className={cn(
+                              selectFiltroFechaClass,
+                              "flex items-center gap-1.5 min-w-0",
+                            )}
+                          >
+                            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+                            <span className="capitalize truncate">
                               {formatearFechaFiltro(fechaSeleccionada)}
                             </span>
                           </button>
@@ -328,17 +369,15 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                           />
                         </PopoverContent>
                       </Popover>
-                    </div>
-                  )}
+                    )}
 
-                  {modoFiltro === "semana" && (
-                    <div className="flex flex-col items-start gap-1">
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                        Seleccione una semana para mostrar
-                      </span>
-                      <div className="flex items-center gap-2 flex-wrap">
+                    {modoFiltro === "semana" && (
+                      <>
                         <select
-                          className="max-w-[130px] sm:max-w-none bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold focus:outline-none focus:border-blue-400 transition-all shadow-sm cursor-pointer"
+                          className={cn(
+                            selectFiltroFechaClass,
+                            "text-center min-w-0 flex-1 max-w-[11rem] sm:max-w-none",
+                          )}
                           onChange={(e) => {
                             const idx = parseInt(e.target.value, 10);
                             const sem = semanasDisponibles[idx];
@@ -352,7 +391,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                           )}
                         >
                           <option value="-1" disabled>
-                            Seleccione semana
+                            Semana
                           </option>
                           {semanasDisponibles.map((sem, idx) => (
                             <option key={idx} value={idx}>
@@ -360,17 +399,28 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                             </option>
                           ))}
                         </select>
-                        <Popover open={calendarSemanaOpen} onOpenChange={setCalendarSemanaOpen}>
+                        <Popover
+                          open={calendarSemanaOpen}
+                          onOpenChange={setCalendarSemanaOpen}
+                        >
                           <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1.5 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold hover:border-blue-400 transition-all shadow-sm min-w-0 sm:min-w-[120px]">
-                              <Calendar className="w-4 h-4 text-blue-500" />
-                              <span className="dark:text-gray-200">{formatMes(mesSemanas)}</span>
+                            <button
+                              type="button"
+                              className={cn(
+                                selectFiltroFechaClass,
+                                "flex items-center gap-1.5 min-w-0 shrink-0",
+                              )}
+                            >
+                              <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
+                              <span className="truncate">{formatMes(mesSemanas)}</span>
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="end">
                             <Calendario
                               modo="mes"
-                              fechaSeleccionada={fechaInicio || format(new Date(), "yyyy-MM-dd")}
+                              fechaSeleccionada={
+                                fechaInicio || format(new Date(), "yyyy-MM-dd")
+                              }
                               onSelectDate={(date) => {
                                 const newMes = date.substring(0, 7);
                                 setMesSemanas(newMes);
@@ -384,23 +434,16 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                             />
                           </PopoverContent>
                         </Popover>
-                      </div>
-                    </div>
-                  )}
+                      </>
+                    )}
 
-                  {modoFiltro === "rango" && (
-                    <div className="flex flex-col items-start gap-1 w-full min-w-0">
-                      <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                        Selecciona las fechas que deseas ver
-                      </span>
-                      <div className="flex items-center gap-1 sm:gap-2 flex-nowrap w-full min-w-0">
+                    {modoFiltro === "rango" && (
+                      <div className="flex flex-1 min-w-0 w-full items-center justify-center gap-1.5 sm:gap-2">
                         <Popover open={calendarInicioOpen} onOpenChange={setCalendarInicioOpen}>
                           <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-emerald-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
-                              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
-                              <span className="dark:text-gray-200">
-                                {formatearFechaFiltro(fechaInicio)}
-                              </span>
+                            <button type="button" className={botonFechaRangoClass}>
+                              <Calendar className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                              <span>{formatearFechaFiltro(fechaInicio)}</span>
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -413,14 +456,12 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                             />
                           </PopoverContent>
                         </Popover>
-                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-400 shrink-0" />
+                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500 shrink-0" />
                         <Popover open={calendarFinOpen} onOpenChange={setCalendarFinOpen}>
                           <PopoverTrigger asChild>
-                            <button className="flex items-center gap-1 sm:gap-2 bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] sm:text-xs font-semibold cursor-pointer hover:border-red-400 transition-all shadow-sm shrink-0 whitespace-nowrap">
-                              <Calendar className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500 shrink-0" />
-                              <span className="dark:text-gray-200">
-                                {formatearFechaFiltro(fechaFin)}
-                              </span>
+                            <button type="button" className={botonFechaRangoClass}>
+                              <Calendar className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                              <span>{formatearFechaFiltro(fechaFin)}</span>
                             </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
@@ -434,8 +475,8 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                           </PopoverContent>
                         </Popover>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
 
                 <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1 shrink-0 w-full lg:w-auto justify-start">
@@ -446,7 +487,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                         setFiltroEstado("todos");
                       } else {
                         setFiltroEstado("aprobado");
-                        if (modoFiltro === "pendientes") setModoFiltro("dia");
+                        if (modoFiltro === "pendientes") aplicarModoSemana();
                       }
                     }}
                     className={cn(
@@ -466,7 +507,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                         setFiltroEstado("todos");
                       } else {
                         setFiltroEstado("rechazado");
-                        if (modoFiltro === "pendientes") setModoFiltro("dia");
+                        if (modoFiltro === "pendientes") aplicarModoSemana();
                       }
                     }}
                     className={cn(

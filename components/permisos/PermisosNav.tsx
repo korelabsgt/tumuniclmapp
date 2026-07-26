@@ -39,45 +39,45 @@ export default function PermisosNav({ tipoVista, className }: Props) {
   return (
     <div
       className={cn(
-        "flex items-center gap-1 p-1 bg-gray-200/50 dark:bg-neutral-800 rounded-lg w-fit flex-wrap",
+        "flex items-center justify-center sm:justify-start gap-1 p-1 bg-gray-200/50 dark:bg-neutral-800 rounded-lg w-full sm:w-fit flex-wrap",
         className,
       )}
     >
       <Link
         href={rutas.permisos}
         className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-md transition-all",
+          "flex flex-1 sm:flex-initial items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-bold rounded-md transition-all min-w-0",
           !esAcuerdos && !esLecturas
             ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
             : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
         )}
       >
-        <FileText className="w-3.5 h-3.5" />
-        Permisos
+        <FileText className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate">Permisos</span>
       </Link>
       <Link
         href={rutas.acuerdos}
         className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-md transition-all",
+          "flex flex-1 sm:flex-initial items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-bold rounded-md transition-all min-w-0",
           esAcuerdos
             ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
             : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
         )}
       >
-        <ScrollText className="w-3.5 h-3.5" />
-        Acuerdos
+        <ScrollText className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate">Acuerdos</span>
       </Link>
       <Link
         href={rutas.lecturas}
         className={cn(
-          "flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-md transition-all",
+          "flex flex-1 sm:flex-initial items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 text-[11px] sm:text-sm font-bold rounded-md transition-all min-w-0",
           esLecturas
             ? "bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-sm"
             : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200",
         )}
       >
-        <Bell className="w-3.5 h-3.5" />
-        Notificaciones
+        <Bell className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate">Notificaciones</span>
       </Link>
     </div>
   );

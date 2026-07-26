@@ -5,6 +5,22 @@ function limpiarMes(fecha: Date, patron: string): string {
   return format(fecha, patron, { locale: es }).replace(/\./g, "");
 }
 
+function diaSemanaCorto(fecha: Date): string {
+  const diaRaw = format(fecha, "EEE", { locale: es }).replace(".", "");
+  return `${diaRaw.charAt(0).toUpperCase()}${diaRaw.slice(1)}`;
+}
+
+export function formatearRangoSemanaFiltro(
+  inicioISO: string,
+  finISO: string,
+): string {
+  const inicio = parseISO(inicioISO.substring(0, 10));
+  const fin = parseISO(finISO.substring(0, 10));
+  const diaInicio = format(inicio, "d", { locale: es });
+  const diaFin = format(fin, "d", { locale: es });
+  return `${diaSemanaCorto(inicio)} ${diaInicio} - ${diaSemanaCorto(fin)} ${diaFin}`;
+}
+
 export function formatearRangoSemana(inicioISO: string, finISO: string): string {
   const inicio = parseISO(inicioISO.substring(0, 10));
   const fin = parseISO(finISO.substring(0, 10));
@@ -42,7 +58,7 @@ export function getSemanasDelMes(yyyyMM: string) {
     semanas.push({
       inicio,
       fin,
-      label: formatearRangoSemana(inicio, fin),
+      label: formatearRangoSemanaFiltro(inicio, fin),
     });
 
     current = new Date(weekEnd);

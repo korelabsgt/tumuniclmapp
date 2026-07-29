@@ -436,17 +436,29 @@ export const checkIsDirectorServiciosPublicos = async (dependenciaId: string | n
   if (!dependenciaId) return false;
 
   const supabase = await createClient();
-  
-  const { data, error }: { data: any, error: any } = await supabase
-    .from('dependencias')
-    .select('nombre')
-    .eq('id', dependenciaId)
-    .single();
+  let currentId: string | null = dependenciaId;
+  let depth = 0;
+  const MAX_DEPTH = 5;
 
-  if (error || !data) return false;
+  while (currentId && depth < MAX_DEPTH) {
+    const { data, error }: { data: any, error: any } = await supabase
+      .from('dependencias')
+      .select('id, nombre, parent_id')
+      .eq('id', currentId)
+      .single();
 
-  const nombre = (data.nombre || '').toLowerCase();
-  return nombre.includes('director de servicios públicos') || nombre.includes('director de servicios publicos');
+    if (error || !data) break;
+
+    const nombre = (data.nombre || '').toLowerCase();
+    if (nombre.includes('servicios públicos') || nombre.includes('servicios publicos')) {
+      return true;
+    }
+
+    currentId = data.parent_id;
+    depth++;
+  }
+
+  return false;
 };
 
 /**

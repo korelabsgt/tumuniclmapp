@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from "react";
 import { X, Download, Loader2 } from "lucide-react";
+import { getRemuneradoBadgeClass, getRemuneradoEtiqueta } from "../categorias";
 import { PermisoEmpleado } from "../types";
 import PermisoTemplate from "../PermisoTemplate";
 import { toPng } from "html-to-image";
@@ -199,12 +200,8 @@ export default function PreviewPermiso({ permiso, isOpen, onClose }: Props) {
                   {permiso.estado.replace(/_/g, " ")}
                 </span>
                 {permiso.remunerado !== null && (
-                  <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${
-                    permiso.remunerado
-                      ? "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800"
-                      : "bg-neutral-50 text-neutral-500 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:border-neutral-700"
-                  }`}>
-                    {permiso.remunerado ? "REMUNERADO" : "SIN GOCE"}
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-black tracking-wider border ${getRemuneradoBadgeClass(permiso.remunerado)}`}>
+                    {getRemuneradoEtiqueta(permiso.remunerado)}
                   </span>
                 )}
               </div>

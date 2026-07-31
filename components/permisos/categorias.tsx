@@ -1,5 +1,17 @@
 import { Heart, Umbrella, GraduationCap, FileCheck, Clock, type LucideIcon } from "lucide-react";
-import { PermisoEmpleado } from "./types";
+import { getEtiquetaRemunerado, PermisoEmpleado } from "./types";
+
+export const getRemuneradoEtiqueta = getEtiquetaRemunerado;
+
+export const getRemuneradoTextClass = (remunerado: boolean): string =>
+  remunerado
+    ? "text-emerald-600 dark:text-emerald-400"
+    : "text-red-600 dark:text-red-400";
+
+export const getRemuneradoBadgeClass = (remunerado: boolean): string =>
+  remunerado
+    ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800"
+    : "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800";
 
 export type CategoriaPermiso =
   | "igss"

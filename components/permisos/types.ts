@@ -7,6 +7,13 @@ export type UsuarioConJerarquia = Usuario & {
   dependencia_id: string | null;
 };
 
+export const ETIQUETA_REMUNERADO = "Rem." as const;
+export const ETIQUETA_NO_REMUNERADO = "No Rem." as const;
+
+export function getEtiquetaRemunerado(remunerado: boolean): string {
+  return remunerado ? ETIQUETA_REMUNERADO : ETIQUETA_NO_REMUNERADO;
+}
+
 export type EstadoPermiso = 'pendiente' | 'aprobado_jefe' | 'aprobado' | 'rechazado' | 'rechazado_jefe' | 'rechazado_rrhh';
 
 export type PermisoEmpleado = {

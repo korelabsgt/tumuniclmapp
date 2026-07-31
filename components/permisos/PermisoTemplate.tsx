@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { getRemuneradoBadgeClass, getRemuneradoEtiqueta } from './categorias';
 import { PermisoEmpleado } from './types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -130,12 +131,8 @@ const PermisoTemplate = React.forwardRef<HTMLDivElement, Props>(({ permiso }, re
                         </span>
                         
                         {permiso.remunerado !== null && (
-                             <span className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-wider border ${
-                                permiso.remunerado 
-                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200' 
-                                : 'bg-neutral-50 text-neutral-500 border-neutral-200'
-                             }`}>
-                                {permiso.remunerado ? 'REMUNERADO' : 'SIN GOCE'}
+                             <span className={`px-4 py-1.5 rounded-full text-[11px] font-black tracking-wider border ${getRemuneradoBadgeClass(permiso.remunerado)}`}>
+                                {getRemuneradoEtiqueta(permiso.remunerado)}
                              </span>
                         )}
                     </div>

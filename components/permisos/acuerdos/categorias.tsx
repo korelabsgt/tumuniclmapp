@@ -7,12 +7,17 @@ import {
 } from "lucide-react";
 import { PermisoEmpleado } from "@/components/permisos/types";
 import {
+  getRemuneradoBadgeClass,
+  getRemuneradoEtiqueta,
+  getRemuneradoTextClass,
   IGSS_JUSTIFICACION_CLASS,
   IGSS_TEXT_CLASS,
   VACACIONES_DOT_CLASS,
   VACACIONES_JUSTIFICACION_CLASS,
   VACACIONES_TEXT_CLASS,
 } from "@/components/permisos/categorias";
+
+export { getRemuneradoBadgeClass, getRemuneradoEtiqueta, getRemuneradoTextClass };
 
 export type CategoriaAcuerdo =
   | "vacaciones"

@@ -1,9 +1,12 @@
-import Hero from "@/components/hero";
+import { Suspense } from 'react';
+import HomePublico from "@/components/home/HomePublico";
 
 export default async function Home() {
   return (
     <>
-      <Hero />
+      <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Cargando...</div>}>
+        <HomePublico />
+      </Suspense>
     </>
   );
 }

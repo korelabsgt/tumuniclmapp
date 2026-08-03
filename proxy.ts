@@ -11,7 +11,7 @@ export async function proxy(request: NextRequest) {
   const isProtectedRoute = request.nextUrl.pathname.startsWith("/protected");
 
   if (!user && isProtectedRoute) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Verificar ban de Supabase Auth

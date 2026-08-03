@@ -46,7 +46,7 @@ const whooshVariant: Variants = {
   },
 };
 
-export default function LogoLink() {
+export default function LogoLink({ iconOnly = false }: { iconOnly?: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (
@@ -82,78 +82,82 @@ export default function LogoLink() {
             />
           </motion.div>
 
-          {/* Versión Móvil */}
-          <div className="md:hidden flex flex-col items-center text-center mt-[-15px] mb-4">
-            <motion.span
-              className="text-[10px] font-extrabold uppercase tracking-wider relative overflow-hidden inline-block whitespace-nowrap text-[#0066cc]  transition-colors"
-              style={{ fontFamily: "Montserrat, sans-serif" }}
-              variants={typeWriterVariant}
-              initial="hidden"
-              animate="visible"
-              custom={1}
-            >
-              SIGEM -CLM-
-              <motion.span
-                className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
-                initial={{ x: "-100%" }}
-                animate={{ x: "100%" }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 3,
-                  ease: "linear",
-                  delay: 1,
-                }}
-                style={{ mixBlendMode: "soft-light" }}
-              />
-            </motion.span>
-          </div>
+          {!iconOnly && (
+            <>
+              {/* Versión Móvil */}
+              <div className="md:hidden flex flex-col items-center text-center mt-[-15px] mb-4">
+                <motion.span
+                  className="text-[10px] font-extrabold uppercase tracking-wider relative overflow-hidden inline-block whitespace-nowrap text-[#0066cc]  transition-colors"
+                  style={{ fontFamily: "Montserrat, sans-serif" }}
+                  variants={typeWriterVariant}
+                  initial="hidden"
+                  animate="visible"
+                  custom={1}
+                >
+                  SIGEM -CLM-
+                  <motion.span
+                    className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 3,
+                      ease: "linear",
+                      delay: 1,
+                    }}
+                    style={{ mixBlendMode: "soft-light" }}
+                  />
+                </motion.span>
+              </div>
 
-          {/* Versión Escritorio */}
-          <div className="hidden md:inline-block leading-tight text-left">
-            <motion.span
-              className="block text-3xl mb-0 font-extrabold uppercase tracking-wide relative overflow-hidden whitespace-nowrap text-[#0066cc]  transition-colors"
-              style={{ fontFamily: "Montserrat, sans-serif" }}
-              variants={typeWriterVariant}
-              initial="hidden"
-              animate="visible"
-              custom={1}
-            >
-              SIGEM -CLM-
-              <motion.span
-                className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
-                initial={{ x: "-100%" }}
-                animate={{ x: "100%" }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 3,
-                  ease: "linear",
-                  delay: 1,
-                }}
-                style={{ mixBlendMode: "soft-light" }}
-              />
-            </motion.span>
+              {/* Versión Escritorio */}
+              <div className="hidden md:inline-block leading-tight text-left">
+                <motion.span
+                  className="block text-3xl mb-0 font-extrabold uppercase tracking-wide relative overflow-hidden whitespace-nowrap text-[#0066cc]  transition-colors"
+                  style={{ fontFamily: "Montserrat, sans-serif" }}
+                  variants={typeWriterVariant}
+                  initial="hidden"
+                  animate="visible"
+                  custom={1}
+                >
+                  SIGEM -CLM-
+                  <motion.span
+                    className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: "100%" }}
+                    transition={{
+                      repeat: Infinity,
+                      duration: 3,
+                      ease: "linear",
+                      delay: 1,
+                    }}
+                    style={{ mixBlendMode: "soft-light" }}
+                  />
+                </motion.span>
 
-            <motion.span
-              className="block text-xl font-medium text-gray-600 dark:text-gray-300 mt-[-2px] whitespace-nowrap overflow-hidden transition-colors"
-              style={{ fontFamily: "Inter, sans-serif" }}
-              variants={typeWriterVariant}
-              initial="hidden"
-              animate="visible"
-              custom={2}
-            >
-              Sistema Integral de Gestión Municipal
-            </motion.span>
+                <motion.span
+                  className="block text-xl font-medium text-gray-600 dark:text-gray-300 mt-[-2px] whitespace-nowrap overflow-hidden transition-colors"
+                  style={{ fontFamily: "Inter, sans-serif" }}
+                  variants={typeWriterVariant}
+                  initial="hidden"
+                  animate="visible"
+                  custom={2}
+                >
+                  Sistema Integral de Gestión Municipal
+                </motion.span>
 
-            <motion.span
-              className="block font-semibold text-lg mt-1 whitespace-nowrap overflow-hidden text-[#0066cc] transition-colors"
-              style={{ fontFamily: "Inter, sans-serif" }}
-              variants={whooshVariant}
-              initial="hidden"
-              animate="visible"
-            >
-              Municipalidad de Concepción Las Minas
-            </motion.span>
-          </div>
+                <motion.span
+                  className="block font-semibold text-lg mt-1 whitespace-nowrap overflow-hidden text-[#0066cc] transition-colors"
+                  style={{ fontFamily: "Inter, sans-serif" }}
+                  variants={whooshVariant}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  Municipalidad de Concepción Las Minas
+                </motion.span>
+              </div>
+            </>
+          )}
         </motion.div>
       </div>
 

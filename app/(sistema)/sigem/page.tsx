@@ -36,8 +36,8 @@ export default function ProtectedPage() {
 
       const rolNormalizado = rolNombre?.toUpperCase();
       const destination = (rolNormalizado === 'ADMINISTRADOR' || rolNormalizado === 'SUPER') 
-        ? '/protected/admin' 
-        : '/protected/user';
+        ? '/sigem/admin' 
+        : '/sigem/user';
 
       router.prefetch(destination);
 

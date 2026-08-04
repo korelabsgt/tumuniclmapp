@@ -13,7 +13,7 @@ export default function EditarBeneficiarioPage() {
     <div className={formPageClass}>
       <button
         type="button"
-        onClick={() => router.push('/protected/fertilizante/beneficiarios')}
+        onClick={() => router.push('/sigem/fertilizante/beneficiarios')}
         className="text-emerald-600 dark:text-emerald-400 text-sm underline p-0 m-0 h-auto min-h-0 bg-transparent border-0 shadow-none cursor-pointer font-medium"
       >
         Volver

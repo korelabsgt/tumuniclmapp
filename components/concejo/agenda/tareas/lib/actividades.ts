@@ -273,7 +273,7 @@ export async function crearActividadConcejo(input: CrearActividadInput): Promise
     throw new Error(errorEnlace.message);
   }
 
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
   return task.id;
 }
 
@@ -317,7 +317,7 @@ export async function editarActividadConcejo(
   const { error } = await supabase.from('tasks').update(updates).eq('id', taskId);
   if (error) throw new Error(error.message);
 
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }
 
 export async function eliminarActividadConcejo(taskId: string): Promise<void> {
@@ -330,5 +330,5 @@ export async function eliminarActividadConcejo(taskId: string): Promise<void> {
   const { error } = await supabase.from('tasks').delete().eq('id', taskId);
   if (error) throw new Error(error.message);
 
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }

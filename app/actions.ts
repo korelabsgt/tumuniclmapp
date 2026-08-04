@@ -115,9 +115,9 @@ export const signInAction = async (prevState: FormState, formData: FormData): Pr
   });
 
   if (rol === 'SUPER') {
-    redirect('/protected/admin');
+    redirect('/sigem/admin');
   } else {
-    redirect('/protected/user');
+    redirect('/sigem/user');
   }
 };
 
@@ -131,7 +131,7 @@ export const signUpAction = async (formData: FormData) => {
   const origin = (await headers()).get("origin");
 
   if (!email || !password || roles.length === 0 || !nombre) {
-    return encodedRedirect("error", "/protected/admin/sign-up", "Todos los campos son obligatorios.");
+    return encodedRedirect("error", "/sigem/admin/sign-up", "Todos los campos son obligatorios.");
   }
 
   const { data: yaExiste, error: errorVerificacion } = await supabase.rpc(
@@ -140,11 +140,11 @@ export const signUpAction = async (formData: FormData) => {
   );
 
   if (errorVerificacion) {
-    return encodedRedirect("error", "/protected/admin/sign-up", "Error al verificar el correo.");
+    return encodedRedirect("error", "/sigem/admin/sign-up", "Error al verificar el correo.");
   }
 
   if (yaExiste) {
-    return encodedRedirect("error", "/protected/admin/sign-up", "Usuario ya registrado.");
+    return encodedRedirect("error", "/sigem/admin/sign-up", "Usuario ya registrado.");
   }
 
   const {
@@ -160,7 +160,7 @@ export const signUpAction = async (formData: FormData) => {
   });
 
   if (error || !data?.user) {
-    return encodedRedirect("error", "/protected/admin/sign-up", error?.message || "No se pudo crear.");
+    return encodedRedirect("error", "/sigem/admin/sign-up", error?.message || "No se pudo crear.");
   }
 
   const user_id = data.user.id;
@@ -171,7 +171,7 @@ export const signUpAction = async (formData: FormData) => {
 
   if (errorPerfil) {
     console.error('Error al insertar en info_usuario:', errorPerfil);
-    return encodedRedirect("error", "/protected/admin/sign-up", "Error al guardar perfil.");
+    return encodedRedirect("error", "/sigem/admin/sign-up", "Error al guardar perfil.");
   }
 
   for (const rol_id of roles) {
@@ -190,7 +190,7 @@ export const signUpAction = async (formData: FormData) => {
     user_id: user_id_log,
   });
 
-  return encodedRedirect("success", "/protected/admin/sign-up", "Usuario creado con éxito.");
+  return encodedRedirect("success", "/sigem/admin/sign-up", "Usuario creado con éxito.");
 };
 
 export const resetPasswordAction = async (formData: FormData) => {

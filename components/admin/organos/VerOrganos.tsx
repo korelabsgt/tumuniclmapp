@@ -61,7 +61,7 @@ export default function VerOrganos() {
                 <div className="flex items-center gap-4">
                     <Button
                         variant="ghost"
-                        onClick={() => router.push("/protected")}
+                        onClick={() => router.push("/sigem")}
                         className="text-blue-600 underline p-2"
                     >
                         Volver

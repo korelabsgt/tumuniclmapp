@@ -200,7 +200,7 @@ export default function VerBeneficiarios() {
             {permisos.includes("CREAR") || permisos.includes("TODO") ? (
               <Button
                 onClick={() =>
-                  router.push("/protected/fertilizante/beneficiarios/crear")
+                  router.push("/sigem/fertilizante/beneficiarios/crear")
                 }
                 className="h-12 bg-blue-600 hover:bg-blue-700 text-white px-4 w-full sm:w-auto"
               >

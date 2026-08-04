@@ -83,7 +83,7 @@ export async function GET(request: Request) {
               const payload = JSON.stringify({
                 title: '⏰ Comisión Iniciando',
                 body: `La comisión "${comision.titulo}" inicia ahora. RECUERDA MARCAR TU ASISTENCIA.`,
-                url: `/protected/comisiones?id=${comision.id}`,
+                url: `/sigem/comisiones?id=${comision.id}`,
                 icon: '/icon-192x192.png'
               })
 

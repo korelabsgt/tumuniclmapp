@@ -64,7 +64,7 @@ export default function BloqueoActividad() {
   }, [fetchActividad]);
 
   useEffect(() => {
-    if (pathname === '/protected/actividades') {
+    if (pathname === '/sigem/actividades') {
       fetchActividad(true);
     }
   }, [pathname, fetchActividad]);

@@ -749,7 +749,7 @@ export default function ReporteDepartamentos({ initialData, initialParams }: Pro
       <div className="flex flex-col gap-3 md:gap-4">
         <div className="flex items-start gap-3">
           <Link
-            href="/protected/combustible"
+            href="/sigem/combustible"
             className="mt-1 p-1.5 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors print:hidden shrink-0"
             title="Volver"
           >

@@ -152,7 +152,7 @@ export default function Sesion({ isOpen, onClose, onSave, agendaAEditar }: Sesio
               body: JSON.stringify({
                 title: '💼 Nueva Sesión de Concejo',
                 message: `Se ha programado la sesión: "${formData.titulo}" para el ${fechaCapitalizada}, a las ${hora}:${minuto} ${periodo}, haz clic para ver 🤳.`,
-                url: `/protected/concejo/agenda`,
+                url: `/sigem/concejo/agenda`,
                 targetIds: targetIds
               })
             });

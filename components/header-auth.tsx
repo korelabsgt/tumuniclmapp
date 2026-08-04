@@ -15,8 +15,8 @@ export default function AuthButton() {
   const pathname = usePathname();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const esAdmin = rol === 'SUPER' || rol === 'ADMINISTRADOR';
-  const rutaInicio = esAdmin ? '/protected/admin' : '/protected/';
-  const esInicio = pathname === '/protected/';
+  const rutaInicio = esAdmin ? '/sigem/admin' : '/sigem/';
+  const esInicio = pathname === '/sigem/';
   const linkStyles = "inline-flex items-center justify-end text-xs lg:text-lg transition-colors hover:underline focus-visible:outline-none";
 
   const handleSignOut = async () => {

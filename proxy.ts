@@ -8,7 +8,7 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isProtectedRoute = request.nextUrl.pathname.startsWith("/protected");
+  const isProtectedRoute = request.nextUrl.pathname.startsWith("/sigem");
 
   if (!user && isProtectedRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
     const rolNombre = (relacion?.roles as any)?.nombre ?? null;
 
     if (
-      request.nextUrl.pathname.startsWith("/protected/admin/configs") &&
+      request.nextUrl.pathname.startsWith("/sigem/admin/configs") &&
       rolNombre !== "SUPER"
     ) {
       return NextResponse.redirect(new URL("/unauthorized", request.url));
@@ -57,7 +57,7 @@ export async function proxy(request: NextRequest) {
     ];
 
     if (
-      request.nextUrl.pathname.startsWith("/protected/admin") &&
+      request.nextUrl.pathname.startsWith("/sigem/admin") &&
       !rolesPermitidosAdmin.includes(rolNombre)
     ) {
       return NextResponse.redirect(new URL("/unauthorized", request.url));

@@ -44,7 +44,7 @@ export default function BloqueoSolicitudesJefes() {
   }, [fetchSolicitud]);
 
   useEffect(() => {
-    if (pathname === '/protected/solicitudes/jefes') {
+    if (pathname === '/sigem/solicitudes/jefes') {
       fetchSolicitud(true);
     }
   }, [pathname, fetchSolicitud]);

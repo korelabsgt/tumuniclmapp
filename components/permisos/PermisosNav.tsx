@@ -14,19 +14,19 @@ interface Props {
 
 const RUTAS: Record<TipoVista, { permisos: string; acuerdos: string; lecturas: string }> = {
   mis: {
-    permisos: "/protected/permisos",
-    acuerdos: "/protected/permisos/acuerdos",
-    lecturas: "/protected/permisos/lecturas",
+    permisos: "/sigem/permisos",
+    acuerdos: "/sigem/permisos/acuerdos",
+    lecturas: "/sigem/permisos/lecturas",
   },
   jefe: {
-    permisos: "/protected/permisos/jefe",
-    acuerdos: "/protected/permisos/acuerdos/jefe",
-    lecturas: "/protected/permisos/lecturas/jefe",
+    permisos: "/sigem/permisos/jefe",
+    acuerdos: "/sigem/permisos/acuerdos/jefe",
+    lecturas: "/sigem/permisos/lecturas/jefe",
   },
   rrhh: {
-    permisos: "/protected/permisos/rrhh",
-    acuerdos: "/protected/permisos/acuerdos/rrhh",
-    lecturas: "/protected/permisos/lecturas/rrhh",
+    permisos: "/sigem/permisos/rrhh",
+    acuerdos: "/sigem/permisos/acuerdos/rrhh",
+    lecturas: "/sigem/permisos/lecturas/rrhh",
   },
 };
 

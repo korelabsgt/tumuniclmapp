@@ -18,7 +18,7 @@ export default function ViewSwitcher({ isSuper }: ViewSwitcherProps) {
     >
       <button
         type="button"
-        onClick={() => router.push("/protected/mis-asistencias")}
+        onClick={() => router.push("/sigem/mis-asistencias")}
         onMouseEnter={() => setHovered("asistencia")}
         onMouseLeave={() => setHovered(null)}
         className="flex-1 flex items-center justify-center gap-2 h-full rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 shadow-sm border border-green-200 dark:border-green-800 text-base md:text-lg font-bold transition-colors duration-200"
@@ -33,7 +33,7 @@ export default function ViewSwitcher({ isSuper }: ViewSwitcherProps) {
 
       <button
         type="button"
-        onClick={() => router.push("/protected/mis-comisiones")}
+        onClick={() => router.push("/sigem/mis-comisiones")}
         onMouseEnter={() => setHovered("comisiones")}
         onMouseLeave={() => setHovered(null)}
         className="flex-1 flex items-center justify-center gap-2 h-full rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 shadow-sm border border-purple-200 dark:border-purple-800 text-base md:text-lg font-bold transition-colors duration-200"

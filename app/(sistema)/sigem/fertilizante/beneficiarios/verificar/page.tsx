@@ -14,7 +14,7 @@ export default function EditarBeneficiarioPage() {
       <div className="relative mb-8 text-center">
           <Button
           variant="ghost"
-          onClick={() => router.push('/protected/fertilizante/beneficiarios')}
+          onClick={() => router.push('/sigem/fertilizante/beneficiarios')}
           className="text-blue-600 text-base underline absolute left-0 top-1/2 -translate-y-1/2"
         >
           Volver

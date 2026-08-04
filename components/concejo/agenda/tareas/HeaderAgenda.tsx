@@ -65,7 +65,7 @@ export default function HeaderAgenda({
         
         <div className="flex-shrink-0 w-full md:w-auto">
           {!isPrinting && (
-            <BotonVolver ruta="/protected/concejo/agenda" />
+            <BotonVolver ruta="/sigem/concejo/agenda" />
           )}
         </div>
 

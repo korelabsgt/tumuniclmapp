@@ -139,7 +139,7 @@ export function CrearEmpleado() {
       Swal.fire('Error', 'No se pudo guardar el empleado.', 'error');
     } else {
       Swal.fire('Éxito', 'Empleado creado exitosamente.', 'success').then(() => {
-        router.push(`/protected/admin/users/ver?id=${userId}`);
+        router.push(`/sigem/admin/users/ver?id=${userId}`);
       });
     }
   };
@@ -149,7 +149,7 @@ export function CrearEmpleado() {
       <div className="flex mb-6">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/protected/admin/users/ver?id=${userId}`)}
+          onClick={() => router.push(`/sigem/admin/users/ver?id=${userId}`)}
           className="text-blue-600 dark:text-blue-400 text-base underline"
         >
           Volver

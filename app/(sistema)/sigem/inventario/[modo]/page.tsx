@@ -28,7 +28,7 @@ export default async function ModoInventarioPage({ params }: PageProps) {
     tipoVista = 'general';
   } else {
     // Si escriben basura en la URL, los redirigimos a sus propios bienes
-    redirect('/protected/inventario/propias');
+    redirect('/sigem/inventario/propias');
   }
 
   return (

@@ -1,4 +1,4 @@
-// app/protected/fertilizante/beneficiarios/page.tsx
+// app/sigem/fertilizante/beneficiarios/page.tsx
 
 'use client';
 import { Suspense } from 'react';

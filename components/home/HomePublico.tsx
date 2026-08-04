@@ -5,7 +5,7 @@ import { PublicContent } from './ui/PublicContent';
 
 export default function HomePublico() {
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
+    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 font-sans">
       <PublicHeader />
       <PublicHero />
       <PublicContent />

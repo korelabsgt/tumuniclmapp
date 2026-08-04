@@ -530,7 +530,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                         <button
                           onClick={() => {
                             setMenuAbierto(false);
-                            router.push("/protected/admin/sign-up");
+                            router.push("/sigem/admin/sign-up");
                           }}
                           className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg flex items-center gap-3 transition-colors group"
                         >
@@ -550,7 +550,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                         <button
                           onClick={() => {
                             setMenuAbierto(false);
-                            router.push("/protected/admin/jefes");
+                            router.push("/sigem/admin/jefes");
                           }}
                           className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg flex items-center gap-3 transition-colors group"
                         >
@@ -570,7 +570,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                         <button
                           onClick={() => {
                             setMenuAbierto(false);
-                            router.push("/protected/admin/horarios");
+                            router.push("/sigem/admin/horarios");
                           }}
                           className="w-full text-left px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-neutral-700/50 rounded-lg flex items-center gap-3 transition-colors group"
                         >

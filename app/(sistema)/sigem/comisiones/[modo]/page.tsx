@@ -1,4 +1,4 @@
-// app/protected/comisiones/[modo]/page.tsx
+// app/sigem/comisiones/[modo]/page.tsx
 'use client';
 
 import { Suspense, use } from 'react';

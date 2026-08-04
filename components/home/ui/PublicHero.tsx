@@ -3,7 +3,7 @@ import React from 'react';
 export function PublicHero() {
   return (
     <section 
-      className="relative w-full h-[65vh] min-h-[500px] flex flex-col justify-center items-center text-center overflow-hidden bg-blue-100"
+      className="relative w-full h-[65vh] min-h-[500px] flex flex-col justify-center items-center text-center overflow-hidden bg-blue-100 dark:bg-neutral-900"
     >
       {/* Background Image Placeholder */}
       <div 
@@ -14,10 +14,10 @@ export function PublicHero() {
       />
       
       {/* Gradient overlay for better text readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-white/30 dark:from-black/50 to-transparent"></div>
 
       {/* Hero Content */}
-      <div className="relative z-10 -mt-10 px-4 drop-shadow-lg text-gray-900">
+      <div className="relative z-10 -mt-10 px-4 drop-shadow-lg text-gray-900 dark:text-white">
         <h1 
           className="text-4xl md:text-5xl lg:text-6xl mb-2" 
           style={{ fontFamily: "'Brush Script MT', cursive, serif" }}

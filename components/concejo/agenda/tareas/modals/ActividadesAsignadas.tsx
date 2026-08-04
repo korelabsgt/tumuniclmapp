@@ -204,7 +204,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
         body: JSON.stringify({
           title: titulo,
           message: mensaje,
-          url: '/protected/actividades',
+          url: '/sigem/actividades',
           targetIds: [userId],
         }),
       });

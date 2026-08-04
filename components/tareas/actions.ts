@@ -286,30 +286,30 @@ export async function crearTarea(formData: NewTaskState) {
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades');
-  revalidatePath('/protected/actividades/jefe');
-  revalidatePath('/protected/actividades/rrhh');
+  revalidatePath('/sigem/actividades');
+  revalidatePath('/sigem/actividades/jefe');
+  revalidatePath('/sigem/actividades/rrhh');
 }
 
 export async function actualizarTarea(id: string, updates: any) {
   const supabase = await createClient();
   const { error } = await supabase.from('tasks').update(updates).eq('id', id);
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades', 'layout'); 
+  revalidatePath('/sigem/actividades', 'layout'); 
 }
 
 export async function actualizarArchivosTarea(taskId: string, nuevosArchivos: any[]) {
   const supabase = await createClient();
   const { error } = await supabase.from('tasks').update({ archivos: nuevosArchivos }).eq('id', taskId);
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }
 
 export async function updateChecklist(taskId: string, newChecklist: ChecklistItem[]) {
   const supabase = await createClient();
   const { error } = await supabase.from('tasks').update({ checklist: newChecklist }).eq('id', taskId);
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }
 
 export async function cambiarEstado(taskId: string, nuevoEstado: string) {
@@ -323,14 +323,14 @@ export async function cambiarEstado(taskId: string, nuevoEstado: string) {
   }
   const { error } = await supabase.from('tasks').update({ status: nuevoEstado }).eq('id', taskId);
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }
 
 export async function eliminarTarea(taskId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from('tasks').delete().eq('id', taskId);
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }
 
 export async function duplicarTarea(datos: NewTaskState) {
@@ -349,7 +349,7 @@ export async function duplicarTarea(datos: NewTaskState) {
   }]);
 
   if (error) throw new Error(error.message);
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
 }
 
 export async function obtenerActividadPendienteConfirmacion() {
@@ -425,6 +425,6 @@ export async function confirmarActividad(id: string) {
     return { success: false, error: 'No se pudo confirmar la actividad' };
   }
 
-  revalidatePath('/protected/actividades', 'layout');
+  revalidatePath('/sigem/actividades', 'layout');
   return { success: true, confirmed_at: confirmedAt };
 }

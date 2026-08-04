@@ -64,22 +64,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  if (user && request.nextUrl.pathname === "/") {
-    const { data: relacion } = await supabase
-      .from("usuarios_roles")
-      .select("roles(nombre)")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const rolNombre = (relacion?.roles as any)?.nombre ?? null;
-    const rolesAdmin = ["ADMINISTRADOR", "SUPER", "SECRETARIO", "RRHH"];
-
-    const destino = rolesAdmin.includes(rolNombre)
-      ? "/protected/admin"
-      : "/protected/user";
-
-    return NextResponse.redirect(new URL(destino, request.url));
-  }
 
   response.headers.set("x-pathname", request.nextUrl.pathname);
 

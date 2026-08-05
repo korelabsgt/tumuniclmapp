@@ -38,6 +38,14 @@ export function formatearRangoSemana(inicioISO: string, finISO: string): string 
   return `${inicioStr} - ${finStr} · ${year}`;
 }
 
+export function getRangoMes(yyyyMM: string): { inicio: string; fin: string } {
+  const [year, month] = yyyyMM.split("-").map(Number);
+  return {
+    inicio: format(new Date(year, month - 1, 1), "yyyy-MM-dd"),
+    fin: format(new Date(year, month, 0), "yyyy-MM-dd"),
+  };
+}
+
 export function getSemanasDelMes(yyyyMM: string) {
   const [year, month] = yyyyMM.split("-").map(Number);
   const start = new Date(year, month - 1, 1);

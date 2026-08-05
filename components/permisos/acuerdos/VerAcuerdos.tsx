@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { format, parseISO, isSameDay } from "date-fns";
-import { es } from "date-fns/locale";
+import { parseISO, isSameDay } from "date-fns";
 import {
   ChevronDown,
   Search,
@@ -15,9 +14,7 @@ import {
   Eye,
   Pencil,
   ChevronsUpDown,
-  ArrowRight,
   ArrowUpDown,
-  Calendar,
   CalendarClock,
 } from "lucide-react";
 import PreviewAcuerdo from "./modals/PreviewAcuerdo";
@@ -30,8 +27,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAcuerdos, TipoVistaAcuerdos } from "./hooks";
 import { type PerfilUsuario } from "@/components/permisos/acciones";
 import { cn } from "@/lib/utils";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import Calendario from "@/components/ui/Calendario";
+import FiltroFechaPermisos, {
+  aplicarModoMes,
+} from "../FiltroFechaPermisos";
 import PermisosNav from "../PermisosNav";
 import {
   CategoriaAcuerdo,
@@ -43,10 +41,8 @@ import {
 } from "./categorias";
 import { formatearDiasSemana } from "./utilidades";
 import {
-  formatearFechaFiltro,
   formatearFechaTarjetaDesdeISO,
   formatearRangoTarjeta,
-  getSemanasDelMes,
 } from "@/components/permisos/lib/fechas";
 import { getModalidadAcuerdo, parseDiasAcuerdo } from "./dias-acuerdo";
 
@@ -102,40 +98,8 @@ export default function VerAcuerdos({ tipoVista }: Props) {
   const [acuerdoParaImagen, setAcuerdoParaImagen] = React.useState<AcuerdoEmpleado | null>(null);
   const [modalElegirDiasAbierto, setModalElegirDiasAbierto] = React.useState(false);
   const [acuerdoParaElegirDias, setAcuerdoParaElegirDias] = React.useState<AcuerdoEmpleado | null>(null);
-  const [calendarOpen, setCalendarOpen] = React.useState(false);
-  const [calendarSemanaOpen, setCalendarSemanaOpen] = React.useState(false);
-  const [calendarInicioOpen, setCalendarInicioOpen] = React.useState(false);
-  const [calendarFinOpen, setCalendarFinOpen] = React.useState(false);
-
-  const [mesSemanas, setMesSemanas] = React.useState(format(new Date(), "yyyy-MM"));
-  const semanasDisponibles = useMemo(() => getSemanasDelMes(mesSemanas), [mesSemanas]);
-
-  React.useEffect(() => {
-    if (modoFiltro === "semana" && semanasDisponibles.length > 0) {
-      const matches = semanasDisponibles.some(
-        (s) => s.inicio === fechaInicio && s.fin === fechaFin,
-      );
-      if (!matches) {
-        const hoy = format(new Date(), "yyyy-MM-dd");
-        const currentWeek = semanasDisponibles.find(
-          (s) => s.inicio <= hoy && s.fin >= hoy,
-        );
-        if (currentWeek) {
-          setFechaInicio(currentWeek.inicio);
-          setFechaFin(currentWeek.fin);
-        } else {
-          setFechaInicio(semanasDisponibles[0].inicio);
-          setFechaFin(semanasDisponibles[0].fin);
-        }
-      }
-    }
-  }, [modoFiltro, semanasDisponibles, fechaInicio, fechaFin, setFechaInicio, setFechaFin]);
-
-  const formatMes = (mesYear: string) => {
-    const d = parseISO(mesYear + "-01");
-    const str = format(d, "MMMM yyyy", { locale: es });
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  };
+  const volverAModoMes = () =>
+    aplicarModoMes({ setModoFiltro, setFechaInicio, setFechaFin });
 
   const handleVerPreview = (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => {
     e.stopPropagation();
@@ -206,80 +170,6 @@ export default function VerAcuerdos({ tipoVista }: Props) {
         ? "jefe"
         : "rrhh";
 
-  const aplicarModoSemana = () => {
-    setModoFiltro("semana");
-    setMesSemanas(format(new Date(), "yyyy-MM"));
-    const hoy = format(new Date(), "yyyy-MM-dd");
-    const semActual = getSemanasDelMes(format(new Date(), "yyyy-MM")).find(
-      (s) => s.inicio <= hoy && s.fin >= hoy,
-    );
-    if (semActual) {
-      setFechaInicio(semActual.inicio);
-      setFechaFin(semActual.fin);
-    }
-  };
-
-  const handleCambioModoFiltro = (modo: "dia" | "semana" | "rango") => {
-    setFiltroEstado("todos");
-    if (modo === "semana") {
-      aplicarModoSemana();
-      return;
-    }
-    setModoFiltro(modo);
-  };
-
-  const modoFiltroSelect =
-    modoFiltro === "dia" || modoFiltro === "semana" || modoFiltro === "rango"
-      ? modoFiltro
-      : "semana";
-
-  const selectFiltroFechaClass =
-    "shrink-0 appearance-none [&::-ms-expand]:hidden bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800 rounded-lg px-2 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold focus:outline-none focus:border-blue-400 transition-all shadow-sm cursor-pointer dark:text-gray-200";
-
-  const botonFechaRangoClass = cn(
-    selectFiltroFechaClass,
-    "flex items-center justify-center gap-1.5 flex-1 min-w-0 lg:min-w-[7.5rem] whitespace-nowrap px-2 text-center",
-  );
-
-  const modoSelectMobileClass = cn(
-    selectFiltroFechaClass,
-    "shrink-0 w-[5.25rem] min-w-[5.25rem] text-center lg:hidden",
-  );
-
-  const modoSelectDesktopClass = cn(
-    selectFiltroFechaClass,
-    "hidden lg:block text-center",
-    modoFiltro === "rango" && "lg:flex-none lg:w-[5.25rem] lg:min-w-[5.25rem]",
-  );
-
-  const modoSelectEl = (
-    <select
-      value={modoFiltroSelect}
-      onChange={(e) =>
-        handleCambioModoFiltro(e.target.value as "dia" | "semana" | "rango")
-      }
-      className={modoSelectDesktopClass}
-    >
-      <option value="dia">Día</option>
-      <option value="semana">Semana</option>
-      <option value="rango">Rango</option>
-    </select>
-  );
-
-  const modoSelectMobileEl = (
-    <select
-      value={modoFiltroSelect}
-      onChange={(e) =>
-        handleCambioModoFiltro(e.target.value as "dia" | "semana" | "rango")
-      }
-      className={modoSelectMobileClass}
-    >
-      <option value="dia">Día</option>
-      <option value="semana">Semana</option>
-      <option value="rango">Rango</option>
-    </select>
-  );
-
   return (
     <>
       <div className="w-full lg:w-[95%] mx-auto md:px-4 pb-10 transition-all">
@@ -323,161 +213,17 @@ export default function VerAcuerdos({ tipoVista }: Props) {
               </div>
 
               <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-end lg:gap-3 w-full">
-                <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full flex flex-col items-center gap-1">
-                  {modoFiltro !== "pendientes" && (
-                    <div className="flex items-center gap-2 w-full min-w-0 lg:justify-center">
-                      {modoSelectMobileEl}
-                      <span className="text-[10px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 flex-1 min-w-0 text-left lg:flex-none lg:text-center lg:w-full">
-                        Selecciona la fecha para mostrar
-                      </span>
-                    </div>
-                  )}
-
-                  <div
-                    className={cn(
-                      "flex justify-center gap-2 w-full min-w-0",
-                      modoFiltro === "rango"
-                        ? "items-center"
-                        : "items-center overflow-x-auto",
-                    )}
-                  >
-                    {modoSelectEl}
-
-                    {modoFiltro === "dia" && (
-                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                        <PopoverTrigger asChild>
-                          <button
-                            type="button"
-                            className={cn(
-                              selectFiltroFechaClass,
-                              "flex items-center gap-1.5 min-w-0",
-                            )}
-                          >
-                            <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
-                            <span className="capitalize truncate">
-                              {formatearFechaFiltro(fechaSeleccionada)}
-                            </span>
-                          </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendario
-                            fechaSeleccionada={fechaSeleccionada}
-                            onSelectDate={(date) => {
-                              setFechaSeleccionada(date);
-                              setCalendarOpen(false);
-                            }}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    )}
-
-                    {modoFiltro === "semana" && (
-                      <>
-                        <select
-                          className={cn(
-                            selectFiltroFechaClass,
-                            "text-center min-w-0 flex-1 max-w-[11rem] sm:max-w-none",
-                          )}
-                          onChange={(e) => {
-                            const idx = parseInt(e.target.value, 10);
-                            const sem = semanasDisponibles[idx];
-                            if (sem) {
-                              setFechaInicio(sem.inicio);
-                              setFechaFin(sem.fin);
-                            }
-                          }}
-                          value={semanasDisponibles.findIndex(
-                            (s) => s.inicio === fechaInicio && s.fin === fechaFin,
-                          )}
-                        >
-                          <option value="-1" disabled>
-                            Semana
-                          </option>
-                          {semanasDisponibles.map((sem, idx) => (
-                            <option key={idx} value={idx}>
-                              {sem.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Popover
-                          open={calendarSemanaOpen}
-                          onOpenChange={setCalendarSemanaOpen}
-                        >
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className={cn(
-                                selectFiltroFechaClass,
-                                "flex items-center gap-1.5 min-w-0 shrink-0",
-                              )}
-                            >
-                              <Calendar className="w-4 h-4 text-blue-500 shrink-0" />
-                              <span className="truncate">{formatMes(mesSemanas)}</span>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="end">
-                            <Calendario
-                              modo="mes"
-                              fechaSeleccionada={
-                                fechaInicio || format(new Date(), "yyyy-MM-dd")
-                              }
-                              onSelectDate={(date) => {
-                                const newMes = date.substring(0, 7);
-                                setMesSemanas(newMes);
-                                const semanasDelMes = getSemanasDelMes(newMes);
-                                if (semanasDelMes.length > 0) {
-                                  setFechaInicio(semanasDelMes[0].inicio);
-                                  setFechaFin(semanasDelMes[0].fin);
-                                }
-                                setCalendarSemanaOpen(false);
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </>
-                    )}
-
-                    {modoFiltro === "rango" && (
-                      <div className="flex flex-1 min-w-0 w-full items-center justify-center gap-1.5 sm:gap-2">
-                        <Popover open={calendarInicioOpen} onOpenChange={setCalendarInicioOpen}>
-                          <PopoverTrigger asChild>
-                            <button type="button" className={botonFechaRangoClass}>
-                              <Calendar className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                              <span>{formatearFechaFiltro(fechaInicio)}</span>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendario
-                              fechaSeleccionada={fechaInicio}
-                              onSelectDate={(date) => {
-                                setFechaInicio(date);
-                                setCalendarInicioOpen(false);
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 dark:text-gray-500 shrink-0" />
-                        <Popover open={calendarFinOpen} onOpenChange={setCalendarFinOpen}>
-                          <PopoverTrigger asChild>
-                            <button type="button" className={botonFechaRangoClass}>
-                              <Calendar className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                              <span>{formatearFechaFiltro(fechaFin)}</span>
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendario
-                              fechaSeleccionada={fechaFin}
-                              onSelectDate={(date) => {
-                                setFechaFin(date);
-                                setCalendarFinOpen(false);
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <FiltroFechaPermisos
+                  modoFiltro={modoFiltro}
+                  fechaSeleccionada={fechaSeleccionada}
+                  fechaInicio={fechaInicio}
+                  fechaFin={fechaFin}
+                  setModoFiltro={setModoFiltro}
+                  setFechaSeleccionada={setFechaSeleccionada}
+                  setFechaInicio={setFechaInicio}
+                  setFechaFin={setFechaFin}
+                  alCambiarModo={() => setFiltroEstado("todos")}
+                />
 
                 <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1 shrink-0 w-full lg:w-auto justify-start">
                   <Button
@@ -487,7 +233,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                         setFiltroEstado("todos");
                       } else {
                         setFiltroEstado("aprobado");
-                        if (modoFiltro === "pendientes") aplicarModoSemana();
+                        if (modoFiltro === "pendientes") volverAModoMes();
                       }
                     }}
                     className={cn(
@@ -507,7 +253,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                         setFiltroEstado("todos");
                       } else {
                         setFiltroEstado("rechazado");
-                        if (modoFiltro === "pendientes") aplicarModoSemana();
+                        if (modoFiltro === "pendientes") volverAModoMes();
                       }
                     }}
                     className={cn(
@@ -918,10 +664,10 @@ function UsuarioGrupoAcuerdos({
                           "text-[9px] lg:text-xs font-bold px-1.5 lg:px-2.5 py-0.5 lg:py-1 rounded border inline-flex items-center shrink-0",
                           acuerdo.remunerado
                             ? "text-emerald-700 bg-emerald-50 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/20 dark:border-emerald-800"
-                            : "text-gray-600 bg-gray-100 border-gray-200 dark:text-gray-400 dark:bg-neutral-800 dark:border-neutral-700",
+                            : "text-red-700 bg-red-50 border-red-100 dark:text-red-400 dark:bg-red-900/20 dark:border-red-800",
                         )}
                       >
-                        {acuerdo.remunerado ? "REMUNERADO" : "NO REM"}
+                        {acuerdo.remunerado ? "Remunerado" : "No remunerado"}
                       </span>
                     )}
                   </div>

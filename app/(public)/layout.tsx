@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/themes/theme-provider";
+import QueryProvider from "@/components/providers/QueryProvider";
 
 export default function PublicLayout({
   children,
@@ -12,9 +13,11 @@ export default function PublicLayout({
       enableSystem={false}
       disableTransitionOnChange
     >
-      <main className="flex-grow w-full">
-        {children}
-      </main>
+      <QueryProvider>
+        <main className="flex-grow w-full">
+          {children}
+        </main>
+      </QueryProvider>
     </ThemeProvider>
   );
 }

@@ -147,10 +147,10 @@ export default function ImageEditorModal({
             >
               <RefreshCw size={18} />
             </button>
-            {currentAspect !== 1 && (
+            {aspect !== 1 && (
               <button
                 type="button"
-                onClick={() => setCurrentAspect((a) => 1 / a)}
+                onClick={() => setCurrentAspect((a) => Math.abs(a - aspect) < 0.01 ? 1 / aspect : aspect)}
                 className="p-2 rounded-lg bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
                 title="Cambiar orientación (Vertical/Horizontal)"
               >

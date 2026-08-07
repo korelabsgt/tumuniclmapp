@@ -24,8 +24,7 @@ const ThemeSwitcher = () => {
       theme={isDark ? "dark" : "light"}
       onThemeChange={setTheme}
       className={cn(
-        "h-12 w-12 flex items-center justify-center rounded-md transition-colors duration-200 cursor-pointer",
-        isDark ? "hover:bg-gray-800" : "hover:bg-sky-100",
+        "h-12 w-12 flex items-center justify-center rounded-md transition-all duration-200 cursor-pointer hover:scale-110",
         "[&_svg]:size-6",
         isDark ? "[&_svg]:text-blue-400" : "[&_svg]:text-yellow-500"
       )}

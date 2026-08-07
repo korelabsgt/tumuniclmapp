@@ -21,6 +21,7 @@ export interface ImageUploaderHandle {
 
 interface ImageUploaderProps {
   bucketName: string;
+  folderPath?: string; // Ej: 'portadas' o 'logos/municipio_1'
   currentImagePath: string | null;
   onUploadSuccess: (newPath: string) => void | Promise<void>;
   onDeleteSuccess: () => void | Promise<void>;
@@ -36,10 +37,15 @@ interface ImageUploaderProps {
   onEstadoChange?: (estado: { uploading: boolean; deleting: boolean }) => void;
   /** Clase CSS adicional para la vista previa de la imagen (ej. max-h-[250px]) */
   previewClassName?: string;
+  /** Límite de tamaño máximo en MB para la compresión (default: 0.5 MB) */
+  maxSizeMB?: number;
+  /** Máxima anchura o altura en píxeles (default: 1920) */
+  maxWidthOrHeight?: number;
 }
 
 const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(function ImageUploader({
   bucketName,
+  folderPath = '',
   currentImagePath,
   onUploadSuccess,
   onDeleteSuccess,
@@ -51,6 +57,8 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
   botonesExternos = false,
   onEstadoChange,
   previewClassName,
+  maxSizeMB = 0.2,
+  maxWidthOrHeight = 1920,
 }, ref) {
   const supabase = createClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -80,7 +88,7 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
     setMagnifier({ show: true, clientX, clientY, bgX, bgY });
   };
 
-  // Generar signed URL para el preview
+  // Generar URL pública para el preview (en lugar de signedUrl porque la carpeta es pública)
   useEffect(() => {
     if (!currentImagePath) {
       setPreviewUrl(null);
@@ -88,14 +96,11 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
     }
 
     setLoadingPreview(true);
-    supabase.storage
-      .from(bucketName)
-      .createSignedUrl(currentImagePath, signedUrlExpiresIn)
-      .then(({ data, error }) => {
-        setPreviewUrl(error ? null : data?.signedUrl ?? null);
-        setLoadingPreview(false);
-      });
-  }, [currentImagePath, bucketName, supabase, signedUrlExpiresIn]);
+    // Armar la URL pública directa
+    const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketName}/${currentImagePath}`;
+    setPreviewUrl(publicUrl);
+    setLoadingPreview(false);
+  }, [currentImagePath, bucketName]);
 
   const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -159,31 +164,38 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
   const buildUniqueName = (ext: string) => {
     const timestamp = Date.now();
     const rand = Math.random().toString(36).substring(2, 10);
-    return `${timestamp}-${rand}.${ext}`;
+    const fileName = `${timestamp}-${rand}.${ext}`;
+    
+    if (folderPath) {
+      // Remover slashes iniciales/finales para evitar dobles slashes
+      const cleanFolder = folderPath.replace(/^\/+|\/+$/g, '');
+      return `${cleanFolder}/${fileName}`;
+    }
+    return fileName;
   };
 
   const uploadEditedFile = async (editedFile: File) => {
     setUploading(true);
     setEditingFile(null);
     try {
+      const outputType = editedFile.type === 'image/png' ? 'image/png' : 
+                         editedFile.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+      
+      let ext = outputType.split('/')[1];
+      if (ext === 'jpeg') ext = 'jpg';
+
       const compressed = await imageCompression(editedFile, {
-        maxSizeMB: 0.1,
-        maxWidthOrHeight: 1024,
+        maxSizeMB,
+        maxWidthOrHeight,
         useWebWorker: true,
-        fileType: 'image/jpeg',
+        fileType: outputType,
       });
 
-      const jpegBlob = compressed.type === 'image/jpeg'
-        ? compressed
-        : new File([compressed], compressed.name.replace(/\.[^.]+$/, '.jpg'), {
-            type: 'image/jpeg',
-          });
-
-      const newPath = buildUniqueName('jpg');
+      const newPath = buildUniqueName(ext);
 
       const { error: uploadError } = await supabase.storage
         .from(bucketName)
-        .upload(newPath, jpegBlob, { upsert: false, contentType: 'image/jpeg' });
+        .upload(newPath, compressed, { upsert: false, contentType: outputType });
 
       if (uploadError) throw uploadError;
 

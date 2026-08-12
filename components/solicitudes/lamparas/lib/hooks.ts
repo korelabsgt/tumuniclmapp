@@ -10,6 +10,7 @@ import {
   editarSolicitudLampara,
   eliminarSolicitudLampara,
   getComunidades,
+  obtenerFlagsModulosDependencia,
 } from "./actions";
 import { SolicitudLampara, CrearSolicitudLamparaValues } from "./zod";
 
@@ -17,6 +18,8 @@ const KEYS = {
   solicitudes: ["solicitudes-lamparas"],
   electricistas: ["electricistas-disponibles"],
   comunidades: ["comunidades-clm"],
+  flagsDependencia: (dependenciaId: string) =>
+    ["flags-modulos-dependencia", dependenciaId] as const,
 };
 
 const FIVE_MINUTES = 1000 * 60 * 5;
@@ -98,3 +101,24 @@ export const useComunidades = () => {
     staleTime: FIVE_MINUTES,
   });
 };
+
+const FLAGS_VACIOS = {
+  esAtencionVecino: false,
+  esElectricista: false,
+  esDirectorSP: false,
+};
+
+export function useFlagsModulosDependencia(dependenciaId: string | null) {
+  const { data } = useQuery({
+    queryKey: KEYS.flagsDependencia(dependenciaId ?? ""),
+    queryFn: () => obtenerFlagsModulosDependencia(dependenciaId),
+    enabled: Boolean(dependenciaId),
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  });
+
+  return data ?? FLAGS_VACIOS;
+}

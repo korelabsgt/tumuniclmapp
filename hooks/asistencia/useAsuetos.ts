@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { obtenerAsuetosRango, Asueto } from "@/lib/asuetos/acciones";
 
 export type { Asueto };
 
 export type ParentByDependenciaId = Map<string, string | null>;
+
+const FIVE_MINUTES = 1000 * 60 * 5;
+
+export const asuetosQueryKey = (fechaInicio: string, fechaFin: string) =>
+  ["asuetos", fechaInicio, fechaFin] as const;
 
 export function buildParentByDependenciaId(
   dependencias: { id: string; parent_id: string | null }[],
@@ -34,33 +39,22 @@ export function dependenciaEstaExcluidaDelAsueto(
 }
 
 export function useAsuetos(fechaInicio: string, fechaFin: string) {
-  const [asuetos, setAsuetos] = useState<Asueto[]>([]);
-  const [loading, setLoading] = useState(!!(fechaInicio && fechaFin));
+  const enabled = Boolean(fechaInicio && fechaFin);
 
-  const cargar = useCallback(async () => {
-    if (!fechaInicio || !fechaFin) return;
-    setLoading(true);
-    try {
-      const data = await obtenerAsuetosRango(fechaInicio, fechaFin);
-      setAsuetos(data);
-    } catch {
-      setAsuetos([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fechaInicio, fechaFin]);
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: asuetosQueryKey(fechaInicio, fechaFin),
+    queryFn: () => obtenerAsuetosRango(fechaInicio, fechaFin),
+    enabled,
+    staleTime: FIVE_MINUTES,
+  });
 
-  useEffect(() => {
-    cargar();
-  }, [cargar]);
-
-  return { asuetos, loading, recargar: cargar };
+  return {
+    asuetos: data ?? [],
+    loading: isLoading && enabled,
+    recargar: refetch,
+  };
 }
 
-/**
- * Asueto del día para la dependencia indicada.
- * Si la dependencia (o un ancestro) está en dependencias_excluidas, no aplica.
- */
 export function getAsuetoPorFecha(
   asuetos: Asueto[],
   diaString: string,

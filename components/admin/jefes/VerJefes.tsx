@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Crown } from 'lucide-react';
-import { obtenerEstructuraCompleta } from './actions';
+import { useEstructuraJefes } from './hooks';
 import Cargando from '@/components/ui/animations/Cargando';
 import Estructura from './Estructura';
 import Jefes from './Jefes';
@@ -11,27 +11,12 @@ import { Button } from '@/components/ui/button';
 
 export default function VerJefes() {
   const router = useRouter();
-  const [datos, setDatos] = useState<{dependencias: any[], usuarios: any[]}>({ dependencias: [], usuarios: [] });
-  // 'loading' inicial para la primera carga
-  const [initialLoading, setInitialLoading] = useState(true);
-  // 'reloading' para actualizaciones sin desmontar
-  const [reloading, setReloading] = useState(false);
+  const { datos, initialLoading, reloading, refetch } = useEstructuraJefes();
   const [vista, setVista] = useState<'estructura' | 'jefes'>('estructura');
 
-  const cargar = async (esRecarga = false) => {
-    if (esRecarga) setReloading(true);
-    else setInitialLoading(true);
-
-    try {
-        const res = await obtenerEstructuraCompleta();
-        setDatos(res);
-    } finally {
-        setInitialLoading(false);
-        setReloading(false);
-    }
+  const cargar = () => {
+    void refetch();
   };
-
-  useEffect(() => { cargar(); }, []);
 
   return (
     <div className="w-full lg:w-[85%] mx-auto md:px-4 transition-all duration-300 relative">
@@ -102,7 +87,7 @@ export default function VerJefes() {
                 <Cargando texto="Cargando datos..." />
             ) : (
                 vista === 'estructura' 
-                    ? <Estructura datos={datos} onReload={() => cargar(true)} />
+                    ? <Estructura datos={datos} onReload={() => cargar()} />
                     : <Jefes datos={datos} />
             )}
         </div>

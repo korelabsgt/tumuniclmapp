@@ -11,6 +11,7 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.css';
 
 import { useNivelData } from '@/hooks/educacion/useNivelData';
+import { useTodosAlumnos } from '@/hooks/educacion/useEducacionData';
 import useUserData from '@/hooks/sesion/useUserData';
 import { createClient } from '@/utils/supabase/client';
 
@@ -32,6 +33,7 @@ export default function Nivel() {
   const nivelId = params.nivelId as string;
   const { permisos, cargando: cargandoUsuario } = useUserData();
   const { nivel, alumnosDelNivel, maestros, loading, fetchData } = useNivelData(nivelId);
+  const { data: todosLosAlumnos = [] } = useTodosAlumnos();
 
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState<Alumno | null>(null);
   const [alumnoParaEditar, setAlumnoParaEditar] = useState<Alumno | null>(null);
@@ -39,21 +41,7 @@ export default function Nivel() {
   const [isAsignarMaestroOpen, setIsAsignarMaestroOpen] = useState(false);
   const [isFormNivelOpen, setIsFormNivelOpen] = useState(false);
   const [accionesAbiertas, setAccionesAbiertas] = useState<Alumno | null>(null);
-  const [todosLosAlumnos, setTodosLosAlumnos] = useState<Alumno[]>([]);
   const [tabActiva, setTabActiva] = useState<'lista' | 'asistencia' | 'historial'>('lista');
-
-  useEffect(() => {
-    const fetchAllAlumnos = async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase.from('alumnos').select('*');
-      if (data) {
-        setTodosLosAlumnos(data);
-      } else {
-        console.error('Error fetching all students:', error);
-      }
-    };
-    fetchAllAlumnos();
-  }, []);
 
   useEffect(() => {
     const isModalOpen = isFormAlumnoOpen || alumnoSeleccionado || isAsignarMaestroOpen || isFormNivelOpen || accionesAbiertas;

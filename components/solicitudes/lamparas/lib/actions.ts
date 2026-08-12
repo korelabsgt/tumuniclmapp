@@ -369,96 +369,71 @@ export const getUsuariosAtencionVecino = async () => {
   }));
 };
 
-/**
- * Verifica de forma robusta si un dependencia_id pertenece a la familia de
- * "Unidad de Atención al Vecino" (ya sea él mismo, o un hijo/nieto).
- */
-export const checkIsAtencionVecino = async (dependenciaId: string | null): Promise<boolean> => {
-  if (!dependenciaId) return false;
-
-  const supabase = await createClient();
-  let currentId: string | null = dependenciaId;
-  let depth = 0;
-  const MAX_DEPTH = 5;
-
-  while (currentId && depth < MAX_DEPTH) {
-    const { data, error }: { data: any, error: any } = await supabase
-      .from('dependencias')
-      .select('id, nombre, parent_id')
-      .eq('id', currentId)
-      .single();
-
-    if (error || !data) break;
-
-    // Buscamos cualquier variación del nombre, sin importar tildes o mayúsculas
-    const nombre = (data.nombre || '').toLowerCase();
-    if (nombre.includes('atención al vecino') || nombre.includes('atencion al vecino')) {
-      return true;
-    }
-
-    currentId = data.parent_id;
-    depth++;
-  }
-
-  return false;
+export type FlagsModulosDependencia = {
+  esAtencionVecino: boolean;
+  esElectricista: boolean;
+  esDirectorSP: boolean;
 };
 
-export const checkIsElectricista = async (dependenciaId: string | null): Promise<boolean> => {
-  if (!dependenciaId) return false;
+export const obtenerFlagsModulosDependencia = async (
+  dependenciaId: string | null,
+): Promise<FlagsModulosDependencia> => {
+  const vacio: FlagsModulosDependencia = {
+    esAtencionVecino: false,
+    esElectricista: false,
+    esDirectorSP: false,
+  };
+
+  if (!dependenciaId) return vacio;
 
   const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("dependencias")
+    .select("id, nombre, parent_id");
+
+  if (error || !data) return vacio;
+
+  const byId = new Map(
+    data.map((dep) => [
+      dep.id,
+      { nombre: dep.nombre, parent_id: dep.parent_id },
+    ]),
+  );
+
+  const flags: FlagsModulosDependencia = { ...vacio };
   let currentId: string | null = dependenciaId;
-  let depth = 0;
-  const MAX_DEPTH = 5;
+  const vistos = new Set<string>();
 
-  while (currentId && depth < MAX_DEPTH) {
-    const { data, error }: { data: any, error: any } = await supabase
-      .from('dependencias')
-      .select('id, nombre, parent_id')
-      .eq('id', currentId)
-      .single();
+  while (currentId && !vistos.has(currentId)) {
+    vistos.add(currentId);
+    const dep = byId.get(currentId);
+    if (!dep) break;
 
-    if (error || !data) break;
-
-    const nombre = (data.nombre || '').toLowerCase();
-    if (nombre.includes('alumbrado')) {
-      return true;
+    const nombre = (dep.nombre || "").toLowerCase();
+    if (
+      nombre.includes("atención al vecino") ||
+      nombre.includes("atencion al vecino")
+    ) {
+      flags.esAtencionVecino = true;
+    }
+    if (nombre.includes("alumbrado")) {
+      flags.esElectricista = true;
+    }
+    if (
+      nombre.includes("servicios públicos") ||
+      nombre.includes("servicios publicos")
+    ) {
+      flags.esDirectorSP = true;
     }
 
-    currentId = data.parent_id;
-    depth++;
-  }
-
-  return false;
-};
-
-export const checkIsDirectorServiciosPublicos = async (dependenciaId: string | null): Promise<boolean> => {
-  if (!dependenciaId) return false;
-
-  const supabase = await createClient();
-  let currentId: string | null = dependenciaId;
-  let depth = 0;
-  const MAX_DEPTH = 5;
-
-  while (currentId && depth < MAX_DEPTH) {
-    const { data, error }: { data: any, error: any } = await supabase
-      .from('dependencias')
-      .select('id, nombre, parent_id')
-      .eq('id', currentId)
-      .single();
-
-    if (error || !data) break;
-
-    const nombre = (data.nombre || '').toLowerCase();
-    if (nombre.includes('servicios públicos') || nombre.includes('servicios publicos')) {
-      return true;
+    if (flags.esAtencionVecino && flags.esElectricista && flags.esDirectorSP) {
+      break;
     }
 
-    currentId = data.parent_id;
-    depth++;
+    currentId = dep.parent_id;
   }
 
-  return false;
+  return flags;
 };
 
 /**

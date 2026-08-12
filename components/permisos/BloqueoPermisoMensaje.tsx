@@ -1,15 +1,17 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, FileText } from "lucide-react";
 import { useTheme } from "next-themes";
 import Swal from "sweetalert2";
 import { PERMISO_MENSAJE_REFRESH } from "@/components/push/Listener";
+import { confirmarMensajePermiso } from "./lib/mensajes";
 import {
-  obtenerMensajePendientePermiso,
-  confirmarMensajePermiso,
-} from "./lib/mensajes";
+  useMensajePendientePermiso,
+  MENSAJE_PERMISO_PENDIENTE_KEY,
+} from "./lib/hooks-queries";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface MensajePendiente {
   id: string;
@@ -38,41 +40,22 @@ const formatearFechaHora = (fechaISO: string) => {
 };
 
 export default function BloqueoPermisoMensaje() {
+  const queryClient = useQueryClient();
   const { resolvedTheme } = useTheme();
-  const [mensaje, setMensaje] = useState<MensajePendiente | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, refetch } = useMensajePendientePermiso();
+  const mensaje = (data as MensajePendiente | null) ?? null;
   const [confirming, setConfirming] = useState(false);
 
-  const fetchMensaje = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-
-    try {
-      const result = await obtenerMensajePendientePermiso();
-      if (result.success && result.data) {
-        setMensaje(result.data as MensajePendiente);
-      } else {
-        setMensaje(null);
-      }
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    fetchMensaje();
-  }, [fetchMensaje]);
-
-  useEffect(() => {
-    const onRefresh = () => fetchMensaje(true);
+    const onRefresh = () => {
+      void refetch();
+    };
 
     window.addEventListener(PERMISO_MENSAJE_REFRESH, onRefresh);
-    window.addEventListener("focus", onRefresh);
-
     return () => {
       window.removeEventListener(PERMISO_MENSAJE_REFRESH, onRefresh);
-      window.removeEventListener("focus", onRefresh);
     };
-  }, [fetchMensaje]);
+  }, [refetch]);
 
   if (loading || !mensaje) return null;
 
@@ -104,7 +87,7 @@ export default function BloqueoPermisoMensaje() {
       }
 
       const leidoAt = result.leido_at || new Date().toISOString();
-      setMensaje(null);
+      queryClient.setQueryData(MENSAJE_PERMISO_PENDIENTE_KEY, null);
 
       await Swal.fire({
         title: "Enterado registrado",
@@ -118,7 +101,7 @@ export default function BloqueoPermisoMensaje() {
         ...swalTheme,
       });
 
-      await fetchMensaje(true);
+      await refetch();
     } finally {
       setConfirming(false);
     }

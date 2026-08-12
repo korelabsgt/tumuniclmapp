@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
   Loader2,
@@ -41,11 +42,7 @@ interface Props {
 const ITEMS_PER_PAGE = 5;
 
 export default function AsignarPrograma({ isOpen, onClose }: Props) {
-  const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
-  const [availablePrograms, setAvailablePrograms] = useState<
-    ProgramaEducativo[]
-  >([]);
-
+  const queryClient = useQueryClient();
   const [selectedYear, setSelectedYear] = useState<string>(
     new Date().getFullYear().toString(),
   );
@@ -54,31 +51,36 @@ export default function AsignarPrograma({ isOpen, onClose }: Props) {
   const [userSearchTerm, setUserSearchTerm] = useState("");
   const [filterAssigned, setFilterAssigned] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ["educacion", "asignar-programas"],
+    queryFn: async () => {
       const usersData = await obtenerUsuariosPorModulo("EDUCACION");
-      const sortedUsers = (usersData || []).sort((a: any, b: any) =>
-        (a.nombre || a.email).localeCompare(b.nombre || b.email),
-      );
-      setAllUsers(sortedUsers as UserProfile[]);
-
+      const sortedUsers = [...(usersData || [])].sort((a, b) => {
+        const left = String(
+          (a as UserProfile).nombre || (a as UserProfile).email || "",
+        );
+        const right = String(
+          (b as UserProfile).nombre || (b as UserProfile).email || "",
+        );
+        return left.localeCompare(right);
+      });
       const programsData = await obtenerProgramasEducativos();
-      setAvailablePrograms(programsData || []);
-    } catch (error) {
-      toast.error("Error al cargar los datos iniciales.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return {
+        users: sortedUsers as UserProfile[],
+        programs: (programsData || []) as ProgramaEducativo[],
+      };
+    },
+    enabled: isOpen,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const allUsers = data?.users ?? [];
+  const availablePrograms = data?.programs ?? [];
 
   useEffect(() => {
     if (isOpen) {
-      fetchData();
       setSelectedYear(new Date().getFullYear().toString());
       setSelectedProgram("");
     }
@@ -156,7 +158,9 @@ export default function AsignarPrograma({ isOpen, onClose }: Props) {
 
     if (result.success) {
       toast.success("Programas actualizados correctamente.");
-      fetchData();
+      void queryClient.invalidateQueries({
+        queryKey: ["educacion", "asignar-programas"],
+      });
     } else {
       toast.error(`Error al actualizar: ${result.message}`);
     }

@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { actualizarInfoPersonal, obtenerInfoUsuario } from './action';
 import { obtenerLlamadasAtencion, eliminarLlamadaAtencion, obtenerTodasFaltas } from './llamadaAtencionActions';
-import { obtenerCitacionesUsuario, obtenerTodasCitaciones, confirmarCitacion, eliminarCitacion } from './citacionActions';
+import { obtenerCitacionesUsuario, obtenerTodasCitaciones, confirmarCitacion, eliminarCitacion, obtenerCitacionPendienteActual } from './citacionActions';
 import Swal from 'sweetalert2';
 
 export function useLlamadasAtencion(userId: string) {
@@ -139,6 +139,23 @@ export function useTodasCitaciones(enabled = true) {
     loading,
     invalidate,
   };
+}
+
+export const CITACION_PENDIENTE_KEY = ['bloqueo-citacion'] as const;
+
+export function useCitacionPendiente() {
+  return useQuery({
+    queryKey: CITACION_PENDIENTE_KEY,
+    queryFn: async () => {
+      const result = await obtenerCitacionPendienteActual();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return null;
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+  });
 }
 
 export function useInfoForm(userId: string) {

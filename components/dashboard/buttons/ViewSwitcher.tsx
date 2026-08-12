@@ -3,48 +3,45 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AnimatedIcon from "@/components/ui/AnimatedIcon";
-
-interface ViewSwitcherProps {
-  isSuper: boolean;
-}
-
-export default function ViewSwitcher({ isSuper }: ViewSwitcherProps) {
+export default function ViewSwitcher() {
   const router = useRouter();
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <div
-      className={`flex gap-2 h-14 order-1 md:order-3 ${isSuper ? "md:col-span-5" : "md:col-span-8"}`}
-    >
-      <button
-        type="button"
-        onClick={() => router.push("/protected/mis-asistencias")}
-        onMouseEnter={() => setHovered("asistencia")}
-        onMouseLeave={() => setHovered(null)}
-        className="flex-1 flex items-center justify-center gap-2 h-full rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 shadow-sm border border-green-200 dark:border-green-800 text-base md:text-lg font-bold transition-colors duration-200"
-      >
-        <AnimatedIcon
-          iconKey="sgtmgpft"
-          className="w-8 h-8"
-          trigger={hovered === "asistencia" ? "loop" : undefined}
-        />
-        <span className="truncate">Asistencia</span>
-      </button>
+    <div className="order-1 -mx-4 w-[calc(100%+2rem)] md:col-span-12 md:order-3 sm:mx-0 sm:flex sm:w-full sm:justify-center sm:px-2">
+      <div className="w-full rounded-none border-x-0 border-y-2 border-zinc-300 shadow-sm dark:border-zinc-600 sm:w-fit sm:max-w-full sm:rounded-xl sm:border-2 sm:border-zinc-300 dark:sm:border-zinc-600">
+        <div className="flex h-11 w-full divide-x-2 divide-zinc-300 dark:divide-zinc-600 sm:h-12">
+          <button
+            type="button"
+            onClick={() => router.push("/protected/mis-asistencias")}
+            onMouseEnter={() => setHovered("asistencia")}
+            onMouseLeave={() => setHovered(null)}
+            className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 bg-green-50/90 px-2 text-sm font-bold text-green-700 transition-colors hover:bg-green-100/70 dark:bg-green-950/20 dark:text-green-400/90 dark:hover:bg-green-900/30 sm:flex-initial sm:shrink-0 sm:gap-2.5 sm:px-4 sm:text-lg"
+          >
+            <AnimatedIcon
+              iconKey="sgtmgpft"
+              className="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
+              trigger={hovered === "asistencia" ? "loop" : undefined}
+            />
+            <span className="whitespace-nowrap">Asistencia</span>
+          </button>
 
-      <button
-        type="button"
-        onClick={() => router.push("/protected/mis-comisiones")}
-        onMouseEnter={() => setHovered("comisiones")}
-        onMouseLeave={() => setHovered(null)}
-        className="flex-1 flex items-center justify-center gap-2 h-full rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 shadow-sm border border-purple-200 dark:border-purple-800 text-base md:text-lg font-bold transition-colors duration-200"
-      >
-        <AnimatedIcon
-          iconKey="vqkaxtlm"
-          className="w-8 h-8"
-          trigger={hovered === "comisiones" ? "loop" : undefined}
-        />
-        <span className="truncate">Comisiones</span>
-      </button>
+          <button
+            type="button"
+            onClick={() => router.push("/protected/mis-comisiones")}
+            onMouseEnter={() => setHovered("comisiones")}
+            onMouseLeave={() => setHovered(null)}
+            className="flex flex-1 cursor-pointer items-center justify-center gap-1.5 bg-purple-50/90 px-2 text-sm font-bold text-purple-700 transition-colors hover:bg-purple-100/70 dark:bg-purple-950/20 dark:text-purple-400/90 dark:hover:bg-purple-900/30 sm:flex-initial sm:shrink-0 sm:gap-2.5 sm:px-4 sm:text-lg"
+          >
+            <AnimatedIcon
+              iconKey="vqkaxtlm"
+              className="h-7 w-7 shrink-0 sm:h-8 sm:w-8"
+              trigger={hovered === "comisiones" ? "loop" : undefined}
+            />
+            <span className="whitespace-nowrap">Comisiones</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

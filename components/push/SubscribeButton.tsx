@@ -5,7 +5,15 @@ import { createClient } from "@/utils/supabase/client";
 import { urlBase64ToUint8Array } from "@/app/utils/vapid";
 import { Bell, BellOff, Loader2, Check } from "lucide-react";
 
-export default function SubscribeButton({ userId }: { userId: string | null }) {
+export default function SubscribeButton({
+  userId,
+  className,
+  variant = "default",
+}: {
+  userId: string | null;
+  className?: string;
+  variant?: "default" | "plain";
+}) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -98,15 +106,22 @@ export default function SubscribeButton({ userId }: { userId: string | null }) {
     }
   };
 
+  const esPlano = variant === "plain";
+
   return (
     <button
+      type="button"
       onClick={handleToggle}
       disabled={!mounted || loading || !userId}
-      className={`h-14 w-full flex items-center justify-center rounded-md border transition-all duration-200 ${
-        isSubscribed
-          ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-          : "bg-gray-100 dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-800"
-      }`}
+      className={`flex items-center justify-center transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${
+        esPlano
+          ? "h-10 w-10 bg-transparent border-0 shadow-none hover:opacity-80"
+          : `h-14 w-full rounded-md border ${
+              isSubscribed
+                ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-gray-500 dark:text-gray-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            }`
+      } ${className ?? ""}`}
       title={
         isSubscribed ? "Desactivar notificaciones" : "Activar notificaciones"
       }
@@ -116,9 +131,15 @@ export default function SubscribeButton({ userId }: { userId: string | null }) {
       ) : isSubscribed ? (
         <div className="relative">
           <Bell className="h-7 w-7 text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
-          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white dark:border-neutral-900">
-            <Check className="h-2.5 w-2.5 text-white stroke-[4]" />
-          </div>
+          {!esPlano ? (
+            <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white dark:border-neutral-900">
+              <Check className="h-2.5 w-2.5 text-white stroke-[4]" />
+            </div>
+          ) : (
+            <div className="absolute -top-0.5 -right-0.5 bg-green-500 rounded-full p-0.5">
+              <Check className="h-2 w-2 text-white stroke-[4]" />
+            </div>
+          )}
         </div>
       ) : (
         <BellOff className="h-7 w-7 text-gray-400 dark:text-gray-500" />

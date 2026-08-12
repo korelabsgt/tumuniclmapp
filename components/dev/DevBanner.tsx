@@ -1,29 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import { MensajeDev } from './zod';
-import { getMensajesActivosDev } from './actions/mensajes';
 import { getNivelConfig } from './nivelConfig';
 import { MensajeFormateado } from './mensajeFormato';
+import { useMensajesActivosDev } from './lib/hooks';
 
 export default function DevBanner() {
-  const [mensajes, setMensajes] = useState<MensajeDev[]>([]);
-  const [cerrados, setCerrados] = useState<Set<string>>(new Set());
+  const { data: mensajes = [] } = useMensajesActivosDev();
 
-  useEffect(() => {
-    getMensajesActivosDev().then(setMensajes);
-  }, []);
-
-  const visibles = mensajes.filter((m) => !cerrados.has(m.id));
-
-  if (visibles.length === 0) return null;
+  if (mensajes.length === 0) return null;
 
   return (
-    <div className="w-full space-y-0">
+    <div id="app-dev-banner" className="w-full shrink-0 space-y-0">
       <AnimatePresence>
-        {visibles.map((m) => {
+        {mensajes.map((m) => {
           const cfg = getNivelConfig(m.estado);
           const Icon = cfg.icon;
 
@@ -57,13 +47,6 @@ export default function DevBanner() {
                     />
                   </div>
                 </div>
-                <button
-                  onClick={() => setCerrados((prev) => new Set(prev).add(m.id))}
-                  className={`p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0 ${cfg.accent}`}
-                  aria-label="Cerrar aviso"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
               </div>
             </motion.div>
           );

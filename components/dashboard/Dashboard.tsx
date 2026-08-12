@@ -1,37 +1,36 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import useUserData from "@/hooks/sesion/useUserData";
 
 import HorarioSistema from "@/components/admin/sistema/HorarioSistema";
-import TarjetaEmpleado from "@/components/admin/dependencias/TarjetaEmpleado";
 import BroadcastButton from "@/components/push/BroadcastButton";
+import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 
 import Config from "./buttons/Config";
 import ViewSwitcher from "./buttons/ViewSwitcher";
-import Profile from "./buttons/Profile";
 import ModulesView from "./views/ModulesView";
 
 export default function Dashboard() {
-  const { rol, modulos = [], permisos = [], userId, esjefe, dependencia_id } = useUserData();
+  const {
+    rol,
+    modulos = [],
+    userId,
+    esjefe,
+    dependencia_id,
+    permisos = [],
+    cargando,
+  } = useUserData();
 
-  const [mostrarTarjetaModal, setMostrarTarjetaModal] = useState(false);
   const [mostrarHorarioModal, setMostrarHorarioModal] = useState(false);
 
-  useEffect(() => {
-    if (mostrarTarjetaModal) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mostrarTarjetaModal]);
-
   const isSuper = rol === "SUPER";
+
+  if (cargando) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <section className="w-full mx-auto px-4 md:px-8 pt-2">
@@ -46,20 +45,8 @@ export default function Dashboard() {
           </div>
         )}
 
-        <ViewSwitcher isSuper={isSuper} />
-
-        <Profile
-          userId={userId}
-          isSuper={isSuper}
-          onShowTarjeta={() => setMostrarTarjetaModal(true)}
-        />
+        <ViewSwitcher />
       </div>
-
-      <TarjetaEmpleado
-        isOpen={mostrarTarjetaModal}
-        onClose={() => setMostrarTarjetaModal(false)}
-        userId={userId}
-      />
 
       <motion.div
         key="modulos"
@@ -68,7 +55,13 @@ export default function Dashboard() {
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
       >
-        <ModulesView rol={rol} modulos={modulos} esjefe={esjefe} userId={userId} dependenciaId={dependencia_id} />
+        <ModulesView
+          rol={rol}
+          modulos={modulos}
+          esjefe={esjefe}
+          userId={userId}
+          dependenciaId={dependencia_id}
+        />
       </motion.div>
 
       <AnimatePresence>

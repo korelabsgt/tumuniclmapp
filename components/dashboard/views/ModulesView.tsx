@@ -1,14 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { TODOS_LOS_MODULOS } from "../constants";
 import ModuleCard from "../modules/ModuleCard";
 import ModuleAccordion from "../modules/ModuleAccordion";
-import {
-  checkIsAtencionVecino,
-  checkIsElectricista,
-  checkIsDirectorServiciosPublicos,
-} from "@/components/solicitudes/lamparas/lib/actions";
+import { useFlagsModulosDependencia } from "@/components/solicitudes/lamparas/lib/hooks";
 
 interface ModulesViewProps {
   rol: string;
@@ -26,25 +22,10 @@ export default function ModulesView({
   dependenciaId,
 }: ModulesViewProps) {
   const [loadingModule, setLoadingModule] = useState<string | null>(null);
-  const [esAtencionVecino, setEsAtencionVecino] = useState(false);
-  const [esElectricista, setEsElectricista] = useState(false);
-  const [esDirectorSP, setEsDirectorSP] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-    if (dependenciaId) {
-      checkIsAtencionVecino(dependenciaId)
-        .then((isAtencion) => setEsAtencionVecino(isAtencion))
-        .catch(console.error);
-      checkIsElectricista(dependenciaId)
-        .then((isElec) => setEsElectricista(isElec))
-        .catch(console.error);
-      checkIsDirectorServiciosPublicos(dependenciaId)
-        .then((isDir) => setEsDirectorSP(isDir && esjefe))
-        .catch(console.error);
-    }
-  }, [dependenciaId]);
+  const flags = useFlagsModulosDependencia(dependenciaId ?? null);
+  const esAtencionVecino = flags.esAtencionVecino;
+  const esElectricista = flags.esElectricista;
+  const esDirectorSP = flags.esDirectorSP && esjefe;
 
   const modulosDisponibles = useMemo(
     () =>
@@ -220,8 +201,6 @@ export default function ModulesView({
   const tienePoliticas = modulosPoliticas.length > 0;
   const tieneGestion = modulosGestion.length > 0;
 
-  if (!mounted) return null;
-
   return (
     <div className="w-full lg:max-w-[100%] xl:max-w-[90%] mx-auto">
       <div
@@ -337,7 +316,7 @@ export default function ModulesView({
         )}
 
         {tienePoliticas && (
-          <div className={`space-y-4 ${!tieneGestion ? "w-full" : ""}`}>
+          <div className={`space-y-4 pb-2 sm:pb-0 ${!tieneGestion ? "w-full" : ""}`}>
             <h2 className="text-2xl font-bold text-blue-600 dark:text-gray-100 mb-4 text-center md:text-left">
               Políticas Públicas
             </h2>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   format, 
   startOfWeek, 
@@ -20,8 +20,7 @@ import PreviewPermiso from '@/components/permisos/modals/PreviewPermiso';
 import { RegistrosAgrupadosPorUsuario, RegistrosAgrupadosDiarios, AsistenciaDiaria, AsistenciaEnriquecida } from './types';
 import { PermisoEmpleado } from '@/components/permisos/types';
 import { AnimatePresence } from 'framer-motion';
-import useAsistenciasOficina from '@/hooks/asistencia/useAsistenciasOficina';
-import { createClient } from '@/utils/supabase/client';
+import useAsistenciasOficina, { usePermisosOficinaRango } from '@/hooks/asistencia/useAsistenciasOficina';
 
 interface AsistenciasOficinasProps {
   oficinaId?: string;
@@ -40,42 +39,19 @@ export default function AsistenciasOficinas({ oficinaId }: AsistenciasOficinasPr
   } | null>(null);
   const [permisoPreview, setPermisoPreview] = useState<PermisoEmpleado | null>(null);
 
-  // Permisos de los usuarios de la oficina en el rango de fechas
-  const [permisosMap, setPermisosMap] = useState<Record<string, PermisoEmpleado[]>>({});
-
   const { registros: todosLosRegistros, loading } = useAsistenciasOficina(oficinaId || null, fechaInicio, fechaFin);
 
-  // Obtener permisos de todos los usuarios de la oficina en el rango
-  useEffect(() => {
-    const fetchPermisos = async () => {
-      if (!todosLosRegistros || todosLosRegistros.length === 0) {
-        setPermisosMap({});
-        return;
-      }
+  const userIds = useMemo(
+    () => [...new Set((todosLosRegistros || []).map((r: { user_id: string }) => r.user_id))],
+    [todosLosRegistros],
+  );
 
-      const userIds = [...new Set(todosLosRegistros.map((r: any) => r.user_id as string))];
-      if (userIds.length === 0) return;
-
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('permisos_empleado')
-        .select('*')
-        .in('user_id', userIds)
-        .gte('fin', fechaInicio)
-        .lte('inicio', fechaFin + 'T23:59:59');
-
-      if (error || !data) return;
-
-      const map: Record<string, PermisoEmpleado[]> = {};
-      data.forEach((p: any) => {
-        if (!map[p.user_id]) map[p.user_id] = [];
-        map[p.user_id].push(p as PermisoEmpleado);
-      });
-      setPermisosMap(map);
-    };
-
-    fetchPermisos();
-  }, [todosLosRegistros, fechaInicio, fechaFin]);
+  const { data: permisosMapRaw = {} } = usePermisosOficinaRango(
+    userIds,
+    fechaInicio,
+    fechaFin,
+  );
+  const permisosMap = permisosMapRaw as Record<string, PermisoEmpleado[]>;
 
   const diasDelRango = useMemo(() => {
     const start = parseISO(fechaInicio);

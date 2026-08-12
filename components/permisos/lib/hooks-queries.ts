@@ -9,6 +9,7 @@ import {
 } from "@/components/permisos/acciones";
 import {
   obtenerLecturasNotificaciones,
+  obtenerMensajePendientePermiso,
   type TipoVistaLecturas,
 } from "@/components/permisos/lib/mensajes";
 import { PERMISOS_QUERY_ROOT, permisosQueryKeys } from "./query-keys";
@@ -86,5 +87,22 @@ export function useLecturasNotificaciones(tipoVista: TipoVistaLecturas) {
     queryKey: permisosQueryKeys.lecturas(tipoVista),
     queryFn: () => obtenerLecturasNotificaciones(tipoVista),
     staleTime: STALE_MS,
+  });
+}
+
+export const MENSAJE_PERMISO_PENDIENTE_KEY = ["bloqueo-permiso-mensaje"] as const;
+
+export function useMensajePendientePermiso() {
+  return useQuery({
+    queryKey: MENSAJE_PERMISO_PENDIENTE_KEY,
+    queryFn: async () => {
+      const result = await obtenerMensajePendientePermiso();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return null;
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
   });
 }

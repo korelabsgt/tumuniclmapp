@@ -1,70 +1,64 @@
-import { useState, useEffect, useCallback } from 'react';
-import { createClient } from '@/utils/supabase/client';
-import { toast } from 'react-toastify';
-import type { Programa, Alumno, Maestro } from '@/components/educacion/lib/esquemas';
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
+import { createClient } from "@/utils/supabase/client";
+import { toast } from "react-toastify";
+import type { Alumno } from "@/components/educacion/lib/esquemas";
+import {
+  educacionKeys,
+  fetchProgramaPorId,
+  mapInscripciones,
+  useInvalidarEducacion,
+  useMaestrosEducacion,
+} from "@/hooks/educacion/useEducacionData";
+
+const FIVE_MINUTES = 1000 * 60 * 5;
+
+type InscripcionConAlumno = {
+  programa_id: number;
+  alumnos: Alumno | null;
+};
 
 export function useNivelData(nivelId: string | number) {
-    const [nivel, setNivel] = useState<Programa | null>(null);
-    const [alumnosDelNivel, setAlumnosDelNivel] = useState<Alumno[]>([]);
-    const [maestros, setMaestros] = useState<Maestro[]>([]);
-    const [loading, setLoading] = useState(true);
+  const fetchData = useInvalidarEducacion();
+  const enabled = Boolean(nivelId);
 
-    const fetchData = useCallback(async () => {
-        setLoading(true);
-        const supabase = createClient();
-        
-        const nivelRes = await supabase
-            .from('programas_educativos')
-            .select('*')
-            .eq('id', nivelId)
-            .single();
+  const nivelQuery = useQuery({
+    queryKey: educacionKeys.programa(nivelId),
+    queryFn: () => fetchProgramaPorId(nivelId),
+    enabled,
+    staleTime: FIVE_MINUTES,
+  });
 
-        if (nivelRes.error) {
-            toast.error('Error al cargar el nivel.');
-            setLoading(false);
-            return;
-        }
+  const alumnosQuery = useQuery({
+    queryKey: educacionKeys.inscripcionesPrograma(nivelId),
+    queryFn: async (): Promise<Alumno[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("alumnos_inscripciones")
+        .select("*, alumnos(*)")
+        .eq("programa_id", nivelId);
+      if (error) {
+        toast.error("Error al cargar los alumnos del nivel.");
+        throw new Error(error.message);
+      }
+      return mapInscripciones(data as InscripcionConAlumno[]);
+    },
+    enabled,
+    staleTime: FIVE_MINUTES,
+  });
 
-        const nivelData = nivelRes.data as Programa;
-        setNivel(nivelData);
+  const maestrosQuery = useMaestrosEducacion();
 
-        const alumnosInscripcionesRes = await supabase
-            .from('alumnos_inscripciones')
-            .select('*, alumnos(*)')
-            .eq('programa_id', nivelData.id);
-
-        if (alumnosInscripcionesRes.error) {
-            toast.error('Error al cargar los alumnos del nivel.');
-            setLoading(false);
-            return;
-        }
-
-        const alumnosData = alumnosInscripcionesRes.data.map(inscripcion => ({
-            ...inscripcion.alumnos,
-            programa_id: inscripcion.programa_id
-        })) as Alumno[];
-        setAlumnosDelNivel(alumnosData);
-        
-        const maestrosRes = await supabase
-            .from('maestros_municipales')
-            .select('*');
-        
-        if (maestrosRes.error) {
-            toast.error('Error al cargar los maestros.');
-            setLoading(false);
-            return;
-        }
-
-        setMaestros((maestrosRes.data as Maestro[]) || []);
-
-        setLoading(false);
-    }, [nivelId]);
-
-    useEffect(() => {
-        if (nivelId) {
-            fetchData();
-        }
-    }, [nivelId, fetchData]);
-
-    return { nivel, alumnosDelNivel, maestros, loading, fetchData };
+  return {
+    nivel: nivelQuery.data ?? null,
+    alumnosDelNivel: alumnosQuery.data ?? [],
+    maestros: maestrosQuery.data ?? [],
+    loading:
+      (nivelQuery.isLoading ||
+        alumnosQuery.isLoading ||
+        maestrosQuery.isLoading) &&
+      enabled,
+    fetchData,
+  };
 }

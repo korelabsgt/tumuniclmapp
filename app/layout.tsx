@@ -1,15 +1,12 @@
 import "./globals.css";
 import { Geist } from "next/font/google";
-import HeaderAuth from "@/components/header-auth";
-import LogoLink from "@/components/ui/LogoLink";
-import FechaHoraActual from "@/components/ui/FechaHoraActual";
+import AppHeader from "@/components/layout/AppHeader";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import NotificationListener from "@/components/push/Listener";
 import { ThemeProvider } from "@/components/themes/theme-provider";
-import { ThemeSwitcher } from "@/components/themes/theme-switcher";
 import QueryProvider from "@/components/providers/QueryProvider";
 import MouseBackNavigation from "@/components/providers/MouseBackNavigation";
 import SystemGuard from "@/components/system-guard";
@@ -18,6 +15,7 @@ import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
 import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
 import BloqueoPermisoMensaje from "@/components/permisos/BloqueoPermisoMensaje";
+import ProtectedShell from "@/components/layout/ProtectedShell";
 
 export const metadata: Metadata = {
   title: "SIGEM -CLM-",
@@ -71,7 +69,7 @@ export default async function RootLayout({
             <SystemGuard>
               <NotificationListener />
               <MouseBackNavigation />
-              <div className="flex flex-col min-h-screen">
+              <div className="flex min-h-[100dvh] flex-col">
                 <DevBanner />
                 <BloqueoCitacion />
                 <BloqueoActividad />
@@ -79,58 +77,12 @@ export default async function RootLayout({
                 <BloqueoSolicitudesJefes />
 
                 {isStandalonePage ? (
-                  <main className="flex-grow w-full">{children}</main>
+                  <main className="w-full flex-1">{children}</main>
                 ) : (
                   <>
-                    <nav className="w-full flex border-b border-b-foreground/10 h-40">
-                      <div className="w-full flex bg-gray-100 dark:bg-neutral-900 items-center justify-between px-1 pt-1 pb-0 text-sm transition-colors">
-                        <div className="flex items-center gap-3">
-                          <LogoLink />
-                        </div>
-                        <div className="shrink-0">
-                          <HeaderAuth />
-                        </div>
-                      </div>
-                    </nav>
+                    <AppHeader />
 
-                    <main className="flex flex-col gap-5 pt-2 flex-grow w-full mx-auto">
-                      {children}
-                    </main>
-
-                    <footer className="mt-5 pt-5 pb-5 border-t border-foreground/10 bg-gray-100 dark:bg-neutral-900 text-gray-700 dark:text-gray-300 shrink-0 transition-colors">
-                      <div className="w-full flex flex-row justify-between items-end px-6">
-                        <div className="w-1/2 text-left">
-                          <FechaHoraActual />
-                          <p className="mt-5 text-xs md:text-base">
-                            Powered by <br />
-                            <a
-                              href="https://www.oscar27jimenez.com"
-                              target="_blank"
-                              rel="noreferrer"
-                              className="font-semibold hover:underline text-blue-600"
-                            >
-                              Ing. Oscar Jiménez
-                            </a>
-                          </p>
-                        </div>
-
-                        <div className="w-1/2 flex flex-col items-end gap-4 text-end text-xs md:text-sm leading-tight">
-                          <div className="scale-75 origin-right md:scale-100">
-                            <ThemeSwitcher />
-                          </div>
-
-                          <div>
-                            <p>
-                              © {new Date().getFullYear()} - Todos los derechos
-                              reservados.
-                            </p>
-                            <p className="mt-2 text-[10px] md:text-xs text-blue-600 font-bold">
-                              Versión 1.4.7
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </footer>
+                    <ProtectedShell>{children}</ProtectedShell>
                   </>
                 )}
 

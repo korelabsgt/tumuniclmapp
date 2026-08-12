@@ -9,14 +9,18 @@ import {
   cambiarEstado,
   eliminarTarea,
   duplicarTarea,
-  actualizarArchivosTarea
+  actualizarArchivosTarea,
+  obtenerActividadPendienteConfirmacion,
 } from "./actions";
 import { TipoVistaTareas, NewTaskState, ChecklistItem, ArchivoAdjunto } from "./types";
 
-const KEYS = {
+export const TAREAS_KEYS = {
   gestor: (vista: string) => ["gestor-tareas", vista],
-  all: ["gestor-tareas"] 
+  all: ["gestor-tareas"],
+  pendiente: ["bloqueo-actividad-pendiente"],
 };
+
+const KEYS = TAREAS_KEYS;
 
 const FIVE_MINUTES = 1000 * 60 * 5;
 
@@ -32,7 +36,10 @@ export const useGestorData = (tipoVista: TipoVistaTareas, initialData: any) => {
 export const useTareaMutations = () => {
   const queryClient = useQueryClient();
 
-  const invalidar = () => queryClient.invalidateQueries({ queryKey: KEYS.all });
+  const invalidar = () => {
+    queryClient.invalidateQueries({ queryKey: KEYS.all });
+    queryClient.invalidateQueries({ queryKey: KEYS.pendiente });
+  };
 
   const crear = useMutation({
     mutationFn: (data: NewTaskState) => crearTarea(data),
@@ -71,3 +78,18 @@ export const useTareaMutations = () => {
 
   return { crear, actualizar, actualizarChecklist, cambiarStatus, eliminar, duplicar, actualizarArchivos };
 };
+
+export function useActividadPendiente() {
+  return useQuery({
+    queryKey: KEYS.pendiente,
+    queryFn: async () => {
+      const result = await obtenerActividadPendienteConfirmacion();
+      if (result.success && result.data) {
+        return result.data;
+      }
+      return null;
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+  });
+}

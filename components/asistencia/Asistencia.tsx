@@ -31,6 +31,7 @@ import Mapa from "../ui/modals/Mapa";
 import PreviewPermiso from "@/components/permisos/modals/PreviewPermiso";
 import VerComision from "@/components/comisiones/VerComision";
 import { PermisoEmpleado } from "@/components/permisos/types";
+import FechaHoraActual from "@/components/ui/FechaHoraActual";
 import Cargando from "@/components/ui/animations/Cargando";
 import Swal, { SweetAlertOptions } from "sweetalert2";
 
@@ -844,19 +845,8 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                     </div>
                   )}
 
-                  <div className="text-center border-y dark:border-neutral-800 py-4 transition-colors">
-                    <p className="text-xs lg:text-sm text-slate-600 dark:text-slate-300">
-                      <span className="capitalize">
-                        {format(fechaHoraGt, "EEEE, dd/MM/yyyy", {
-                          locale: es,
-                        })}
-                      </span>
-                      <span
-                        className={`font-mono font-bold ml-2 ${estaFueraDeHorario && !esHorarioMultiple ? "text-red-700 dark:text-red-400" : "text-gray-900 dark:text-gray-100"}`}
-                      >
-                        {format(fechaHoraGt, "hh:mm:ss aa", { locale: es })}
-                      </span>
-                    </p>
+                  <div className="flex justify-center border-y border-gray-100 py-4 dark:border-neutral-800">
+                    <FechaHoraActual />
                   </div>
                   <div className="flex justify-center w-full">
                     <div className="w-full">{renderBotonMarcado()}</div>

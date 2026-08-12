@@ -8,12 +8,14 @@ import {
   editarSolicitudJefe,
   eliminarSolicitudJefe,
   getJefesList,
+  obtenerSolicitudPendienteJefe,
 } from "./actions";
 import { SolicitudJefe, CrearSolicitudJefeValues } from "./zod";
 
 const KEYS = {
   solicitudes: ["solicitudes-jefes"],
   jefes: ["lista-jefes"],
+  pendiente: ["bloqueo-solicitud-jefe"],
 };
 
 const FIVE_MINUTES = 1000 * 60 * 5;
@@ -55,7 +57,10 @@ export const useJefes = () => {
 
 export const useSolicitudJefeMutations = () => {
   const queryClient = useQueryClient();
-  const invalidarLista = () => queryClient.invalidateQueries({ queryKey: KEYS.solicitudes });
+  const invalidarLista = () => {
+    queryClient.invalidateQueries({ queryKey: KEYS.solicitudes });
+    queryClient.invalidateQueries({ queryKey: KEYS.pendiente });
+  };
 
   const crear = useMutation({
     mutationFn: (payload: CrearSolicitudJefeValues) => crearSolicitudJefe(payload),
@@ -81,3 +86,18 @@ export const useSolicitudJefeMutations = () => {
 
   return { crear, actualizarEstado, editar, eliminar };
 };
+
+export function useSolicitudPendienteJefe() {
+  return useQuery({
+    queryKey: KEYS.pendiente,
+    queryFn: async () => {
+      const result = await obtenerSolicitudPendienteJefe();
+      if (result.success && result.data) {
+        return result.data as unknown as SolicitudJefe;
+      }
+      return null;
+    },
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+  });
+}

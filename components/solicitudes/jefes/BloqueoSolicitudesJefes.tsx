@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ClipboardList, Calendar, MapPin, AlignLeft } from 'lucide-react';
-import { obtenerSolicitudPendienteJefe } from './lib/actions';
 import { useTheme } from 'next-themes';
 import CambioEstadoJefesModal from './modals/CambioEstadoJefesModal';
 import { SolicitudJefe } from './lib/zod';
+import { useSolicitudPendienteJefe } from './lib/hook';
 
 const formatearFecha = (fechaString: string) => {
   if (!fechaString) return '';
@@ -19,43 +19,15 @@ const formatearFecha = (fechaString: string) => {
 export default function BloqueoSolicitudesJefes() {
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
-  
-  const [solicitud, setSolicitud] = useState<SolicitudJefe | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, refetch } = useSolicitudPendienteJefe();
+  const solicitud = data ?? null;
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const fetchSolicitud = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-
-    try {
-      const result = await obtenerSolicitudPendienteJefe();
-      if (result.success && result.data) {
-        setSolicitud(result.data as unknown as SolicitudJefe);
-      } else {
-        setSolicitud(null);
-      }
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchSolicitud();
-  }, [fetchSolicitud]);
 
   useEffect(() => {
     if (pathname === '/protected/solicitudes/jefes') {
-      fetchSolicitud(true);
+      void refetch();
     }
-  }, [pathname, fetchSolicitud]);
-
-  useEffect(() => {
-    const onRefresh = () => fetchSolicitud(true);
-    window.addEventListener('focus', onRefresh);
-    return () => {
-      window.removeEventListener('focus', onRefresh);
-    };
-  }, [fetchSolicitud]);
+  }, [pathname, refetch]);
 
   if (loading || !solicitud) return null;
 
@@ -69,7 +41,7 @@ export default function BloqueoSolicitudesJefes() {
 
   const handleModalSuccess = () => {
     setIsModalOpen(false);
-    fetchSolicitud(true);
+    void refetch();
   };
 
   return (
@@ -119,7 +91,7 @@ export default function BloqueoSolicitudesJefes() {
                   <div>
                     <p className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">Fecha Requerida:</p>
                     <p className="text-sm font-bold text-gray-900 dark:text-white">
-                      {formatearFecha(solicitud.fecha_solicitud)}
+                      {formatearFecha(solicitud.fecha_solicitud ?? '')}
                     </p>
                   </div>
                 </div>

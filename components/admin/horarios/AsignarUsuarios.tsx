@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'react-toastify';
 import Cargando from '@/components/ui/animations/Cargando';
-import { fetchUsuariosConHorario, asignarHorarioUsuario } from './actions';
+import { asignarHorarioUsuario } from './actions';
 import type { Horario, UsuarioConHorario } from './actions';
 import { Search, X, Loader2, AlertTriangle } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { useUsuariosConHorario, HORARIOS_KEYS } from './hooks';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface AsignarUsuarioProps {
   isOpen: boolean;
@@ -103,22 +105,9 @@ function FilaUsuario({
 }
 
 export default function AsignarUsuario({ isOpen, onClose, horario }: AsignarUsuarioProps) {
-  const [usuarios, setUsuarios] = useState<UsuarioConHorario[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { usuarios, loading } = useUsuariosConHorario(isOpen);
   const [searchTerm, setSearchTerm] = useState('');
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const dataUsuarios = await fetchUsuariosConHorario();
-    setUsuarios(dataUsuarios);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    if (isOpen) {
-      loadData();
-    }
-  }, [isOpen, loadData]);
 
   const { usuariosAsignadosFiltrados, usuariosDisponiblesFiltrados } = useMemo(() => {
     const lowerSearchTerm = searchTerm.toLowerCase();
@@ -134,12 +123,17 @@ export default function AsignarUsuario({ isOpen, onClose, horario }: AsignarUsua
   }, [usuarios, searchTerm, horario]);
   
   const handleUsuarioAsignado = (userId: string, newHorarioId: string | null) => {
-    setUsuarios(prevUsuarios => 
-      prevUsuarios.map(u => 
-        u.user_id === userId 
-        ? { ...u, horario_id: newHorarioId, horario_nombre: newHorarioId === null ? 'Sin asignar' : horario.nombre } 
-        : u
-      )
+    queryClient.setQueryData<UsuarioConHorario[]>(HORARIOS_KEYS.usuarios, (prevUsuarios) =>
+      (prevUsuarios ?? []).map((u) =>
+        u.user_id === userId
+          ? {
+              ...u,
+              horario_id: newHorarioId,
+              horario_nombre:
+                newHorarioId === null ? "Sin asignar" : horario.nombre,
+            }
+          : u,
+      ),
     );
   };
 

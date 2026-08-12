@@ -1,50 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useState } from 'react';
 import TablaOrganos from './TablaOrganos';
 import { Button } from '@/components/ui/button';
-import Swal from 'sweetalert2';
 import { crear } from './Acciones';
-import { Plus, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
-// --- Tipos ---
-type Organo = { id: number; nombre: string; "No": number; };
-type Politica = { id: number; nombre: string; "No": number; };
-type Asignacion = { organo_id: number; politica_id: number; anio: number; politicas: { nombre: string | null }; };
+import { useOrganosPoliticas } from './hooks';
 
 export default function VerOrganos() {
-    const [organos, setOrganos] = useState<Organo[]>([]);
-    const [politicas, setPoliticas] = useState<Politica[]>([]);
-    const [asignaciones, setAsignaciones] = useState<Asignacion[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { organos, politicas, asignaciones, loading, refetch: fetchData } = useOrganosPoliticas();
     const anioActual = new Date().getFullYear();
     const [filtroAnio, setFiltroAnio] = useState<string>(anioActual.toString());
     const router = useRouter();
-
-    const fetchData = async () => {
-        setLoading(true);
-        const supabase = createClient();
-        const [organosRes, politicasRes, asignacionesRes] = await Promise.all([
-            supabase.from('organos').select('id, nombre, "No"').order('No', { ascending: true }),
-            supabase.from('politicas').select('id, nombre, "No"'),
-            supabase.from('organos_politicas').select('*, politicas(nombre)')
-        ]);
-
-        if (organosRes.error || politicasRes.error || asignacionesRes.error) {
-            Swal.fire('Error', 'Error al cargar datos.', 'error');
-        } else {
-            setOrganos(organosRes.data || []);
-            setPoliticas(politicasRes.data || []);
-            setAsignaciones(asignacionesRes.data as Asignacion[]);
-        }
-        setLoading(false);
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
     
     const anioSiguiente = anioActual + 1;
     const aniosExistentes = asignaciones.map(a => a.anio);

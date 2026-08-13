@@ -3,12 +3,13 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { LogOut, Megaphone, MoreVertical, X } from "lucide-react";
 import Swal from "sweetalert2";
 import useUserData from "@/hooks/sesion/useUserData";
 import { useInfoUsuario } from "@/hooks/usuarios/useInfoUsuario";
-import { signOutAction } from "@/app/actions";
+import { cerrarSesion } from "@/utils/auth/logoutCliente";
 import AnimatedIcon from "@/components/ui/AnimatedIcon";
 import SubscribeButton from "@/components/push/SubscribeButton";
 import TarjetaEmpleado from "@/components/admin/dependencias/TarjetaEmpleado";
@@ -125,6 +126,7 @@ export default function AuthButton({
   const { userId, nombre, email, cargando, rol } = useUserData();
   const { usuario: datosUsuario } = useInfoUsuario(menuAbierto ? userId : null);
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false);
   const [mostrarCitacionesFaltas, setMostrarCitacionesFaltas] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -180,7 +182,7 @@ export default function AuthButton({
     });
 
     if (result.isConfirmed) {
-      signOutAction();
+      await cerrarSesion(queryClient);
     }
   };
 

@@ -62,6 +62,7 @@ export default function DropdownReportes({ onSelect, reportLoading = false }: Pr
     onSelect(tipo);
   };
 
+
   return (
     <div ref={ref} className="relative w-full sm:w-auto">
       <button

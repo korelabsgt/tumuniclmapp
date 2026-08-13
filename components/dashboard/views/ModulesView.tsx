@@ -212,6 +212,15 @@ export default function ModulesView({
   );
 
   const tienePoliticas = modulosPoliticas.length > 0;
+  const modulosGestionSueltos = useMemo(
+    () =>
+      modulosGestion.filter(
+        (m) =>
+          !m.subgrupo &&
+          !["ACTIVIDADES", "PERMISOS", "DEV"].includes(m.id),
+      ),
+    [modulosGestion],
+  );
   const tieneGestion = modulosGestion.length > 0;
 
   const gestionAccordionsRef = useRef<HTMLDivElement>(null);
@@ -256,7 +265,7 @@ export default function ModulesView({
   return (
     <div className="mx-auto w-full lg:max-w-[100%] xl:max-w-[90%]">
       <div
-        className={`${tienePoliticas && tieneGestion ? "grid grid-cols-1 items-start gap-x-8 gap-y-10 md:grid-cols-2 md:gap-y-0" : "mx-auto flex max-w-3xl flex-col justify-center"}`}
+        className={`${tienePoliticas && tieneGestion ? "grid grid-cols-1 items-start gap-x-8 gap-y-4 md:grid-cols-2 md:gap-y-0" : "mx-auto flex max-w-3xl flex-col justify-center"}`}
       >
         {tieneGestion && (
           <LayoutGroup>
@@ -264,14 +273,12 @@ export default function ModulesView({
           <div
             className={`flex flex-col overflow-x-hidden ${!tienePoliticas ? "w-full" : ""}`}
           >
-            <div className="mb-4">
-              <DashboardSectionHeader
-                titulo="Gestión Administrativa"
-                colorClass="text-blue-600"
-                dotClass="bg-blue-600"
-                lineClass="bg-blue-600/55 dark:bg-blue-500/60"
-              />
-            </div>
+            <DashboardSectionHeader
+              titulo="Gestión Administrativa"
+              colorClass="text-blue-600"
+              dotClass="bg-blue-600"
+              lineClass="bg-blue-600/55 dark:bg-blue-500/60"
+            />
 
             <div
               ref={gestionAccordionsRef}
@@ -429,19 +436,13 @@ export default function ModulesView({
               </ModuleAccordion>
             </AnimatedAccordionSlot>
 
-            <AnimatedAccordionSlot
-              motionState={getStandaloneMotion()}
-            >
-              <div className="flex flex-col gap-4 pt-2">
-                {modulosGestion
-                  .filter(
-                    (m) =>
-                      !m.subgrupo &&
-                      !["ACTIVIDADES", "PERMISOS", "DEV"].includes(m.id),
-                  )
-                  .map(renderModuleCard)}
-              </div>
-            </AnimatedAccordionSlot>
+            {modulosGestionSueltos.length > 0 ? (
+              <AnimatedAccordionSlot motionState={getStandaloneMotion()}>
+                <div className="flex flex-col gap-4 pt-2">
+                  {modulosGestionSueltos.map(renderModuleCard)}
+                </div>
+              </AnimatedAccordionSlot>
+            ) : null}
             </div>
           </div>
           </NavigationDimShell>
@@ -450,12 +451,13 @@ export default function ModulesView({
 
         {tienePoliticas && (
           <NavigationDimShell loading={navegando} active={politicasTieneActivo}>
-          <div className={`space-y-5 pb-10 ${!tieneGestion ? "w-full" : "md:pt-1"}`}>
+          <div className={`space-y-4 pb-10 ${!tieneGestion ? "w-full" : "md:pt-1"}`}>
             <DashboardSectionHeader
               titulo="Políticas Públicas"
               colorClass="text-blue-400"
               dotClass="bg-blue-400"
               lineClass="bg-blue-400/60 dark:bg-blue-400/60"
+              className="mb-0"
             />
             <div className="space-y-4">
               {modulosPoliticas.map(renderModuleCard)}

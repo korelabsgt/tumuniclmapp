@@ -1,5 +1,5 @@
-import { CintilloInstitucional } from "@/components/ui/cintillo-institucional";
 import { CHROME_BG_CLASS } from "@/components/layout/chrome";
+import { CintilloInstitucional } from "@/components/ui/cintillo-institucional";
 
 const APP_VERSION = "1.7.0";
 
@@ -9,7 +9,9 @@ export default function AppFooter() {
   return (
     <>
       <CintilloInstitucional />
-      <footer className={`shrink-0 border-t border-gray-200 transition-colors dark:border-zinc-700 ${CHROME_BG_CLASS}`}>
+      <footer
+        className={`shrink-0 border-t border-gray-200 transition-colors dark:border-zinc-700 ${CHROME_BG_CLASS}`}
+      >
         <div className="w-full px-4 pb-5 pt-4 sm:px-6 sm:py-6">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div className="min-w-0 space-y-2.5 text-left">
@@ -25,7 +27,7 @@ export default function AppFooter() {
                 Departamento Municipal de Tecnologías de la Información
               </p>
               <p className="text-xs text-muted-foreground">
-                Liderado por{" "}
+                Powered by{" "}
                 <a
                   href="https://www.oscar27jimenez.com"
                   target="_blank"

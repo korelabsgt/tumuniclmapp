@@ -9,7 +9,6 @@ import { ThemeProvider } from "@/components/themes/theme-provider";
 import QueryProvider from "@/components/providers/QueryProvider";
 import MouseBackNavigation from "@/components/providers/MouseBackNavigation";
 import SystemGuard from "@/components/system-guard";
-import DevBanner from "@/components/dev/DevBanner";
 import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
 import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
@@ -76,10 +75,7 @@ export default async function RootLayout({
                 <BloqueoSolicitudesJefes />
 
                 {isStandalonePage ? (
-                  <main className="w-full flex-1 overflow-y-auto">
-                    <DevBanner />
-                    {children}
-                  </main>
+                  <main className="w-full flex-1 overflow-y-auto">{children}</main>
                 ) : (
                   <ProtectedChrome>{children}</ProtectedChrome>
                 )}

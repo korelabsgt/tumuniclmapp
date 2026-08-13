@@ -2,13 +2,13 @@ export default function AsistenciaSkeleton() {
   const pulse = "animate-pulse rounded bg-gray-200 dark:bg-neutral-700";
 
   return (
-    <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-md dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="flex justify-center gap-6 border-b border-gray-100 px-6 pt-6 dark:border-neutral-800 lg:px-8 lg:pt-8">
+    <div className="overflow-hidden rounded-none border-y border-gray-100 bg-white shadow-md dark:border-neutral-800 dark:bg-neutral-900 lg:rounded-lg lg:border">
+      <div className="flex justify-center gap-6 border-b border-gray-100 px-0 pt-4 dark:border-neutral-800 lg:px-8 lg:pt-8">
         <div className={`h-8 w-28 ${pulse}`} />
         <div className={`h-8 w-36 ${pulse}`} />
       </div>
 
-      <div className="space-y-4 p-6 lg:p-8">
+      <div className="space-y-4 px-4 py-4 lg:p-8">
         <div className={`h-12 ${pulse}`} />
 
         <div className="space-y-2">

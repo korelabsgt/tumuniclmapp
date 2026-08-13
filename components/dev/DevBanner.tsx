@@ -1,14 +1,21 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getNivelConfig } from './nivelConfig';
 import { MensajeFormateado } from './mensajeFormato';
 import { useMensajesActivosDev } from './lib/hooks';
 
-export default function DevBanner() {
-  const { data: mensajes = [] } = useMensajesActivosDev();
+function esDashboardInicio(pathname: string) {
+  return pathname === '/protected/admin' || pathname === '/protected/user';
+}
 
-  if (mensajes.length === 0) return null;
+export default function DevBanner() {
+  const pathname = usePathname();
+  const enDashboard = esDashboardInicio(pathname);
+  const { data: mensajes = [] } = useMensajesActivosDev(enDashboard);
+
+  if (!enDashboard || mensajes.length === 0) return null;
 
   return (
     <div id="app-dev-banner" className="w-full shrink-0 space-y-0">

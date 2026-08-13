@@ -501,7 +501,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
     <div className="w-full space-y-4">
 
       <div className="flex w-full justify-center">
-      <div className="flex w-fit max-w-full flex-col gap-2 rounded-lg bg-gray-100 p-1 transition-colors dark:bg-neutral-900 sm:flex-row sm:items-center">
+      <div className="flex w-fit max-w-full flex-row items-center gap-2 rounded-lg bg-gray-100 p-1 transition-colors dark:bg-neutral-900">
         <div className="flex shrink-0 overflow-hidden rounded-lg">
           <Button 
             variant={filtroTipo === 'semanal' ? 'default' : 'ghost'} 
@@ -520,7 +520,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
             Rango
           </Button>
         </div>
-        <div className="hidden h-6 w-px shrink-0 bg-gray-300 dark:bg-neutral-700 sm:block" />
+        <div className="h-6 w-px shrink-0 bg-gray-300 dark:bg-neutral-700" />
         {filtroTipo === 'semanal' ? (
           <div className="relative shrink-0">
             <input

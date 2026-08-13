@@ -17,7 +17,7 @@ export default function DashboardSkeleton() {
       </div>
 
       <div className="mx-auto w-full max-w-6xl">
-        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 md:grid-cols-2 md:gap-y-0">
+        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 md:grid-cols-2 md:gap-y-0">
           <div>
             <div className="mb-4 flex items-center gap-3">
               <div className="h-2 w-2 shrink-0 rounded-full bg-blue-600/70 dark:bg-blue-500/70" />

@@ -20,13 +20,13 @@ export function useInvalidarMensajesDev() {
   };
 }
 
-export function useMensajesActivosDev() {
+export function useMensajesActivosDev(habilitado = true) {
   const deferred = useDeferredReady(500);
 
   return useQuery({
     queryKey: DEV_MENSAJES_KEYS.activos,
     queryFn: getMensajesActivosDev,
-    enabled: deferred,
+    enabled: habilitado && deferred,
     staleTime: TWO_MINUTES,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

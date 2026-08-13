@@ -15,6 +15,7 @@ En rutas protegidas (`app/layout.tsx` → `ProtectedChrome`):
 - El área zinc punteada mide **solo su contenido** (no `min-h-full`, no estirarse al viewport).
 - El espacio para el footer es **externo** al bloque punteado, no padding interno del `<main>`.
 - Al hacer scroll, el aviso (`DevBanner`) y el header suben juntos. El aviso **no** queda fijo. El header se vuelve `sticky top-0` cuando el aviso ya salió de pantalla.
+- `DevBanner` solo en el dashboard de 3er nivel: `/protected/admin` y `/protected/user`. En cualquier otra subruta no se muestra.
 
 ## Estructura (de arriba a abajo)
 

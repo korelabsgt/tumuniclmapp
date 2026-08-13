@@ -821,8 +821,8 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-md transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="flex flex-wrap justify-center border-b border-gray-100 px-6 pt-6 dark:border-neutral-800 lg:px-8 lg:pt-8">
+      <div className="overflow-hidden rounded-none border-y border-gray-100 bg-white shadow-md transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-900 lg:rounded-lg lg:border">
+          <div className="flex flex-wrap justify-center border-b border-gray-100 px-0 pt-4 dark:border-neutral-800 lg:px-8 lg:pt-8">
             <button
               onClick={() => setActiveTab("controlResumen")}
               className={`flex items-center gap-2 px-4 py-2 font-semibold text-xs transition-colors lg:text-sm ${
@@ -846,8 +846,8 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
           </div>
 
           <div
-            className={`px-6 pb-6 lg:px-8 lg:pb-8 ${
-              activeTab === "semanal" ? "pt-3 lg:pt-4" : "pt-6 lg:pt-8"
+            className={`pb-4 lg:px-8 lg:pb-8 ${
+              activeTab === "semanal" ? "px-0 pt-3 lg:pt-4" : "px-4 pt-4 lg:pt-8"
             }`}
           >
             <AnimatedTabContent activeKey={activeTab}>

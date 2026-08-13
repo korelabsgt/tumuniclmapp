@@ -947,3 +947,157 @@ export const getDatosLoteMasivo = async (lote_masivo_id: number) => {
       items
   };
 };
+
+// ─────────────────────────────────────────────
+// REPORTE POR VEHÍCULO (Bitácora de Control)
+// ─────────────────────────────────────────────
+
+export interface CuponDetalle {
+  numeroCupon: number;
+  valorQ: number;
+  justificacion: string;
+  kmInicial: number;
+  kmFinal: number;
+  totalKm: number;
+  fecha: string;
+}
+
+export interface EmpleadoVehiculo {
+  userId: string;
+  nombre: string;
+  renglon: string;
+  dependenciaNombre: string;
+  cupones: CuponDetalle[];
+}
+
+export interface VehiculoReporte {
+  placa: string;
+  modelo: string;
+  tipo: string;
+  tipoCombustible: string;
+  empleados: EmpleadoVehiculo[];
+}
+
+export interface ReporteVehiculos {
+  vehiculos: VehiculoReporte[];
+}
+
+export const getReportePorVehiculo = async (
+  params: ParamsReporteCombustible
+): Promise<ReporteVehiculos> => {
+  const supabase = await createClient();
+  const { inicio, fin } = getRangoFechas(params);
+
+  const { data, error } = await supabase
+    .from('solicitud_combustible')
+    .select(`
+      id,
+      placa,
+      user_id,
+      justificacion,
+      kilometraje_inicial,
+      vehiculo:vehiculos ( tipo_vehiculo, modelo, tipo_combustible ),
+      usuario:info_usuario (
+        nombre,
+        dependencia:dependencias!info_usuario_dependencia_id_fkey ( nombre, renglon )
+      ),
+      entregas:entrega_cupones (
+        correlativo_inicio,
+        correlativo_fin,
+        created_at,
+        detalle:DetalleContrato ( denominacion )
+      ),
+      liquidacion:liquidacion!inner ( km_final )
+    `)
+    .eq('estado', 'aprobado')
+    .gte('created_at', inicio)
+    .lte('created_at', fin);
+
+  if (error || !data) {
+    console.error('Error en getReportePorVehiculo:', error);
+    return { vehiculos: [] };
+  }
+
+  // Mapa: placa → VehiculoReporte (en construcción)
+  const vehiculosMap = new Map<string, VehiculoReporte>();
+
+  for (const sol of data as any[]) {
+    // Descartar solicitudes sin liquidación real (puede ser null si Supabase no filtra por inner join)
+    const liq = Array.isArray(sol.liquidacion) ? sol.liquidacion[0] : sol.liquidacion;
+    if (!liq) continue;
+
+    const vehiculo = Array.isArray(sol.vehiculo) ? sol.vehiculo[0] : sol.vehiculo;
+    const usuario = Array.isArray(sol.usuario) ? sol.usuario[0] : sol.usuario;
+    const dep = Array.isArray(usuario?.dependencia) ? usuario.dependencia[0] : usuario?.dependencia;
+
+    const placa: string = sol.placa || 'SIN PLACA';
+    const userId: string = sol.user_id || 'desconocido';
+    const kmInicial: number = Number(sol.kilometraje_inicial) || 0;
+    const kmFinal: number = Number(liq.km_final) || 0;
+    const totalKm = kmFinal > kmInicial ? kmFinal - kmInicial : 0;
+    const justificacion: string = sol.justificacion?.trim() || 'Sin justificación';
+
+    // Expandir cada entrega de cupones en filas individuales
+    const cupones: CuponDetalle[] = [];
+    const entregas: any[] = sol.entregas || [];
+    for (const entrega of entregas) {
+      const inicio_cup = Number(entrega.correlativo_inicio) || 0;
+      const fin_cup = Number(entrega.correlativo_fin) || inicio_cup;
+      const fecha = entrega.created_at
+        ? new Date(entrega.created_at).toLocaleDateString('es-GT')
+        : '';
+      const det = Array.isArray(entrega.detalle) ? entrega.detalle[0] : entrega.detalle;
+      const valorQ = Number(det?.denominacion) || 0;
+      for (let n = inicio_cup; n <= fin_cup; n++) {
+        cupones.push({
+          numeroCupon: n,
+          valorQ,
+          justificacion,
+          kmInicial,
+          kmFinal,
+          totalKm,
+          fecha,
+        });
+      }
+    }
+
+    if (cupones.length === 0) continue;
+
+    // Asegurar vehículo en el mapa
+    if (!vehiculosMap.has(placa)) {
+      vehiculosMap.set(placa, {
+        placa,
+        modelo: vehiculo?.modelo?.trim() || 'Sin modelo',
+        tipo: vehiculo?.tipo_vehiculo?.trim() || 'Sin tipo',
+        tipoCombustible: vehiculo?.tipo_combustible || 'N/A',
+        empleados: [],
+      });
+    }
+    const vehiculoEntry = vehiculosMap.get(placa)!;
+
+    // Asegurar empleado dentro del vehículo
+    let empleadoEntry = vehiculoEntry.empleados.find((e) => e.userId === userId);
+    if (!empleadoEntry) {
+      empleadoEntry = {
+        userId,
+        nombre: usuario?.nombre || 'Sin nombre',
+        renglon: dep?.renglon || '',
+        dependenciaNombre: dep?.nombre || '',
+        cupones: [],
+      };
+      vehiculoEntry.empleados.push(empleadoEntry);
+    }
+
+    empleadoEntry.cupones.push(...cupones);
+  }
+
+  // Ordenar empleados por nombre dentro de cada vehículo
+  const vehiculos = [...vehiculosMap.values()];
+  vehiculos.forEach((v) => {
+    v.empleados.sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
+  });
+  // Ordenar vehículos por placa
+  vehiculos.sort((a, b) => a.placa.localeCompare(b.placa));
+
+  return { vehiculos };
+};

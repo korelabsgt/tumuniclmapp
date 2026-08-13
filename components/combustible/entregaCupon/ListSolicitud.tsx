@@ -117,6 +117,10 @@ export default function ListSolicitud({ initialData }: Props) {
       setIsCrearLoteOpen(true);
       return;
     }
+    if (tipo === 'vehiculos') {
+      router.push('/protected/combustible/reporte/vehiculos');
+      return;
+    }
     handlePrevisualizarReporte();
   };
 

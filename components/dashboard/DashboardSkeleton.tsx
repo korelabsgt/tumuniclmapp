@@ -1,22 +1,22 @@
 export default function DashboardSkeleton() {
   return (
     <section className="mx-auto w-full animate-pulse px-4 pt-2 md:px-8">
-      <div className="mx-auto mb-6 grid w-full max-w-6xl grid-cols-2 gap-2.5 sm:gap-3">
-        <div className="flex h-[3.25rem] w-full overflow-hidden rounded-xl border border-green-200/80 dark:border-green-900/40">
-          <div className="w-[4.25rem] shrink-0 bg-green-100/80 dark:bg-green-950/30" />
-          <div className="flex items-center bg-green-50/60 px-3 dark:bg-green-950/15">
-            <div className="h-3 w-16 rounded-md bg-green-200/70 dark:bg-green-900/40" />
-          </div>
-        </div>
-        <div className="flex h-[3.25rem] w-full overflow-hidden rounded-xl border border-purple-200/80 dark:border-purple-900/40">
-          <div className="w-[4.25rem] shrink-0 bg-purple-100/80 dark:bg-purple-950/30" />
-          <div className="flex items-center bg-purple-50/60 px-3 dark:bg-purple-950/15">
-            <div className="h-3 w-16 rounded-md bg-purple-200/70 dark:bg-purple-900/40" />
-          </div>
-        </div>
-      </div>
-
       <div className="mx-auto w-full max-w-6xl">
+        <div className="mx-auto w-full lg:max-w-[100%] xl:max-w-[90%]">
+        <div className="mb-4 grid w-full grid-cols-2 gap-2.5 md:mx-auto md:mb-6 md:flex md:w-fit md:justify-center md:gap-3">
+          <div className="flex h-[3.25rem] w-full overflow-hidden rounded-xl border border-green-200/80 dark:border-green-900/40 md:w-fit">
+            <div className="w-[4.25rem] shrink-0 bg-green-100/80 dark:bg-green-950/30" />
+            <div className="flex items-center bg-green-50/60 px-3 dark:bg-green-950/15">
+              <div className="h-3 w-16 rounded-md bg-green-200/70 dark:bg-green-900/40" />
+            </div>
+          </div>
+          <div className="flex h-[3.25rem] w-full overflow-hidden rounded-xl border border-purple-200/80 dark:border-purple-900/40 md:w-fit">
+            <div className="w-[4.25rem] shrink-0 bg-purple-100/80 dark:bg-purple-950/30" />
+            <div className="flex items-center bg-purple-50/60 px-3 dark:bg-purple-950/15">
+              <div className="h-3 w-16 rounded-md bg-purple-200/70 dark:bg-purple-900/40" />
+            </div>
+          </div>
+        </div>
         <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 md:grid-cols-2 md:gap-y-0">
           <div>
             <div className="mb-4 flex items-center gap-3">
@@ -35,7 +35,7 @@ export default function DashboardSkeleton() {
             </div>
           </div>
 
-          <div className="md:pt-1">
+          <div>
             <div className="mb-4 flex items-center gap-3">
               <div className="h-2 w-2 shrink-0 rounded-full bg-blue-400/70 dark:bg-blue-400/70" />
               <div className="h-3 w-36 rounded-md bg-zinc-200/80 dark:bg-zinc-800/80" />
@@ -51,6 +51,7 @@ export default function DashboardSkeleton() {
               ))}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </section>

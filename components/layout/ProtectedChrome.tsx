@@ -5,7 +5,10 @@ import AppHeader from "@/components/layout/AppHeader";
 import DevBanner from "@/components/dev/DevBanner";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { useAppChromeOffset } from "@/components/layout/useAppChromeOffset";
-import { PAGE_BG_CLASS } from "@/components/layout/chrome";
+import {
+  CONTENT_SCROLL_END_GAP_PX,
+  PAGE_BG_CLASS,
+} from "@/components/layout/chrome";
 
 export default function ProtectedChrome({
   children,
@@ -42,7 +45,10 @@ export default function ProtectedChrome({
             />
           </div>
 
-          <main className="relative z-10 mx-auto flex w-full flex-col gap-5 pt-2">
+          <main
+            className="relative z-10 mx-auto flex w-full flex-col gap-5 pt-2"
+            style={{ paddingBottom: CONTENT_SCROLL_END_GAP_PX }}
+          >
             {children}
           </main>
         </div>

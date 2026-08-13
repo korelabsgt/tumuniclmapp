@@ -7,6 +7,7 @@ import ModuleCard from "../modules/ModuleCard";
 import ModuleAccordion from "../modules/ModuleAccordion";
 import AnimatedAccordionSlot from "../modules/AnimatedAccordionSlot";
 import DashboardSectionHeader from "../DashboardSectionHeader";
+import { QuickNavPair } from "../buttons/ViewSwitcher";
 import { NavigationDimShell } from "../modules/navigation-dim";
 import { useAccordionSequence } from "../lib/useAccordionSequence";
 import { useFlagsModulosDependencia } from "@/components/solicitudes/lamparas/lib/hooks";
@@ -35,6 +36,7 @@ export default function ModulesView({
     getSlotMotion,
     isExpanded: isAccordionExpanded,
     getStandaloneMotion,
+    showStandalone,
     isAnimating,
     openAccordionId,
   } = useAccordionSequence();
@@ -222,6 +224,7 @@ export default function ModulesView({
     [modulosGestion],
   );
   const tieneGestion = modulosGestion.length > 0;
+  const dosColumnas = tienePoliticas && tieneGestion;
 
   const gestionAccordionsRef = useRef<HTMLDivElement>(null);
   const gestionBaselineRef = useRef(0);
@@ -262,10 +265,13 @@ export default function ModulesView({
     showRecepcionAccordion,
   ]);
 
+  const hideCompanionOnMobile = !showStandalone;
+
   return (
     <div className="mx-auto w-full lg:max-w-[100%] xl:max-w-[90%]">
+      <QuickNavPair className="mb-4 md:mb-6" />
       <div
-        className={`${tienePoliticas && tieneGestion ? "grid grid-cols-1 items-start gap-x-8 gap-y-4 md:grid-cols-2 md:gap-y-0" : "mx-auto flex max-w-3xl flex-col justify-center"}`}
+        className={`${dosColumnas ? "grid grid-cols-1 items-start gap-x-8 gap-y-4 md:grid-cols-2 md:gap-y-0" : "mx-auto flex max-w-3xl flex-col justify-center"}`}
       >
         {tieneGestion && (
           <LayoutGroup>
@@ -273,12 +279,14 @@ export default function ModulesView({
           <div
             className={`flex flex-col overflow-x-hidden ${!tienePoliticas ? "w-full" : ""}`}
           >
-            <DashboardSectionHeader
-              titulo="Gestión Administrativa"
-              colorClass="text-blue-600"
-              dotClass="bg-blue-600"
-              lineClass="bg-blue-600/55 dark:bg-blue-500/60"
-            />
+            <div className={hideCompanionOnMobile ? "max-md:hidden" : undefined}>
+              <DashboardSectionHeader
+                titulo="Gestión Administrativa"
+                colorClass="text-blue-600"
+                dotClass="bg-blue-600"
+                lineClass="bg-blue-600/55 dark:bg-blue-500/60"
+              />
+            </div>
 
             <div
               ref={gestionAccordionsRef}
@@ -451,7 +459,9 @@ export default function ModulesView({
 
         {tienePoliticas && (
           <NavigationDimShell loading={navegando} active={politicasTieneActivo}>
-          <div className={`space-y-4 pb-10 ${!tieneGestion ? "w-full" : "md:pt-1"}`}>
+          <div
+            className={`space-y-4 ${!tieneGestion ? "w-full" : ""} ${hideCompanionOnMobile ? "max-md:hidden" : ""}`}
+          >
             <DashboardSectionHeader
               titulo="Políticas Públicas"
               colorClass="text-blue-400"

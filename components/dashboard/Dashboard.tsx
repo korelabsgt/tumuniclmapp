@@ -11,7 +11,6 @@ import BroadcastButton from "@/components/push/BroadcastButton";
 import DashboardSkeleton from "@/components/dashboard/DashboardSkeleton";
 
 import Config from "./buttons/Config";
-import ViewSwitcher from "./buttons/ViewSwitcher";
 import ModulesView from "./views/ModulesView";
 import { NavigationDimShell } from "./modules/navigation-dim";
 
@@ -73,22 +72,20 @@ export default function Dashboard() {
             animate={{ opacity: 1, y: 0 }}
             transition={DASHBOARD_FADE}
           >
-            <NavigationDimShell
-              loading={Boolean(loadingModule)}
-              className="mx-auto mb-6 grid w-full max-w-6xl grid-cols-1 items-center justify-items-center gap-4 md:grid-cols-12"
-            >
-              {permisos.includes("CONFIGURACION") && isSuper && (
-                <Config onShowHorario={() => setMostrarHorarioModal(true)} />
-              )}
+            {isSuper ? (
+              <NavigationDimShell
+                loading={Boolean(loadingModule)}
+                className="mx-auto mb-6 grid w-full max-w-6xl grid-cols-1 items-center justify-items-center gap-4 md:grid-cols-12"
+              >
+                {permisos.includes("CONFIGURACION") && (
+                  <Config onShowHorario={() => setMostrarHorarioModal(true)} />
+                )}
 
-              {isSuper && (
                 <div className="order-4 md:order-2 md:col-span-2">
                   <BroadcastButton />
                 </div>
-              )}
-
-              <ViewSwitcher />
-            </NavigationDimShell>
+              </NavigationDimShell>
+            ) : null}
 
             <div className="mx-auto w-full max-w-6xl">
               <ModulesView

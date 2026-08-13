@@ -7,6 +7,7 @@ import { CheckCircle2, Calendar, ClipboardList } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { confirmarActividad } from './actions';
 import { useActividadPendiente, TAREAS_KEYS } from './hooks';
+import { BLOQUEOS_GLOBALES_KEY } from '@/components/layout/bloqueos/hooks';
 import { ACTIVIDAD_PENDIENTE_REFRESH } from '@/components/push/Listener';
 import Swal from 'sweetalert2';
 import { useTheme } from 'next-themes';
@@ -92,7 +93,14 @@ export default function BloqueoActividad() {
       }
 
       const confirmedAt = result.confirmed_at || new Date().toISOString();
-      queryClient.setQueryData(TAREAS_KEYS.pendiente, null);
+      queryClient.setQueryData(BLOQUEOS_GLOBALES_KEY, (prev: {
+        citacion: unknown;
+        actividad: unknown;
+        mensajePermiso: unknown;
+        solicitudJefe: unknown;
+      } | undefined) =>
+        prev ? { ...prev, actividad: null } : prev,
+      );
 
       await Swal.fire({
         title: 'Confirmado',
@@ -107,6 +115,7 @@ export default function BloqueoActividad() {
       });
 
       queryClient.invalidateQueries({ queryKey: TAREAS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
       await refetch();
     } finally {
       setConfirming(false);

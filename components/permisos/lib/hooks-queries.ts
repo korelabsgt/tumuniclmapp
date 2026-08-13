@@ -9,11 +9,11 @@ import {
 } from "@/components/permisos/acciones";
 import {
   obtenerLecturasNotificaciones,
-  obtenerMensajePendientePermiso,
   type TipoVistaLecturas,
 } from "@/components/permisos/lib/mensajes";
 import { PERMISOS_QUERY_ROOT, permisosQueryKeys } from "./query-keys";
 import type { PermisoEmpleado } from "@/components/permisos/types";
+import { useBloqueosGlobales } from "@/components/layout/bloqueos/hooks";
 
 export type ModoFiltroPermisos = "dia" | "semana" | "rango" | "pendientes";
 
@@ -93,16 +93,11 @@ export function useLecturasNotificaciones(tipoVista: TipoVistaLecturas) {
 export const MENSAJE_PERMISO_PENDIENTE_KEY = ["bloqueo-permiso-mensaje"] as const;
 
 export function useMensajePendientePermiso() {
-  return useQuery({
-    queryKey: MENSAJE_PERMISO_PENDIENTE_KEY,
-    queryFn: async () => {
-      const result = await obtenerMensajePendientePermiso();
-      if (result.success && result.data) {
-        return result.data;
-      }
-      return null;
-    },
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-  });
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: data?.mensajePermiso ?? null,
+    isLoading,
+    refetch,
+  };
 }

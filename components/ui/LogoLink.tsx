@@ -53,7 +53,7 @@ export default function LogoLink() {
     <>
       <button
         type="button"
-        className="flex h-14 cursor-pointer items-center gap-2 text-left min-w-0 sm:h-16 sm:gap-3"
+        className="flex h-[4rem] cursor-pointer items-center gap-2 text-left min-w-0 sm:h-16 sm:gap-3"
         onClick={() => setIsModalOpen(true)}
       >
         <Image
@@ -62,7 +62,7 @@ export default function LogoLink() {
           height={120}
           width={240}
           priority
-          className="block h-full w-auto max-w-[4.75rem] sm:max-w-[11rem] object-contain object-left shrink-0"
+          className="block h-[3.75rem] w-auto max-w-[7rem] object-contain object-left shrink-0 sm:h-full sm:max-w-[11rem]"
         />
         <div className="min-w-0 flex flex-col justify-center leading-tight overflow-hidden">
           <span

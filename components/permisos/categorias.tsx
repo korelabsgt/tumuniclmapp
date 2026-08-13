@@ -97,9 +97,9 @@ export const IGSS_TEXT_CLASS = "text-amber-600 dark:text-amber-400";
 export const IGSS_DOT_CLASS = "bg-amber-500";
 
 export const PERMISO_JUSTIFICACION_CLASS =
-  "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-900/40 border-green-200 dark:border-green-900/40";
-export const PERMISO_TEXT_CLASS = "text-green-600 dark:text-green-400";
-export const PERMISO_DOT_CLASS = "bg-green-500";
+  "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border-emerald-200 dark:border-emerald-800";
+export const PERMISO_TEXT_CLASS = "text-emerald-600 dark:text-emerald-400";
+export const PERMISO_DOT_CLASS = "bg-emerald-500";
 
 export const VACACIONES_JUSTIFICACION_CLASS =
   "bg-sky-50 dark:bg-sky-900/20 text-sky-600 dark:text-sky-300 hover:bg-sky-100 dark:hover:bg-sky-900/40 border-sky-100 dark:border-sky-900/30";

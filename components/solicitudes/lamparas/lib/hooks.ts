@@ -109,7 +109,7 @@ const FLAGS_VACIOS = {
 };
 
 export function useFlagsModulosDependencia(dependenciaId: string | null) {
-  const { data } = useQuery({
+  const { data, isPending } = useQuery({
     queryKey: KEYS.flagsDependencia(dependenciaId ?? ""),
     queryFn: () => obtenerFlagsModulosDependencia(dependenciaId),
     enabled: Boolean(dependenciaId),
@@ -120,5 +120,8 @@ export function useFlagsModulosDependencia(dependenciaId: string | null) {
     refetchOnReconnect: false,
   });
 
-  return data ?? FLAGS_VACIOS;
+  return {
+    ...(data ?? FLAGS_VACIOS),
+    flagsPendientes: Boolean(dependenciaId) && isPending,
+  };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -15,6 +15,7 @@ import TarjetaEmpleado from "@/components/admin/dependencias/TarjetaEmpleado";
 import LlamadaAtencionManager from "@/components/admin/users/forms/LlamadaAtencionManager";
 import { ThemeSwitcher } from "@/components/themes/theme-switcher";
 import { useAppChromeOffset } from "@/components/layout/useAppChromeOffset";
+import { CHROME_BG_CLASS } from "@/components/layout/chrome";
 
 function obtenerCargoYOficina(puestoPathJerarquico: string | null | undefined) {
   if (!puestoPathJerarquico) {
@@ -67,7 +68,7 @@ function MenuItemCard({
       onClick={item.onClick}
       onMouseEnter={onHover}
       onMouseLeave={onLeave}
-      className="w-full flex items-start gap-3 p-4 rounded-2xl text-left cursor-pointer bg-white dark:bg-zinc-800/90 border border-zinc-200/80 dark:border-zinc-700/80 hover:border-[#0066cc]/35 dark:hover:border-blue-500/35 transition-colors"
+      className="w-full flex items-start gap-3 p-4 rounded-2xl text-left cursor-pointer bg-neutral-50 dark:bg-neutral-900/40 border border-neutral-200/80 dark:border-neutral-700/80 hover:border-[#0066cc]/35 dark:hover:border-blue-500/35 transition-colors"
     >
       <div
         className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg}`}
@@ -107,16 +108,21 @@ function MenuSectionHeader({
       >
         {titulo}
       </p>
-      <div className="flex-1 h-px bg-zinc-200 dark:bg-zinc-800" />
+      <div className="flex-1 h-px bg-neutral-200 dark:bg-neutral-700" />
     </div>
   );
 }
 
-export default function AuthButton() {
+export default function AuthButton({
+  menuAbierto,
+  onMenuOpenChange,
+}: {
+  menuAbierto: boolean;
+  onMenuOpenChange: (open: boolean) => void;
+}) {
   const { userId, nombre, email, cargando } = useUserData();
-  const { usuario: datosUsuario } = useInfoUsuario(userId);
+  const { usuario: datosUsuario } = useInfoUsuario(menuAbierto ? userId : null);
   const router = useRouter();
-  const [menuAbierto, setMenuAbierto] = useState(false);
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false);
   const [mostrarCitacionesFaltas, setMostrarCitacionesFaltas] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
@@ -133,17 +139,21 @@ export default function AuthButton() {
     setMounted(true);
   }, []);
 
+  useLayoutEffect(() => {
+    remeasure();
+  }, [menuAbierto, remeasure]);
+
   useEffect(() => {
     if (!menuAbierto) return;
-    remeasure();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [menuAbierto, remeasure]);
+  }, [menuAbierto]);
 
-  const cerrarMenu = () => setMenuAbierto(false);
+  const cerrarMenu = () => onMenuOpenChange(false);
+  const alternarMenu = () => onMenuOpenChange(!menuAbierto);
 
   const handleSignOut = async () => {
     const result = await Swal.fire({
@@ -235,8 +245,8 @@ export default function AuthButton() {
           <motion.button
             type="button"
             aria-label="Cerrar menú"
-            className="fixed left-0 right-0 bottom-0 z-[200] bg-zinc-700/20 backdrop-blur-sm cursor-pointer hidden sm:block"
-            style={{ top: topOffset }}
+            className="fixed left-0 right-0 z-[200] cursor-pointer bg-white/50 backdrop-blur-sm dark:bg-black/55 dark:backdrop-blur-sm hidden sm:block"
+            style={{ top: topOffset, bottom: 0 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -246,14 +256,14 @@ export default function AuthButton() {
             role="dialog"
             aria-modal="true"
             aria-label="Menú de usuario"
-            className="fixed right-0 bottom-0 z-[210] flex w-full min-h-0 flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-950 sm:w-[min(22rem,92vw)] sm:border-l border-zinc-200 dark:border-zinc-800 shadow-xl"
-            style={{ top: topOffset }}
+            className={`fixed right-0 z-[210] flex w-full min-h-0 flex-col overflow-hidden ${CHROME_BG_CLASS} sm:w-[min(22rem,92vw)]`}
+            style={{ top: topOffset, bottom: 0 }}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="shrink-0 flex items-center justify-between gap-3 border-b border-zinc-200/70 px-4 pt-3 pb-3 dark:border-zinc-800">
+            <div className="shrink-0 flex items-center justify-between gap-3 px-4 pt-2 pb-3">
               <button
                 type="button"
                 onClick={() => {
@@ -270,7 +280,7 @@ export default function AuthButton() {
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <div className="pb-3 pt-1">
-                <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm dark:border-zinc-700 dark:bg-zinc-800/90">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900/40">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
@@ -281,7 +291,7 @@ export default function AuthButton() {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-700">
+                  <div className="mt-3 border-t border-neutral-100 pt-3 dark:border-neutral-700">
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       Nombre
                     </p>
@@ -320,7 +330,7 @@ export default function AuthButton() {
                 ))}
               </div>
 
-              <div className="my-4 h-px bg-zinc-200 dark:bg-zinc-800" />
+              <div className="my-4 h-px bg-neutral-200 dark:bg-neutral-700" />
 
               <MenuSectionHeader
                 titulo="Mi Cuenta"
@@ -349,19 +359,19 @@ export default function AuthButton() {
   return (
     <>
       <div className="flex items-center gap-0.5 sm:gap-1">
-        <ThemeSwitcher className="w-11 h-11 sm:w-10 sm:h-10" />
+        <ThemeSwitcher className="w-9 h-9 sm:w-10 sm:h-10" />
 
         <button
           type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
           aria-label="Actualizar"
-          className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 cursor-pointer text-[#0066cc] dark:text-blue-400 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity focus-visible:outline-none"
+          className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 cursor-pointer text-[#0066cc] dark:text-blue-400 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity focus-visible:outline-none"
         >
           <AnimatedIcon
             iconKey="qzorewvq"
             trigger={isRefreshing ? "loop" : "hover"}
-            className="w-9 h-9 sm:w-8 sm:h-8"
+            className="w-6 h-6 sm:w-8 sm:h-8"
           />
         </button>
 
@@ -370,7 +380,7 @@ export default function AuthButton() {
             type="button"
             aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuAbierto}
-            onClick={() => setMenuAbierto((v) => !v)}
+            onClick={() => alternarMenu()}
             className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 cursor-pointer text-foreground hover:text-[#0066cc] dark:hover:text-blue-400 transition-colors focus-visible:outline-none"
           >
             <span className="relative w-7 h-7 sm:w-6 sm:h-6 block">
@@ -406,32 +416,30 @@ export default function AuthButton() {
 
       {mounted && userId ? createPortal(panel, document.body) : null}
 
-      {userId ? (
-        <>
-          <TarjetaEmpleado
-            isOpen={mostrarTarjeta}
-            onClose={() => setMostrarTarjeta(false)}
-            userId={userId}
-          />
+      {userId && mostrarTarjeta ? (
+        <TarjetaEmpleado
+          isOpen={mostrarTarjeta}
+          onClose={() => setMostrarTarjeta(false)}
+          userId={userId}
+        />
+      ) : null}
 
-          {mostrarCitacionesFaltas ? (
-            <div
-              className="fixed inset-0 z-[230] flex items-center justify-center p-1 sm:p-4 bg-black/30 dark:bg-black/70 backdrop-blur-sm"
-              onClick={() => setMostrarCitacionesFaltas(false)}
-            >
-              <div
-                className="bg-white dark:bg-neutral-900 rounded-lg w-full max-w-4xl p-6 shadow-xl border dark:border-neutral-800 max-h-[90vh] overflow-y-auto"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <LlamadaAtencionManager
-                  id={userId}
-                  onClose={() => setMostrarCitacionesFaltas(false)}
-                  readOnly={true}
-                />
-              </div>
-            </div>
-          ) : null}
-        </>
+      {userId && mostrarCitacionesFaltas ? (
+        <div
+          className="fixed inset-0 z-[230] flex items-center justify-center p-1 sm:p-4 bg-black/30 dark:bg-black/70 backdrop-blur-sm"
+          onClick={() => setMostrarCitacionesFaltas(false)}
+        >
+          <div
+            className="bg-white dark:bg-neutral-900 rounded-lg w-full max-w-4xl p-6 shadow-xl border dark:border-neutral-800 max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <LlamadaAtencionManager
+              id={userId}
+              onClose={() => setMostrarCitacionesFaltas(false)}
+              readOnly={true}
+            />
+          </div>
+        </div>
       ) : null}
     </>
   );

@@ -23,8 +23,9 @@ export function useInfoUsuario(userId: string | null) {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["infoUsuario", userId],
     queryFn: () => getDetalleUsuarioAction(userId!),
-    enabled: !!userId, // Solo ejecuta si hay userId
+    enabled: !!userId,
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: false,
   });
 
   return {

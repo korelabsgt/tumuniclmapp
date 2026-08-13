@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Calendar } from 'lucide-react';
 import { confirmarCitacion } from './forms/citacionActions';
-import { useCitacionPendiente, CITACION_PENDIENTE_KEY } from './forms/hooks';
+import { useCitacionPendiente } from './forms/hooks';
+import { BLOQUEOS_GLOBALES_KEY } from "@/components/layout/bloqueos/hooks";
 import { useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 
@@ -44,8 +45,15 @@ export default function BloqueoCitacion() {
         background: '#18181b',
         color: '#ffffff'
       });
-      queryClient.setQueryData(CITACION_PENDIENTE_KEY, null);
-      void queryClient.invalidateQueries({ queryKey: CITACION_PENDIENTE_KEY });
+      queryClient.setQueryData(BLOQUEOS_GLOBALES_KEY, (prev: {
+        citacion: unknown;
+        actividad: unknown;
+        mensajePermiso: unknown;
+        solicitudJefe: unknown;
+      } | undefined) =>
+        prev ? { ...prev, citacion: null } : prev,
+      );
+      void queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
       void queryClient.invalidateQueries({ queryKey: ['citaciones'] });
     } else {
       Swal.fire({

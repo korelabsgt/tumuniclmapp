@@ -59,20 +59,21 @@ const ThemeSwitcher = ({ className }: { className?: string }) => {
   }, []);
 
   if (!mounted) {
-    return <div className="w-11 h-11 sm:w-10 sm:h-10" />;
+    return <div className="w-9 h-9 sm:w-10 sm:h-10" />;
   }
 
   const isDark = resolvedTheme === "dark";
-  const iconClass = "w-8 h-8 sm:w-[1.75rem] sm:h-[1.75rem] text-yellow-500";
+  const iconClass = "w-6 h-6 sm:w-[1.75rem] sm:h-[1.75rem] text-yellow-500";
 
   return (
     <AnimatedThemeToggler
+      duration={750}
       theme={isDark ? "dark" : "light"}
       onThemeChange={setTheme}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       className={cn(
-        "inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 cursor-pointer hover:opacity-80 transition-opacity focus-visible:outline-none",
+        "inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 cursor-pointer hover:opacity-80 transition-opacity focus-visible:outline-none",
         className
       )}
     >
@@ -88,7 +89,7 @@ const ThemeSwitcher = ({ className }: { className?: string }) => {
             y: hovered ? -1 : 0,
           }}
           exit={{ opacity: 0, rotate: 30, scale: 0.7 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         >
           {isDark ? (
             <IconSunSolid className={iconClass} />

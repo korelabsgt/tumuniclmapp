@@ -15,7 +15,8 @@ import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
 import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
 import BloqueoPermisoMensaje from "@/components/permisos/BloqueoPermisoMensaje";
-import ProtectedShell from "@/components/layout/ProtectedShell";
+import ProtectedChrome from "@/components/layout/ProtectedChrome";
+import { PAGE_BG_CLASS } from "@/components/layout/chrome";
 
 export const metadata: Metadata = {
   title: "SIGEM -CLM-",
@@ -69,7 +70,7 @@ export default async function RootLayout({
             <SystemGuard>
               <NotificationListener />
               <MouseBackNavigation />
-              <div className="flex min-h-[100dvh] flex-col">
+              <div className={`flex h-[100dvh] flex-col overflow-hidden ${PAGE_BG_CLASS}`}>
                 <DevBanner />
                 <BloqueoCitacion />
                 <BloqueoActividad />
@@ -77,12 +78,11 @@ export default async function RootLayout({
                 <BloqueoSolicitudesJefes />
 
                 {isStandalonePage ? (
-                  <main className="w-full flex-1">{children}</main>
+                  <main className="w-full flex-1 overflow-y-auto">{children}</main>
                 ) : (
                   <>
                     <AppHeader />
-
-                    <ProtectedShell>{children}</ProtectedShell>
+                    <ProtectedChrome>{children}</ProtectedChrome>
                   </>
                 )}
 

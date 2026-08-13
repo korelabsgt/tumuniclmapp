@@ -8,9 +8,9 @@ import {
   editarSolicitudJefe,
   eliminarSolicitudJefe,
   getJefesList,
-  obtenerSolicitudPendienteJefe,
 } from "./actions";
 import { SolicitudJefe, CrearSolicitudJefeValues } from "./zod";
+import { BLOQUEOS_GLOBALES_KEY, useBloqueosGlobales } from "@/components/layout/bloqueos/hooks";
 
 const KEYS = {
   solicitudes: ["solicitudes-jefes"],
@@ -59,7 +59,7 @@ export const useSolicitudJefeMutations = () => {
   const queryClient = useQueryClient();
   const invalidarLista = () => {
     queryClient.invalidateQueries({ queryKey: KEYS.solicitudes });
-    queryClient.invalidateQueries({ queryKey: KEYS.pendiente });
+    queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
   };
 
   const crear = useMutation({
@@ -88,16 +88,11 @@ export const useSolicitudJefeMutations = () => {
 };
 
 export function useSolicitudPendienteJefe() {
-  return useQuery({
-    queryKey: KEYS.pendiente,
-    queryFn: async () => {
-      const result = await obtenerSolicitudPendienteJefe();
-      if (result.success && result.data) {
-        return result.data as unknown as SolicitudJefe;
-      }
-      return null;
-    },
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-  });
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: (data?.solicitudJefe ?? null) as SolicitudJefe | null,
+    isLoading,
+    refetch,
+  };
 }

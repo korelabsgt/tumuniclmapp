@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { APP_MODAL_OVERLAY_CLASS, APP_MODAL_Z_CLASS } from '@/components/ui/modal-portal';
 import { X, MapPin, ArrowUpDown, Eye, EyeOff, FileCheck, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format } from 'date-fns';
@@ -324,7 +325,7 @@ export default function Mapa({ isOpen, onClose, registros, nombreUsuario, titulo
       {isOpen && (
         <motion.div
           onClick={onClose}
-          className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center backdrop-blur-sm"
+          className={`${APP_MODAL_Z_CLASS} ${APP_MODAL_OVERLAY_CLASS}`}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}

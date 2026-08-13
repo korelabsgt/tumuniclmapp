@@ -16,6 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { PermisoEmpleado } from "@/components/permisos/types";
+import { COMISION_TEXT_CLASS } from "@/components/permisos/categorias";
 import { obtenerHorarioAsistenciaEnFecha } from "@/components/permisos/utilidades";
 
 /** Minutos de gracia tras la hora de entrada (ej. 8:00 → hasta 8:15). */
@@ -168,6 +169,51 @@ export function resolverEstadoMarcaje(params: {
   return "correcto";
 }
 
+export function getEstadoMarcajeTextClass(estado: EstadoMarcaje): string {
+  switch (estado) {
+    case "esperando":
+      return "text-gray-500 dark:text-gray-400";
+    case "sin_permiso":
+      return "text-red-600 dark:text-red-400";
+    case "sin_marcaje_salida":
+    case "sin_registro_entrada":
+      return "text-orange-600 dark:text-orange-400";
+    case "entrada_tarde":
+      return "text-red-600 dark:text-red-400";
+    case "correcto":
+      return "text-zinc-600 dark:text-zinc-400";
+  }
+}
+
+export function resolverMarcajeHoraTextClass(params: {
+  justificacionTextClass?: string | null;
+  asueto?: boolean;
+  comision?: boolean;
+  tieneMarca: boolean;
+  esEntradaTarde?: boolean;
+  estadoMarcaje?: EstadoMarcaje | null;
+}): string {
+  if (params.asueto) {
+    return "text-amber-600 dark:text-amber-400 font-normal";
+  }
+  if (params.justificacionTextClass) {
+    return `${params.justificacionTextClass} font-normal`;
+  }
+  if (params.comision) {
+    return `${COMISION_TEXT_CLASS} font-normal`;
+  }
+  if (params.tieneMarca) {
+    if (params.esEntradaTarde) {
+      return ENTRADA_TARDE_TIME_CLASS;
+    }
+    if (params.estadoMarcaje) {
+      return `${getEstadoMarcajeTextClass(params.estadoMarcaje)} font-normal`;
+    }
+    return MARCaje_HORA_CLASS;
+  }
+  return "text-red-400 font-normal";
+}
+
 export function getEstadoMarcajeMeta(estado: EstadoMarcaje): {
   label: string;
   className: string;
@@ -213,7 +259,7 @@ export function getEstadoMarcajeMeta(estado: EstadoMarcaje): {
       return {
         label: "Correcto",
         className:
-          "bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-900/30",
+          "bg-zinc-100 dark:bg-neutral-800 text-zinc-600 dark:text-zinc-400 border-transparent shadow-none",
         icon: CheckCircle2,
       };
   }

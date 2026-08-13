@@ -30,16 +30,16 @@ export default function DevBanner() {
               transition={{
                 opacity: { duration: 0.25 },
                 height: { duration: 0.25 },
-                borderColor: { duration: 1.2, repeat: Infinity, ease: 'easeInOut' },
+                borderColor: { duration: 2.6, repeat: Infinity, ease: 'easeInOut' },
               }}
               className={`${cfg.bg} border-2`}
             >
               <div className="w-full flex items-start gap-3 px-4 py-2.5">
                 <div className={`flex-1 min-w-0 text-sm ${cfg.text}`}>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
+                  <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Icon className={`hidden sm:block w-6 h-6 flex-shrink-0 ${cfg.accent}`} />
-                      <span className="font-bold leading-snug">{m.titulo}</span>
+                      <Icon className={`hidden sm:block w-7 h-7 flex-shrink-0 ${cfg.accent}`} />
+                      <span className="text-base sm:text-lg font-bold leading-snug">{m.titulo}</span>
                     </div>
                     <MensajeFormateado
                       texto={m.mensaje}

@@ -1,0 +1,84 @@
+---
+description: Layout protegido — footer fijo en z-0, área punteada y scroll del contenido
+globs: app/layout.tsx,components/layout/**,components/dashboard/views/ModulesView.tsx
+alwaysApply: false
+---
+
+# Layout chrome protegido
+
+## Objetivo
+
+En rutas protegidas (`app/layout.tsx` → `AppHeader` + `ProtectedChrome`):
+
+- Footer **fijo** al borde inferior del viewport, siempre visible.
+- Footer en la capa **más baja** (`z-0`); el contenido pasa **encima** (`z-10`).
+- El área zinc punteada mide **solo su contenido** (no `min-h-full`, no estirarse al viewport).
+- El espacio para el footer es **externo** al bloque punteado, no padding interno del `<main>`.
+
+## Estructura (de arriba a abajo)
+
+```
+div.h-[100dvh].overflow-hidden.flex.flex-col     ← raíz, altura fija viewport
+  DevBanner / bloqueos (shrink-0)
+  AppHeader (shrink-0, z-[220])
+  ProtectedChrome (flex-1 min-h-0)
+    footer#app-main-footer  fixed bottom-0 z-0   ← capa atrás
+    div scroll z-10 overflow-y-auto
+      paddingBottom = alto footer (externo)      ← reserva para no tapar contenido
+      div PAGE_BG + DotPattern (altura = contenido)
+        main (sin pb grande de footer)
+```
+
+## Archivos
+
+| Archivo | Rol |
+|---------|-----|
+| `app/layout.tsx` | `h-[100dvh] overflow-hidden`; monta `AppHeader` + `ProtectedChrome` |
+| `components/layout/ProtectedChrome.tsx` | Footer fijo + scroll + fondo punteado |
+| `components/layout/AppFooter.tsx` | Contenido del footer (cintillo + texto) |
+| `components/layout/chrome.ts` | `PAGE_BG_CLASS`, `APP_FOOTER_Z_CLASS` (`z-0`), `APP_CONTENT_Z_CLASS` (`z-10`) |
+| `components/layout/useAppChromeOffset.ts` | Mide `#app-main-footer` con `ResizeObserver` → `bottomOffset` |
+
+## Capas z (3D)
+
+| Capa | z-index | Comportamiento |
+|------|---------|----------------|
+| Footer | `z-0` | `fixed bottom-0`, detrás de todo el contenido |
+| Contenido + puntos | `z-10` | Scroll encima del footer |
+| Header nav | `z-[220]` | Siempre al frente |
+
+El footer va **primero en el DOM** dentro de `ProtectedChrome` (antes del scroll), nunca portaleado al `body` (el portal lo pintaba encima aunque tuviera `z-0`).
+
+## Espaciado: externo vs interno
+
+- **Externo (correcto):** `paddingBottom: bottomOffset` en el **contenedor de scroll** (`ProtectedChrome`), fuera del bloque `PAGE_BG` + puntos.
+- **Interno (prohibido para footer):** `padding-bottom` grande en `<main>` o en el wrapper punteado para “dejar sitio” al footer.
+- **Interno (prohibido):** `pb-8` u otros paddings grandes al final del dashboard si generan hueco vacío dentro del área punteada.
+
+El bloque punteado (`div` con `PAGE_BG_CLASS`) **no** lleva `min-h-full` ni `flex-1`: su altura = altura del contenido.
+
+## `useAppChromeOffset`
+
+- `bottomOffset` = `footer.offsetHeight` del elemento `#app-main-footer`.
+- Fallback inicial `160` hasta el primer measure.
+- Re-mide con `ResizeObserver` en footer, nav y dev banner.
+
+Solo usar `bottomOffset` para el `paddingBottom` **externo** del scroll.
+
+## Dashboard — acordeones (`ModulesView`)
+
+El `minHeight` de la columna de gestión **solo durante animación** (`isAnimating`):
+
+- En reposo: sin `minHeight` → el área punteada no deja hueco bajo el último módulo.
+- Al animar: capturar altura actual para no colapsar la columna en la transición.
+
+No aplicar `minHeight` permanente que solo crece (deja espacio vacío tras cerrar acordeones).
+
+## Prohibido
+
+- Portal del footer a `document.body`.
+- `fixed` + `top`/`bottom` + spacer con `calc(100dvh - …)` en el contenido.
+- Footer en flujo normal (`shrink-0` al final del scroll) si se pide footer fijo.
+- `min-h-[100dvh]` en la raíz protegida (usar `h-[100dvh]`).
+- `min-h-full` / `flex-1` en el bloque zinc punteado.
+- Confundir “abajo en pantalla” con “abajo en z”: el footer va fijo abajo **y** en `z-0` (detrás del contenido).

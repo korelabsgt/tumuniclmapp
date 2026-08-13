@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { urlBase64ToUint8Array } from "@/app/utils/vapid";
 import { Bell, BellOff, Loader2, Check } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function SubscribeButton({
   userId,
@@ -17,38 +18,50 @@ export default function SubscribeButton({
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [statusConfirmed, setStatusConfirmed] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
     setMounted(true);
+    setStatusConfirmed(false);
+
     const checkStatus = async () => {
-      if ("serviceWorker" in navigator && userId) {
-        try {
-          const reg = await navigator.serviceWorker.getRegistration();
-          if (reg) {
-            const sub = await reg.pushManager.getSubscription();
-            if (sub) {
-              const subJson = JSON.parse(JSON.stringify(sub));
+      if (!("serviceWorker" in navigator) || !userId) {
+        setIsSubscribed(false);
+        setStatusConfirmed(true);
+        return;
+      }
 
-              const { data } = await supabase
-                .from("push_subscriptions")
-                .select("id")
-                .match({ user_id: userId })
-                .contains("subscription", subJson)
-                .maybeSingle();
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            const subJson = JSON.parse(JSON.stringify(sub));
 
-              if (data) {
-                setIsSubscribed(true);
-              } else {
-                await sub.unsubscribe();
-                setIsSubscribed(false);
-              }
+            const { data } = await supabase
+              .from("push_subscriptions")
+              .select("id")
+              .match({ user_id: userId })
+              .contains("subscription", subJson)
+              .maybeSingle();
+
+            if (data) {
+              setIsSubscribed(true);
+            } else {
+              await sub.unsubscribe();
+              setIsSubscribed(false);
             }
           }
-        } catch (e) {}
+        }
+      } catch (e) {
+        setIsSubscribed(false);
+      } finally {
+        setStatusConfirmed(true);
       }
     };
-    checkStatus();
+
+    void checkStatus();
   }, [userId]);
 
   const handleToggle = async () => {
@@ -108,11 +121,20 @@ export default function SubscribeButton({
 
   const esPlano = variant === "plain";
 
+  if (!mounted || !statusConfirmed || !userId) {
+    return null;
+  }
+
   return (
-    <button
+    <motion.div
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <button
       type="button"
       onClick={handleToggle}
-      disabled={!mounted || loading || !userId}
+      disabled={loading}
       className={`flex items-center justify-center transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${
         esPlano
           ? "h-10 w-10 bg-transparent border-0 shadow-none hover:opacity-80"
@@ -144,6 +166,7 @@ export default function SubscribeButton({
       ) : (
         <BellOff className="h-7 w-7 text-gray-400 dark:text-gray-500" />
       )}
-    </button>
+      </button>
+    </motion.div>
   );
 }

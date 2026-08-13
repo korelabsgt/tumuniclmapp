@@ -1,65 +1,83 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import AnimatedIcon from '@/components/ui/AnimatedIcon';
+import { accordionPanelTransition } from './accordion-motion';
+import { useLordIconHoverLoop } from '../lib/useLordIconHoverLoop';
+import { MODULE_ICON_STRIP_CLASS } from './module-icon-strip';
 
 interface ModuleAccordionProps {
+  id: string;
   titulo: string;
   descripcion: string;
   iconKey: string;
   children: React.ReactNode;
+  isOpen: boolean;
+  onToggle: (id: string) => void;
+  disabled?: boolean;
 }
 
-export default function ModuleAccordion({ titulo, descripcion, iconKey, children }: ModuleAccordionProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hover, setHover] = useState(false);
+export default function ModuleAccordion({
+  id,
+  titulo,
+  descripcion,
+  iconKey,
+  children,
+  isOpen,
+  onToggle,
+  disabled = false,
+}: ModuleAccordionProps) {
+  const { trigger, onPointerEnter, onPointerLeave } = useLordIconHoverLoop();
 
   if (!children || (Array.isArray(children) && children.length === 0)) return null;
 
   return (
-    <div className="border rounded-xl bg-gray-50 dark:bg-gray-900 overflow-hidden mb-4 shadow-sm w-full">
+    <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:shadow-none">
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        className="w-full flex items-center justify-between px-4 py-8 md:py-5 bg-white dark:bg-gray-800 hover:bg-gray-50 transition-colors border-b border-gray-100 dark:border-gray-700"
+        type="button"
+        onClick={() => onToggle(id)}
+        disabled={disabled}
+        onMouseEnter={onPointerEnter}
+        onMouseLeave={onPointerLeave}
+        className={`flex w-full items-stretch text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 ${isOpen ? 'border-b border-gray-200 dark:border-zinc-700/80' : ''}`}
       >
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 flex items-center justify-center bg-blue-50 dark:bg-gray-700 rounded-full flex-shrink-0">
-             <AnimatedIcon 
-                iconKey={iconKey} 
-                className="w-8 h-8" 
-                trigger={hover ? 'loop' : undefined}
-             />
+        <div
+          className={`flex w-[4.25rem] shrink-0 items-center justify-center self-stretch px-3 ${MODULE_ICON_STRIP_CLASS} ${isOpen ? 'rounded-tl-2xl' : 'rounded-l-2xl'}`}
+        >
+          <AnimatedIcon
+            iconKey={iconKey}
+            className="h-full w-full"
+            trigger={trigger}
+          />
+        </div>
+
+        <div className="flex min-w-0 flex-1 items-center justify-between gap-4 py-5 pr-4 pl-4">
+          <div className="min-w-0 text-left">
+            <h3 className="text-sm font-bold uppercase tracking-wide text-foreground">{titulo}</h3>
+            <p className="mt-1 text-xs leading-snug text-muted-foreground">{descripcion}</p>
           </div>
-          <div className="text-left">
-            <h3 className="font-bold text-gray-800 dark:text-gray-200 text-base">{titulo}</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{descripcion}</p>
+
+          {isOpen ? (
+            <ChevronUp className="h-5 w-5 shrink-0 text-muted-foreground" />
+          ) : (
+            <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" />
+          )}
+        </div>
+      </button>
+
+      <div
+        className="grid overflow-hidden"
+        style={{
+          gridTemplateRows: isOpen ? '1fr' : '0fr',
+          transition: accordionPanelTransition,
+        }}
+      >
+        <div className="min-h-0 overflow-visible">
+          <div className="flex flex-col gap-3 bg-zinc-50 px-3 py-2 dark:bg-zinc-900/40">
+            {children}
           </div>
         </div>
-        
-        {isOpen ? <ChevronUp className="h-5 w-5 text-gray-400" /> : <ChevronDown className="h-5 w-5 text-gray-400" />}
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial="collapsed"
-            animate="open"
-            exit="collapsed"
-            variants={{
-              open: { opacity: 1, height: "auto" },
-              collapsed: { opacity: 0, height: 0 }
-            }}
-            transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-          >
-            <div className="p-3 flex flex-col gap-3 bg-gray-50 dark:bg-gray-900/50">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </div>
     </div>
   );
 }

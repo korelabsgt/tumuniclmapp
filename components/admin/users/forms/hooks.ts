@@ -4,10 +4,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { actualizarInfoPersonal, obtenerInfoUsuario } from './action';
 import { obtenerLlamadasAtencion, eliminarLlamadaAtencion, obtenerTodasFaltas } from './llamadaAtencionActions';
-import { obtenerCitacionesUsuario, obtenerTodasCitaciones, confirmarCitacion, eliminarCitacion, obtenerCitacionPendienteActual } from './citacionActions';
+import { obtenerCitacionesUsuario, obtenerTodasCitaciones, confirmarCitacion, eliminarCitacion } from './citacionActions';
 import Swal from 'sweetalert2';
+import { useBloqueosGlobales } from '@/components/layout/bloqueos/hooks';
 
-export function useLlamadasAtencion(userId: string) {
+export function useLlamadasAtencion(userId: string, enabled = true) {
   const queryClient = useQueryClient();
   const queryKey = ['llamadasAtencion', userId];
 
@@ -19,7 +20,8 @@ export function useLlamadasAtencion(userId: string) {
       return result.data || [];
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !!userId,
+    enabled: enabled && !!userId,
+    refetchOnMount: false,
   });
 
   const invalidate = () => {
@@ -144,18 +146,13 @@ export function useTodasCitaciones(enabled = true) {
 export const CITACION_PENDIENTE_KEY = ['bloqueo-citacion'] as const;
 
 export function useCitacionPendiente() {
-  return useQuery({
-    queryKey: CITACION_PENDIENTE_KEY,
-    queryFn: async () => {
-      const result = await obtenerCitacionPendienteActual();
-      if (result.success && result.data) {
-        return result.data;
-      }
-      return null;
-    },
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-  });
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: data?.citacion ?? null,
+    isLoading,
+    refetch,
+  };
 }
 
 export function useInfoForm(userId: string) {

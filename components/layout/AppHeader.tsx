@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
@@ -7,6 +8,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import HeaderAuth from "@/components/header-auth";
 import LogoLink from "@/components/ui/LogoLink";
 import useUserData from "@/hooks/sesion/useUserData";
+import { CHROME_BG_CLASS } from "@/components/layout/chrome";
 
 function esInicioDashboard(pathname: string) {
   return pathname === "/protected/admin" || pathname === "/protected/user";
@@ -36,6 +38,7 @@ const fadeSuave = {
 export default function AppHeader() {
   const pathname = usePathname();
   const { rol, cargando } = useUserData();
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const esInicio = esInicioDashboard(pathname);
   const mostrarVolver = debeMostrarVolver(pathname) && !cargando;
 
@@ -46,7 +49,7 @@ export default function AppHeader() {
   return (
     <nav
       id="app-main-nav"
-      className="w-full shrink-0 border-b border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-950"
+      className={`relative z-[220] w-full shrink-0 ${CHROME_BG_CLASS}`}
     >
       <div className="flex w-full items-center justify-between gap-3 px-3 py-2 sm:px-5">
         <div className="flex min-w-0 flex-col justify-center gap-2 overflow-hidden">
@@ -66,7 +69,7 @@ export default function AppHeader() {
           </AnimatePresence>
         </div>
 
-        <HeaderAuth />
+        <HeaderAuth menuAbierto={menuAbierto} onMenuOpenChange={setMenuAbierto} />
       </div>
     </nav>
   );

@@ -7,9 +7,9 @@ import { useTheme } from "next-themes";
 import Swal from "sweetalert2";
 import { PERMISO_MENSAJE_REFRESH } from "@/components/push/Listener";
 import { confirmarMensajePermiso } from "./lib/mensajes";
+import { BLOQUEOS_GLOBALES_KEY } from "@/components/layout/bloqueos/hooks";
 import {
   useMensajePendientePermiso,
-  MENSAJE_PERMISO_PENDIENTE_KEY,
 } from "./lib/hooks-queries";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -87,7 +87,14 @@ export default function BloqueoPermisoMensaje() {
       }
 
       const leidoAt = result.leido_at || new Date().toISOString();
-      queryClient.setQueryData(MENSAJE_PERMISO_PENDIENTE_KEY, null);
+      queryClient.setQueryData(BLOQUEOS_GLOBALES_KEY, (prev: {
+        citacion: unknown;
+        actividad: unknown;
+        mensajePermiso: unknown;
+        solicitudJefe: unknown;
+      } | undefined) =>
+        prev ? { ...prev, mensajePermiso: null } : prev,
+      );
 
       await Swal.fire({
         title: "Enterado registrado",

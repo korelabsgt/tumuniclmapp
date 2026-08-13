@@ -10,9 +10,9 @@ import {
   eliminarTarea,
   duplicarTarea,
   actualizarArchivosTarea,
-  obtenerActividadPendienteConfirmacion,
 } from "./actions";
 import { TipoVistaTareas, NewTaskState, ChecklistItem, ArchivoAdjunto } from "./types";
+import { BLOQUEOS_GLOBALES_KEY, useBloqueosGlobales } from "@/components/layout/bloqueos/hooks";
 
 export const TAREAS_KEYS = {
   gestor: (vista: string) => ["gestor-tareas", vista],
@@ -38,7 +38,7 @@ export const useTareaMutations = () => {
 
   const invalidar = () => {
     queryClient.invalidateQueries({ queryKey: KEYS.all });
-    queryClient.invalidateQueries({ queryKey: KEYS.pendiente });
+    queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
   };
 
   const crear = useMutation({
@@ -80,16 +80,11 @@ export const useTareaMutations = () => {
 };
 
 export function useActividadPendiente() {
-  return useQuery({
-    queryKey: KEYS.pendiente,
-    queryFn: async () => {
-      const result = await obtenerActividadPendienteConfirmacion();
-      if (result.success && result.data) {
-        return result.data;
-      }
-      return null;
-    },
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-  });
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: data?.actividad ?? null,
+    isLoading,
+    refetch,
+  };
 }

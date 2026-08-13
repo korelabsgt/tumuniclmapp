@@ -32,7 +32,7 @@ import PreviewPermiso from "@/components/permisos/modals/PreviewPermiso";
 import VerComision from "@/components/comisiones/VerComision";
 import { PermisoEmpleado } from "@/components/permisos/types";
 import FechaHoraActual from "@/components/ui/FechaHoraActual";
-import Cargando from "@/components/ui/animations/Cargando";
+import AsistenciaSkeleton from "@/components/asistencia/AsistenciaSkeleton";
 import Swal, { SweetAlertOptions } from "sweetalert2";
 
 import { useMarcarAsistencia } from "@/hooks/asistencia/useMarcarAsistencia";
@@ -47,6 +47,7 @@ import {
 } from "@/components/permisos/utilidades";
 import { esTipoAcuerdo } from "@/components/permisos/types";
 import PreviewAcuerdo from "@/components/permisos/acuerdos/modals/PreviewAcuerdo";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { useObtenerUbicacion } from "@/hooks/ubicacion/useObtenerUbicacion";
 import {
   getCategoriaIcon,
@@ -74,15 +75,19 @@ import {
   esEntradaTardeMarcaje,
   esNombreHorarioMultiple,
   esTipoMarcajeLibre,
-  ENTRADA_TARDE_TIME_CLASS,
+  resolverMarcajeHoraTextClass,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
-  MARCaje_HORA_CLASS,
   MINUTOS_INICIO_ENTRADA_TARDE,
 } from "@/components/asistencia/lib/estado-marcaje";
+import {
+  MARCaje_JUSTIFICACION_GRID_CLASS,
+  JUSTIFICACION_COL_CLASS,
+} from "@/components/asistencia/lib/marcaje-layout";
+import { AnimatedTabContent } from "@/components/asistencia/lib/AnimatedTabContent";
 
 const JUSTIFICACION_BADGE_CLASS =
-  "w-full min-h-[2.35rem] py-2 px-2 rounded-md font-bold flex items-center justify-center gap-1.5 text-center text-[11px] sm:text-xs leading-snug border shadow-sm";
+  "w-full min-h-[2.35rem] py-1.5 px-1.5 rounded-md font-bold flex items-center justify-center gap-1 text-center text-[10px] sm:text-[11px] leading-tight border shadow-sm";
 const JUSTIFICACION_ICON_CLASS = "w-4 h-4 flex-shrink-0";
 
 const formatScheduleTime = (timeString: string | null | undefined) => {
@@ -569,9 +574,13 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
   const entradaMarcada = !!registroEntradaHoy;
   const salidaMarcada = !!registroSalidaHoy;
   const hayRegistrosHoy = registrosHoyMultiple.length > 0;
+  const cargandoDatos =
+    cargandoUsuario ||
+    cargandoRegistros ||
+    cargandoPermisos ||
+    cargandoComisiones;
 
-  if (cargandoUsuario || cargandoRegistros)
-    return <Cargando texto="Asistencia..." />;
+  if (cargandoDatos) return <AsistenciaSkeleton />;
 
   const renderBotonMarcado = () => {
     if (!esHorarioMultiple && !esDiaLaboral) {
@@ -668,35 +677,59 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
 
   const horarioEntradaHoyStr = format(scheduleEntrada, "HH:mm:ss");
 
-  const getEntradaTextClass = () => {
-    if (registroEntradaHoy) {
-      if (
+  const justificacionHoyTextClass = permisoHoy
+    ? getCategoriaTextClass(getCategoriaPermiso(permisoHoy))
+    : acuerdoHoy
+      ? getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy))
+      : null;
+
+  const estadoMarcajeHoy = resolverEstadoMarcaje({
+    fechaStr: hoyStr,
+    tieneEntrada: !!registroEntradaHoy,
+    tieneSalida: !!registroSalidaHoy,
+    notasEntrada: registroEntradaHoy?.notas,
+    notasSalida: registroSalidaHoy?.notas,
+    marcaEntradaAt: registroEntradaHoy?.created_at,
+    horarioEntrada: horarioEntradaHoyStr,
+    cantidadMarcajes:
+      esHorarioMultiple || registrosHoyMultiple.length > 2
+        ? registrosHoyMultiple.length
+        : null,
+  });
+
+  const getEntradaTextClass = () =>
+    resolverMarcajeHoraTextClass({
+      justificacionTextClass: justificacionHoyTextClass,
+      comision:
+        !!comisionHoy &&
+        !permisoHoy &&
+        !acuerdoHoy &&
+        comisionTocaEntrada,
+      tieneMarca: !!registroEntradaHoy,
+      esEntradaTarde:
+        !!registroEntradaHoy &&
+        !permisoHoy &&
+        !acuerdoHoy &&
         esEntradaTardeMarcaje({
           marcaEntradaAt: registroEntradaHoy.created_at,
           horarioEntrada: horarioEntradaHoyStr,
-          diaString: format(fechaHoraGt, "yyyy-MM-dd"),
+          diaString: hoyStr,
           notas: registroEntradaHoy.notas,
-        })
-      ) {
-        return ENTRADA_TARDE_TIME_CLASS;
-      }
-      return "font-normal text-gray-800 dark:text-gray-200";
-    }
-    if (permisoHoy) return getCategoriaTextClass(getCategoriaPermiso(permisoHoy));
-    if (acuerdoHoy) return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy));
-    if (comisionHoy && comisionTocaEntrada) return COMISION_TEXT_CLASS;
-    return "text-red-400";
-  };
+        }),
+      estadoMarcaje: estadoMarcajeHoy,
+    });
 
-  const getSalidaTextClass = () => {
-    if (registroSalidaHoy) {
-      return "font-normal text-gray-800 dark:text-gray-200";
-    }
-    if (permisoHoy) return getCategoriaTextClass(getCategoriaPermiso(permisoHoy));
-    if (acuerdoHoy) return getCategoriaAcuerdoTextClass(getCategoriaAcuerdo(acuerdoHoy));
-    if (comisionHoy && comisionTocaSalida) return COMISION_TEXT_CLASS;
-    return "text-red-400";
-  };
+  const getSalidaTextClass = () =>
+    resolverMarcajeHoraTextClass({
+      justificacionTextClass: justificacionHoyTextClass,
+      comision:
+        !!comisionHoy &&
+        !permisoHoy &&
+        !acuerdoHoy &&
+        comisionTocaSalida,
+      tieneMarca: !!registroSalidaHoy,
+      estadoMarcaje: estadoMarcajeHoy,
+    });
 
   const renderComisionHoyBtn = () => (
     <button
@@ -788,42 +821,39 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
 
   return (
     <>
-      <div className="w-full xl:max-w-3xl mx-auto">
-        <div className="border-b dark:border-neutral-800 flex mb-4 flex-wrap justify-center transition-colors">
-          <button
-            onClick={() => setActiveTab("controlResumen")}
-            className={`flex items-center gap-2 px-4 py-2 font-semibold text-xs lg:text-sm transition-colors ${
-              activeTab === "controlResumen"
-                ? "border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            }`}
-          >
-            <Clock className="h-4 w-4" /> Asistencia
-          </button>
-          <button
-            onClick={() => setActiveTab("semanal")}
-            className={`flex items-center gap-2 px-4 py-2 font-semibold text-xs lg:text-sm transition-colors ${
-              activeTab === "semanal"
-                ? "border-b-2 border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-            }`}
-          >
-            <CalendarCheck className="h-4 w-4" /> Registro Semanal
-          </button>
-        </div>
-
-        <AnimatePresence mode="wait">
-          {activeTab === "controlResumen" ? (
-            <motion.div
-              key="controlResumen"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
+      <div className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-md transition-colors duration-200 dark:border-neutral-800 dark:bg-neutral-900">
+          <div className="flex flex-wrap justify-center border-b border-gray-100 px-6 pt-6 dark:border-neutral-800 lg:px-8 lg:pt-8">
+            <button
+              onClick={() => setActiveTab("controlResumen")}
+              className={`flex items-center gap-2 px-4 py-2 font-semibold text-xs transition-colors lg:text-sm ${
+                activeTab === "controlResumen"
+                  ? "border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
             >
-              <div className="flex flex-col gap-8 w-full">
-                <div className="p-6 bg-white dark:bg-neutral-900 rounded-lg shadow-md space-y-4 border border-gray-100 dark:border-neutral-800 transition-colors duration-200">
-                  <div className="text-center bg-slate-100 dark:bg-neutral-800 p-3 rounded-md transition-colors">
+              <Clock className="h-4 w-4" /> Asistencia
+            </button>
+            <button
+              onClick={() => setActiveTab("semanal")}
+              className={`flex items-center gap-2 px-4 py-2 font-semibold text-xs transition-colors lg:text-sm ${
+                activeTab === "semanal"
+                  ? "border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`}
+            >
+              <CalendarCheck className="h-4 w-4" /> Registro Semanal
+            </button>
+          </div>
+
+          <div
+            className={`px-6 pb-6 lg:px-8 lg:pb-8 ${
+              activeTab === "semanal" ? "pt-3 lg:pt-4" : "pt-6 lg:pt-8"
+            }`}
+          >
+            <AnimatedTabContent activeKey={activeTab}>
+          {activeTab === "controlResumen" ? (
+              <div className="flex w-full flex-col space-y-4">
+                  <div className="rounded-md bg-slate-100 p-3 text-center transition-colors dark:bg-neutral-800">
                     <p className="font-semibold text-xs lg:text-sm text-gray-800 dark:text-gray-100">
                       {nombre || "Usuario no identificado"}
                     </p>
@@ -861,11 +891,10 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                           Haga clic para ver detalles de ubicación.
                         </p>
-                        <div className="flex items-center gap-1">
-                          {/* Columna 3/4: Asistencia de Hoy (Estilo Calendario) */}
-                          <div 
+                        <div className={MARCaje_JUSTIFICACION_GRID_CLASS}>
+                          <div
                             onClick={handleAbrirMapaHoy}
-                            className="flex-1 min-w-0 cursor-pointer"
+                            className="min-w-0 cursor-pointer"
                           >
                             {(esHorarioMultiple || registrosHoyMultiple.length > 2) ? (
                               <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex justify-center items-center text-center transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[11px] md:text-sm">
@@ -902,7 +931,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                             )}
                           </div>
 
-                          <div className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0 cursor-pointer">
+                          <div className={`${JUSTIFICACION_COL_CLASS} cursor-pointer`}>
                             {renderJustificacionHoyBtn()}
                           </div>
                         </div>
@@ -916,8 +945,8 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                               : "No ha marcado asistencia el día de hoy."}
                           </p>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <div className="flex-1 min-w-0 flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left px-2">
+                        <div className={MARCaje_JUSTIFICACION_GRID_CLASS}>
+                          <div className="min-w-0 flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center px-2">
                              <span className={MARCaje_FILA_CLASS}>
                                <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
                                <span className={`${getEntradaTextClass()} font-normal`}>--:--</span>
@@ -928,24 +957,15 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                                <span className={`${getSalidaTextClass()} font-normal`}>--:--</span>
                              </span>
                           </div>
-                          <div className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0 cursor-pointer">
+                          <div className={`${JUSTIFICACION_COL_CLASS} cursor-pointer`}>
                             {renderJustificacionHoyBtn()}
                           </div>
                         </div>
                       </div>
                     )}
                   </div>
-                </div>
               </div>
-            </motion.div>
           ) : (
-            <motion.div
-              key="semanal"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-            >
               <Calendario
                 todosLosRegistros={todosLosRegistros}
                 onAbrirMapa={handleAbrirMapa}
@@ -958,26 +978,20 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                 horarioSalida={horario_salida}
                 cargandoJustificaciones={cargandoPermisos || cargandoComisiones}
               />
-            </motion.div>
           )}
-        </AnimatePresence>
-      </div>
-
-      <AnimatePresence>
-        {modalMapaAbierto && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <Mapa
-              isOpen={modalMapaAbierto}
-              onClose={() => setModalMapaAbierto(false)}
-              registros={registrosSeleccionadosParaMapa}
-              nombreUsuario={nombre}
-              titulo="Asistencia"
-              permiso={permisoSeleccionadoParaMapa}
-              onVerPermiso={setPermisoParaPreview}
-            />
+            </AnimatedTabContent>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+
+      <Mapa
+        isOpen={modalMapaAbierto}
+        onClose={() => setModalMapaAbierto(false)}
+        registros={registrosSeleccionadosParaMapa}
+        nombreUsuario={nombre}
+        titulo="Asistencia"
+        permiso={permisoSeleccionadoParaMapa}
+        onVerPermiso={setPermisoParaPreview}
+      />
 
       <PreviewPermiso
         isOpen={!!permisoParaPreview}
@@ -992,9 +1006,10 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
       />
 
       {comisionPreview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setComisionPreview(null); }}
+        <ModalPortal
+          open={!!comisionPreview}
+          onClose={() => setComisionPreview(null)}
+          className="p-4"
         >
           <div className="bg-white dark:bg-neutral-950 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <VerComision
@@ -1010,7 +1025,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
               onAprobar={() => {}}
             />
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {mapaComisionRegistros && (

@@ -37,11 +37,11 @@ export default function AppFooter() {
               </p>
             </div>
 
-            <div className="flex flex-col items-start gap-2.5 text-left sm:items-end sm:text-right">
+            <div className="flex flex-col items-center gap-2.5 text-center sm:items-end sm:text-right">
               <p className="text-sm font-bold leading-snug text-foreground/90 sm:text-[15px]">
                 © {year} Municipalidad de Concepción Las Minas
               </p>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                   SIGEM -CLM-
                 </span>

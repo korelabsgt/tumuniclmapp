@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, MoreVertical, X } from "lucide-react";
+import { LogOut, Megaphone, MoreVertical, X } from "lucide-react";
 import Swal from "sweetalert2";
 import useUserData from "@/hooks/sesion/useUserData";
 import { useInfoUsuario } from "@/hooks/usuarios/useInfoUsuario";
@@ -95,13 +95,15 @@ function MenuSectionHeader({
   titulo,
   colorClass,
   dotClass,
+  className = "",
 }: {
   titulo: string;
   colorClass: string;
   dotClass: string;
+  className?: string;
 }) {
   return (
-    <div className="flex items-center gap-2 mb-3">
+    <div className={`mb-3 flex items-center gap-2 ${className}`}>
       <span className={`w-2 h-2 rounded-full shrink-0 ${dotClass}`} />
       <p
         className={`text-[10px] font-bold uppercase tracking-[0.2em] ${colorClass}`}
@@ -120,7 +122,7 @@ export default function AuthButton({
   menuAbierto: boolean;
   onMenuOpenChange: (open: boolean) => void;
 }) {
-  const { userId, nombre, email, cargando } = useUserData();
+  const { userId, nombre, email, cargando, rol } = useUserData();
   const { usuario: datosUsuario } = useInfoUsuario(menuAbierto ? userId : null);
   const router = useRouter();
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false);
@@ -193,6 +195,8 @@ export default function AuthButton({
       window.location.reload();
     }, 2000);
   };
+
+  const mostrarDifusion = ["SUPER", "RRHH", "SECRETARIO"].includes(rol);
 
   const menuItemsPrincipales: MenuItemConfig[] = [
     {
@@ -275,23 +279,35 @@ export default function AuthButton({
                 <LogOut className="h-5 w-5 rotate-180" />
                 Cerrar Sesión
               </button>
-              <SubscribeButton userId={userId} variant="plain" />
+              <div className="flex items-center gap-0.5">
+                {mostrarDifusion ? (
+                  <button
+                    type="button"
+                    aria-label="Difusión"
+                    onClick={() => irA("/protected/dev")}
+                    className="inline-flex h-10 w-10 cursor-pointer items-center justify-center text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
+                  >
+                    <Megaphone className="h-8 w-8" strokeWidth={2.25} />
+                  </button>
+                ) : null}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                  <SubscribeButton userId={userId} variant="plain" reserveSlot />
+                </div>
+              </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
               <div className="pb-3 pt-1">
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                         Usuario
                       </p>
                       <p className="truncate text-sm font-semibold text-[#0066cc] dark:text-blue-400">
                         {usuario}
                       </p>
                     </div>
-                  </div>
-                  <div className="mt-3 border-t border-neutral-100 pt-3 dark:border-neutral-700">
+                  <div className="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
                     <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                       Nombre
                     </p>
@@ -330,12 +346,11 @@ export default function AuthButton({
                 ))}
               </div>
 
-              <div className="my-4 h-px bg-neutral-200 dark:bg-neutral-700" />
-
               <MenuSectionHeader
                 titulo="Mi Cuenta"
                 colorClass="text-violet-500"
                 dotClass="bg-violet-500"
+                className="mt-4"
               />
 
               <div className="flex flex-col gap-2">

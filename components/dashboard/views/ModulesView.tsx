@@ -450,7 +450,7 @@ export default function ModulesView({
 
         {tienePoliticas && (
           <NavigationDimShell loading={navegando} active={politicasTieneActivo}>
-          <div className={`space-y-5 pb-2 ${!tieneGestion ? "w-full" : "md:pt-1"}`}>
+          <div className={`space-y-5 pb-10 ${!tieneGestion ? "w-full" : "md:pt-1"}`}>
             <DashboardSectionHeader
               titulo="Políticas Públicas"
               colorClass="text-blue-400"

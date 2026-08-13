@@ -1,20 +1,14 @@
 export default function DashboardSkeleton() {
   return (
     <section className="mx-auto w-full animate-pulse px-4 pt-2 md:px-8">
-      <div className="mx-auto mb-6 grid w-full max-w-lg grid-cols-3 justify-items-center gap-2.5 sm:flex sm:w-auto sm:gap-3">
-        <div className="flex h-[3.25rem] overflow-hidden rounded-xl border border-orange-200/80 dark:border-orange-900/40">
-          <div className="w-[4.25rem] shrink-0 bg-orange-100/80 dark:bg-orange-950/30" />
-          <div className="flex items-center bg-orange-50/60 px-3 dark:bg-orange-950/15">
-            <div className="h-3 w-14 rounded-md bg-orange-200/70 dark:bg-orange-900/40" />
-          </div>
-        </div>
-        <div className="flex h-[3.25rem] overflow-hidden rounded-xl border border-green-200/80 dark:border-green-900/40">
+      <div className="mx-auto mb-6 grid w-full max-w-6xl grid-cols-2 gap-2.5 sm:gap-3">
+        <div className="flex h-[3.25rem] w-full overflow-hidden rounded-xl border border-green-200/80 dark:border-green-900/40">
           <div className="w-[4.25rem] shrink-0 bg-green-100/80 dark:bg-green-950/30" />
           <div className="flex items-center bg-green-50/60 px-3 dark:bg-green-950/15">
             <div className="h-3 w-16 rounded-md bg-green-200/70 dark:bg-green-900/40" />
           </div>
         </div>
-        <div className="flex h-[3.25rem] overflow-hidden rounded-xl border border-purple-200/80 dark:border-purple-900/40">
+        <div className="flex h-[3.25rem] w-full overflow-hidden rounded-xl border border-purple-200/80 dark:border-purple-900/40">
           <div className="w-[4.25rem] shrink-0 bg-purple-100/80 dark:bg-purple-950/30" />
           <div className="flex items-center bg-purple-50/60 px-3 dark:bg-purple-950/15">
             <div className="h-3 w-16 rounded-md bg-purple-200/70 dark:bg-purple-900/40" />

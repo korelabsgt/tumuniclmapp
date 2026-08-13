@@ -22,12 +22,11 @@ export function useInvalidarMensajesDev() {
 
 export function useMensajesActivosDev() {
   const deferred = useDeferredReady(500);
-  const isDev = process.env.NODE_ENV === "development";
 
   return useQuery({
     queryKey: DEV_MENSAJES_KEYS.activos,
     queryFn: getMensajesActivosDev,
-    enabled: isDev && deferred,
+    enabled: deferred,
     staleTime: TWO_MINUTES,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

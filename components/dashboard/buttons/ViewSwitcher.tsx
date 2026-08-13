@@ -4,10 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AnimatedIcon from "@/components/ui/AnimatedIcon";
 
-interface ViewSwitcherProps {
-  showMensajes?: boolean;
-}
-
 type QuickNavCardProps = {
   titulo: string;
   iconKey: string;
@@ -37,7 +33,7 @@ function QuickNavCard({
       onClick={onClick}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className={`group flex w-auto max-w-full cursor-pointer items-stretch overflow-hidden rounded-md border text-left shadow-sm transition-colors hover:brightness-[1.02] dark:shadow-none ${cardClass}`}
+      className={`group flex w-full cursor-pointer items-stretch overflow-hidden rounded-md border text-left shadow-sm transition-colors hover:brightness-[1.02] dark:shadow-none ${cardClass}`}
     >
       <div
         className={`flex w-[4.25rem] shrink-0 items-center justify-center self-stretch rounded-l-md px-3 py-1 ${stripClass}`}
@@ -49,7 +45,7 @@ function QuickNavCard({
         />
       </div>
 
-      <div className="flex items-center py-2 pr-4 pl-3">
+      <div className="flex flex-1 items-center py-2 pr-4 pl-3">
         <span className={`whitespace-nowrap text-sm font-bold uppercase tracking-wide ${textClass}`}>
           {titulo}
         </span>
@@ -58,29 +54,13 @@ function QuickNavCard({
   );
 }
 
-export default function ViewSwitcher({ showMensajes = false }: ViewSwitcherProps) {
+export default function ViewSwitcher() {
   const router = useRouter();
   const [hovered, setHovered] = useState<string | null>(null);
 
   return (
-    <div className="order-1 flex w-full justify-center md:col-span-12 md:order-3">
-      <div
-        className={`grid w-full max-w-lg justify-items-center gap-2.5 ${showMensajes ? "grid-cols-3" : "grid-cols-2"} sm:flex sm:w-auto sm:max-w-none sm:justify-center sm:gap-3`}
-      >
-        {showMensajes && (
-          <QuickNavCard
-            titulo="Difusión"
-            iconKey="bsmkjadb"
-            activo={hovered === "mensajes"}
-            cardClass="border-orange-200/90 bg-orange-50 dark:border-orange-800/55 dark:bg-orange-950/30"
-            stripClass="bg-orange-100/90 dark:bg-orange-900/45"
-            textClass="text-orange-700 dark:text-orange-400"
-            onEnter={() => setHovered("mensajes")}
-            onLeave={() => setHovered(null)}
-            onClick={() => router.push("/protected/dev")}
-          />
-        )}
-
+    <div className="order-1 w-full md:col-span-12 md:order-3">
+      <div className="grid w-full grid-cols-2 gap-2.5 sm:gap-3">
         <QuickNavCard
           titulo="Asistencia"
           iconKey="sgtmgpft"

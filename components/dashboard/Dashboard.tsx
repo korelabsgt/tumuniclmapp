@@ -87,9 +87,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              <ViewSwitcher
-                showMensajes={["SUPER", "RRHH", "SECRETARIO"].includes(rol)}
-              />
+              <ViewSwitcher />
             </NavigationDimShell>
 
             <div className="mx-auto w-full max-w-6xl">

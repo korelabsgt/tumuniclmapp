@@ -10,10 +10,12 @@ export default function SubscribeButton({
   userId,
   className,
   variant = "default",
+  reserveSlot = false,
 }: {
   userId: string | null;
   className?: string;
   variant?: "default" | "plain";
+  reserveSlot?: boolean;
 }) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -122,6 +124,14 @@ export default function SubscribeButton({
   const esPlano = variant === "plain";
 
   if (!mounted || !statusConfirmed || !userId) {
+    if (reserveSlot) {
+      return (
+        <div
+          className={`h-10 w-10 shrink-0 ${className ?? ""}`}
+          aria-hidden
+        />
+      );
+    }
     return null;
   }
 

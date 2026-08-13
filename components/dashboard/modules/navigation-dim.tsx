@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { ACCORDION_FADE_MS } from "./accordion-motion";
 
 export const NAVIGATION_DIM_CLASS =
-  "pointer-events-none opacity-80 brightness-[0.68] saturate-[0.55]";
+  "pointer-events-none opacity-45 dark:opacity-80 dark:brightness-[0.68] dark:saturate-[0.55]";
 
 export function NavigationDimShell({
   loading,

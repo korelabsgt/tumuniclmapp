@@ -13,6 +13,10 @@ import { Eye, EyeOff, User } from "lucide-react";
 import { motion } from "framer-motion";
 import { Typewriter } from "react-simple-typewriter";
 import Image from "next/image";
+import {
+  correoDesdeUsuario,
+  extraerUsuario,
+} from "@/utils/auth/usuarioCorreo";
 
 const initialState = {
   type: null,
@@ -25,14 +29,12 @@ const inputClass =
 export function LoginForm() {
   const [state, formAction] = useActionState(signInAction, initialState);
   const [verPassword, setVerPassword] = useState(false);
-  const [emailValue, setEmailValue] = useState(state?.email || "");
+  const [usuarioValue, setUsuarioValue] = useState(() =>
+    extraerUsuario(state?.email || ""),
+  );
   const [passwordValue, setPasswordValue] = useState("");
 
-  const handleEmailBlur = () => {
-    if (emailValue && !emailValue.includes("@")) {
-      setEmailValue(emailValue.trim() + "@tumuniclm.com");
-    }
-  };
+  const correoCompleto = correoDesdeUsuario(usuarioValue);
 
   return (
     <div
@@ -90,16 +92,25 @@ export function LoginForm() {
             >
               Usuario
             </Label>
+            <input type="hidden" name="email" value={correoCompleto} />
             <Input
               id="email"
-              name="email"
-              type="email"
+              type="text"
+              inputMode="text"
+              autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               placeholder="Tu usuario"
               required
               className={inputClass}
-              value={emailValue}
-              onChange={(e) => setEmailValue(e.target.value)}
-              onBlur={handleEmailBlur}
+              value={usuarioValue}
+              onChange={(e) => setUsuarioValue(extraerUsuario(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === "@" || e.key === " ") {
+                  e.preventDefault();
+                }
+              }}
             />
           </div>
 

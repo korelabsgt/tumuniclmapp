@@ -1,6 +1,5 @@
 import "./globals.css";
 import { Geist } from "next/font/google";
-import AppHeader from "@/components/layout/AppHeader";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { Metadata, Viewport } from "next";
@@ -71,19 +70,18 @@ export default async function RootLayout({
               <NotificationListener />
               <MouseBackNavigation />
               <div className={`flex h-[100dvh] flex-col overflow-hidden ${PAGE_BG_CLASS}`}>
-                <DevBanner />
                 <BloqueoCitacion />
                 <BloqueoActividad />
                 <BloqueoPermisoMensaje />
                 <BloqueoSolicitudesJefes />
 
                 {isStandalonePage ? (
-                  <main className="w-full flex-1 overflow-y-auto">{children}</main>
+                  <main className="w-full flex-1 overflow-y-auto">
+                    <DevBanner />
+                    {children}
+                  </main>
                 ) : (
-                  <>
-                    <AppHeader />
-                    <ProtectedChrome>{children}</ProtectedChrome>
-                  </>
+                  <ProtectedChrome>{children}</ProtectedChrome>
                 )}
 
                 <ToastContainer

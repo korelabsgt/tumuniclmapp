@@ -8,23 +8,25 @@ alwaysApply: false
 
 ## Objetivo
 
-En rutas protegidas (`app/layout.tsx` → `AppHeader` + `ProtectedChrome`):
+En rutas protegidas (`app/layout.tsx` → `ProtectedChrome`):
 
 - Footer **fijo** al borde inferior del viewport, siempre visible.
 - Footer en la capa **más baja** (`z-0`); el contenido pasa **encima** (`z-10`).
 - El área zinc punteada mide **solo su contenido** (no `min-h-full`, no estirarse al viewport).
 - El espacio para el footer es **externo** al bloque punteado, no padding interno del `<main>`.
+- Al hacer scroll, el aviso (`DevBanner`) y el header suben juntos. El aviso **no** queda fijo. El header se vuelve `sticky top-0` cuando el aviso ya salió de pantalla.
 
 ## Estructura (de arriba a abajo)
 
 ```
 div.h-[100dvh].overflow-hidden.flex.flex-col     ← raíz, altura fija viewport
-  DevBanner / bloqueos (shrink-0)
-  AppHeader (shrink-0, z-[220])
-  ProtectedChrome (flex-1 min-h-0)
+  bloqueos (overlays)
+  ProtectedChrome
     footer#app-main-footer  fixed bottom-0 z-0   ← capa atrás
-    div scroll z-10 overflow-y-auto
-      paddingBottom = alto footer (externo)      ← reserva para no tapar contenido
+    #app-chrome-scroll z-10 overflow-y-auto
+      DevBanner (sale con el scroll, no sticky)
+      AppHeader sticky top-0 z-[220]
+      paddingBottom = alto footer (externo)
       div PAGE_BG + DotPattern (altura = contenido)
         main (sin pb grande de footer)
 ```
@@ -33,8 +35,8 @@ div.h-[100dvh].overflow-hidden.flex.flex-col     ← raíz, altura fija viewport
 
 | Archivo | Rol |
 |---------|-----|
-| `app/layout.tsx` | `h-[100dvh] overflow-hidden`; monta `AppHeader` + `ProtectedChrome` |
-| `components/layout/ProtectedChrome.tsx` | Footer fijo + scroll + fondo punteado |
+| `app/layout.tsx` | `h-[100dvh] overflow-hidden`; monta `ProtectedChrome` |
+| `components/layout/ProtectedChrome.tsx` | Banner + header sticky + footer fijo + scroll + fondo punteado |
 | `components/layout/AppFooter.tsx` | Contenido del footer (cintillo + texto) |
 | `components/layout/chrome.ts` | `PAGE_BG_CLASS`, `APP_FOOTER_Z_CLASS` (`z-0`), `APP_CONTENT_Z_CLASS` (`z-10`) |
 | `components/layout/useAppChromeOffset.ts` | Mide `#app-main-footer` con `ResizeObserver` → `bottomOffset` |

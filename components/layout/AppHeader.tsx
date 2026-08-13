@@ -49,7 +49,7 @@ export default function AppHeader() {
   return (
     <nav
       id="app-main-nav"
-      className={`relative z-[220] w-full shrink-0 ${CHROME_BG_CLASS}`}
+      className={`sticky top-0 z-[220] w-full shrink-0 ${CHROME_BG_CLASS}`}
     >
       <div className="flex w-full items-center justify-between gap-3 px-3 py-2 sm:px-5">
         <div className="flex min-w-0 flex-col justify-center gap-2 overflow-hidden">

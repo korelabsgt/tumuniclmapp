@@ -1,6 +1,8 @@
 "use client";
 
 import AppFooter from "@/components/layout/AppFooter";
+import AppHeader from "@/components/layout/AppHeader";
+import DevBanner from "@/components/dev/DevBanner";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { useAppChromeOffset } from "@/components/layout/useAppChromeOffset";
 import { PAGE_BG_CLASS } from "@/components/layout/chrome";
@@ -20,9 +22,13 @@ export default function ProtectedChrome({
       </footer>
 
       <div
+        id="app-chrome-scroll"
         className="relative z-10 flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain"
         style={{ paddingBottom: footerSpace }}
       >
+        <DevBanner />
+        <AppHeader />
+
         <div className={`relative ${PAGE_BG_CLASS}`}>
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
             <DotPattern

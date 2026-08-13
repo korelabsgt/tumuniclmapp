@@ -1,29 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X } from 'lucide-react';
-import { MensajeDev } from './zod';
-import { getMensajesActivosDev } from './actions/mensajes';
 import { getNivelConfig } from './nivelConfig';
 import { MensajeFormateado } from './mensajeFormato';
+import { useMensajesActivosDev } from './lib/hooks';
+
+function esDashboardInicio(pathname: string) {
+  return pathname === '/protected/admin' || pathname === '/protected/user';
+}
 
 export default function DevBanner() {
-  const [mensajes, setMensajes] = useState<MensajeDev[]>([]);
-  const [cerrados, setCerrados] = useState<Set<string>>(new Set());
+  const pathname = usePathname();
+  const enDashboard = esDashboardInicio(pathname);
+  const { data: mensajes = [] } = useMensajesActivosDev(enDashboard);
 
-  useEffect(() => {
-    getMensajesActivosDev().then(setMensajes);
-  }, []);
-
-  const visibles = mensajes.filter((m) => !cerrados.has(m.id));
-
-  if (visibles.length === 0) return null;
+  if (!enDashboard || mensajes.length === 0) return null;
 
   return (
-    <div className="w-full space-y-0">
+    <div id="app-dev-banner" className="w-full shrink-0 space-y-0">
       <AnimatePresence>
-        {visibles.map((m) => {
+        {mensajes.map((m) => {
           const cfg = getNivelConfig(m.estado);
           const Icon = cfg.icon;
 
@@ -40,16 +37,16 @@ export default function DevBanner() {
               transition={{
                 opacity: { duration: 0.25 },
                 height: { duration: 0.25 },
-                borderColor: { duration: 1.2, repeat: Infinity, ease: 'easeInOut' },
+                borderColor: { duration: 2.6, repeat: Infinity, ease: 'easeInOut' },
               }}
               className={`${cfg.bg} border-2`}
             >
               <div className="w-full flex items-start gap-3 px-4 py-2.5">
                 <div className={`flex-1 min-w-0 text-sm ${cfg.text}`}>
-                  <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
+                  <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-2 min-w-0">
-                      <Icon className={`hidden sm:block w-6 h-6 flex-shrink-0 ${cfg.accent}`} />
-                      <span className="font-bold leading-snug">{m.titulo}</span>
+                      <Icon className={`hidden sm:block w-7 h-7 flex-shrink-0 ${cfg.accent}`} />
+                      <span className="text-base sm:text-lg font-bold leading-snug">{m.titulo}</span>
                     </div>
                     <MensajeFormateado
                       texto={m.mensaje}
@@ -57,13 +54,6 @@ export default function DevBanner() {
                     />
                   </div>
                 </div>
-                <button
-                  onClick={() => setCerrados((prev) => new Set(prev).add(m.id))}
-                  className={`p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0 ${cfg.accent}`}
-                  aria-label="Cerrar aviso"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
               </div>
             </motion.div>
           );

@@ -1,4 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+"use client";
+
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from '@/utils/supabase/client';
 
 type AsistenciaEnriquecida = any; 
@@ -51,4 +53,37 @@ export default function useAsistenciasOficina(
         registros: data || [], 
         loading: isLoading 
     };
+}
+
+export function usePermisosOficinaRango(
+  userIds: string[],
+  fechaInicio: string,
+  fechaFin: string,
+) {
+  const idsKey = [...userIds].sort().join(",");
+
+  return useQuery({
+    queryKey: ["permisos-oficina-rango", idsKey, fechaInicio, fechaFin],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("permisos_empleado")
+        .select("*")
+        .in("user_id", userIds)
+        .gte("fin", fechaInicio)
+        .lte("inicio", `${fechaFin}T23:59:59`);
+
+      if (error || !data) return {} as Record<string, unknown[]>;
+
+      const map: Record<string, unknown[]> = {};
+      data.forEach((permiso) => {
+        const userId = permiso.user_id as string;
+        if (!map[userId]) map[userId] = [];
+        map[userId].push(permiso);
+      });
+      return map;
+    },
+    enabled: userIds.length > 0 && Boolean(fechaInicio && fechaFin),
+    staleTime: FIVE_MINUTES,
+  });
 }

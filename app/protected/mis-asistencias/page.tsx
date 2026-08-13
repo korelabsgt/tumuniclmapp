@@ -1,11 +1,14 @@
 import { Suspense } from "react";
 import Asistencia from "@/components/asistencia/Asistencia";
-import Cargando from "@/components/ui/animations/Cargando";
+import AsistenciaSkeleton from "@/components/asistencia/AsistenciaSkeleton";
+import AsistenciaPageLayout from "@/components/asistencia/AsistenciaPageLayout";
 
 export default function MisAsistenciasPage() {
   return (
-    <Suspense fallback={<Cargando texto="Cargando asistencia..." />}>
-      <Asistencia />
-    </Suspense>
+    <AsistenciaPageLayout>
+      <Suspense fallback={<AsistenciaSkeleton />}>
+        <Asistencia />
+      </Suspense>
+    </AsistenciaPageLayout>
   );
 }

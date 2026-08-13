@@ -1,9 +1,24 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "react-toastify";
-import type { Programa, Alumno } from "@/components/educacion/lib/esquemas";
+import type { Alumno, Programa } from "@/components/educacion/lib/esquemas";
+import {
+  educacionKeys,
+  fetchProgramaPorId,
+  mapInscripciones,
+  useInvalidarEducacion,
+  useMaestrosEducacion,
+} from "@/hooks/educacion/useEducacionData";
+
+const FIVE_MINUTES = 1000 * 60 * 5;
+
+type InscripcionConAlumno = {
+  programa_id: number;
+  alumnos: Alumno | null;
+};
 
 interface MaestroAlumnos {
   id: number;
@@ -13,108 +28,100 @@ interface MaestroAlumnos {
 }
 
 export function useProgramaData(programaId: string | number) {
-  const [programa, setPrograma] = useState<Programa | null>(null);
-  const [nivelesDelPrograma, setNivelesDelPrograma] = useState<Programa[]>([]);
-  const [alumnosDelPrograma, setAlumnosDelPrograma] = useState<Alumno[]>([]);
-  const [maestrosDelPrograma, setMaestrosDelPrograma] = useState<
-    MaestroAlumnos[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  const fetchData = useInvalidarEducacion();
+  const enabled = Boolean(programaId);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    const supabase = createClient();
+  const programaQuery = useQuery({
+    queryKey: educacionKeys.programa(programaId),
+    queryFn: () => fetchProgramaPorId(programaId),
+    enabled,
+    staleTime: FIVE_MINUTES,
+  });
 
-    try {
-      const { data: programaRes, error: programaError } = await supabase
+  const nivelesQuery = useQuery({
+    queryKey: educacionKeys.hijos(programaId),
+    queryFn: async (): Promise<Programa[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
         .from("programas_educativos")
         .select("*")
-        .eq("id", programaId)
-        .single();
-
-      if (programaError) throw programaError;
-
-      const programaData = programaRes as Programa;
-      setPrograma(programaData);
-
-      const { data: nivelesRes, error: nivelesError } = await supabase
-        .from("programas_educativos")
-        .select("*")
-        .eq("parent_id", programaData.id);
-
-      if (nivelesError) throw nivelesError;
-
-      const nivelesData = nivelesRes as Programa[];
-      setNivelesDelPrograma(nivelesData);
-
-      const { data: alumnosInscripcionesRes, error: alumnosError } =
-        await supabase
-          .from("alumnos_inscripciones")
-          .select("*, alumnos(*)")
-          .in("programa_id", [
-            programaData.id,
-            ...nivelesData.map((nivel) => nivel.id),
-          ]);
-
-      if (alumnosError) throw alumnosError;
-
-      const alumnosData = alumnosInscripcionesRes.map((inscripcion) => ({
-        ...(inscripcion.alumnos as Alumno),
-        programa_id: inscripcion.programa_id,
-      })) as Alumno[];
-      setAlumnosDelPrograma(alumnosData);
-
-      // --- CAMBIO CLAVE AQUÍ ---
-      // Obtenemos los IDs de maestros tanto del programa padre como de todos los niveles
-      const maestrosIds = [
-        programaData.maestro_id,
-        ...nivelesData.map((nivel) => nivel.maestro_id),
-      ].filter((id): id is number => id !== null && id !== undefined);
-
-      const uniqueMaestrosIds = [...new Set(maestrosIds)];
-
-      if (uniqueMaestrosIds.length > 0) {
-        const { data: maestrosDataRes, error: maestrosDataError } =
-          await supabase
-            .from("maestros_municipales")
-            .select("id, nombre, ctd_alumnos, telefono")
-            .in("id", uniqueMaestrosIds);
-
-        if (maestrosDataError) throw maestrosDataError;
-
-        const maestrosFormatted: MaestroAlumnos[] = (maestrosDataRes || [])
-          .map((maestro) => ({
-            id: maestro.id,
-            nombre: maestro.nombre,
-            ctd_alumnos: maestro.ctd_alumnos,
-            telefono: maestro.telefono,
-          }))
-          .sort((a, b) => b.ctd_alumnos - a.ctd_alumnos);
-
-        setMaestrosDelPrograma(maestrosFormatted);
-      } else {
-        setMaestrosDelPrograma([]);
+        .eq("parent_id", programaId);
+      if (error) {
+        toast.error("Error al cargar los niveles del programa.");
+        throw new Error(error.message);
       }
-    } catch (error) {
-      console.error("Error fetching program data:", error);
-      toast.error("Error al cargar los datos del programa.");
-    } finally {
-      setLoading(false);
-    }
-  }, [programaId]);
+      return (data as Programa[]) || [];
+    },
+    enabled,
+    staleTime: FIVE_MINUTES,
+  });
 
-  useEffect(() => {
-    if (programaId) {
-      fetchData();
+  const idsInscripcion = useMemo(() => {
+    const ids = [Number(programaId)];
+    for (const nivel of nivelesQuery.data ?? []) {
+      ids.push(nivel.id);
     }
-  }, [programaId, fetchData]);
+    return ids;
+  }, [programaId, nivelesQuery.data]);
+
+  const alumnosQuery = useQuery({
+    queryKey: [
+      ...educacionKeys.inscripcionesPrograma(programaId),
+      "con-niveles",
+      idsInscripcion.join(","),
+    ],
+    queryFn: async (): Promise<Alumno[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("alumnos_inscripciones")
+        .select("*, alumnos(*)")
+        .in("programa_id", idsInscripcion);
+      if (error) {
+        toast.error("Error al cargar los alumnos del programa.");
+        throw new Error(error.message);
+      }
+      return mapInscripciones(data as InscripcionConAlumno[]);
+    },
+    enabled: enabled && idsInscripcion.length > 0 && !nivelesQuery.isLoading,
+    staleTime: FIVE_MINUTES,
+  });
+
+  const maestrosQuery = useMaestrosEducacion();
+
+  const maestrosDelPrograma = useMemo((): MaestroAlumnos[] => {
+    const programa = programaQuery.data;
+    const niveles = nivelesQuery.data ?? [];
+    const maestros = maestrosQuery.data ?? [];
+    if (!programa) return [];
+
+    const maestrosIds = [
+      programa.maestro_id,
+      ...niveles.map((nivel) => nivel.maestro_id),
+    ].filter((id): id is number => id !== null && id !== undefined);
+
+    const uniqueIds = new Set(maestrosIds);
+    return maestros
+      .filter((maestro) => uniqueIds.has(maestro.id))
+      .map((maestro) => ({
+        id: maestro.id,
+        nombre: maestro.nombre,
+        ctd_alumnos: maestro.ctd_alumnos,
+        telefono: maestro.telefono,
+      }))
+      .sort((a, b) => b.ctd_alumnos - a.ctd_alumnos);
+  }, [programaQuery.data, nivelesQuery.data, maestrosQuery.data]);
 
   return {
-    programa,
-    nivelesDelPrograma,
-    alumnosDelPrograma,
+    programa: programaQuery.data ?? null,
+    nivelesDelPrograma: nivelesQuery.data ?? [],
+    alumnosDelPrograma: alumnosQuery.data ?? [],
     maestrosDelPrograma,
-    loading,
+    loading:
+      (programaQuery.isLoading ||
+        nivelesQuery.isLoading ||
+        alumnosQuery.isLoading ||
+        maestrosQuery.isLoading) &&
+      enabled,
     fetchData,
   };
 }

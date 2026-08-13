@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -22,18 +22,20 @@ import ListadoGeneroModal from "./ListadoGeneroModal";
 import GestionDoctosModal from "./GestionDoctosModal";
 import ConfigMetaModal from "./ConfigMetaModal";
 import EncargadosFoliosModal from "./EncargadosFoliosModal";
-import type { Beneficiario, CampoFiltro, OrdenFiltro } from "./types";
+import type { CampoFiltro, OrdenFiltro } from "./types";
 import {
-  cargarBeneficiariosPorAnio,
-  obtenerAniosDisponibles,
   filtrarYOrdenarBeneficiarios,
   generarResumenBeneficiarios,
-  obtenerConfiguracionFertilizante,
 } from "./actions";
 import useUserData from "@/hooks/sesion/useUserData";
+import {
+  useAniosFertilizante,
+  useBeneficiariosPorAnio,
+  useConfigFertilizante,
+  useInvalidarFertilizante,
+} from "./lib/hooks";
 
 export default function VerBeneficiarios() {
-  const [beneficiarios, setBeneficiarios] = useState<Beneficiario[]>([]);
   const [paginaActual, setPaginaActual] = useState(1);
   const [orden, setOrden] = useState<OrdenFiltro>(() => {
     if (typeof window !== "undefined") {
@@ -42,14 +44,11 @@ export default function VerBeneficiarios() {
     }
     return "codigo_asc";
   });
-  const [aniosDisponibles, setAniosDisponibles] = useState<string[]>([]);
   const [mostrarModalFolio, setMostrarModalFolio] = useState(false);
   const [mostrarListadoGenero, setMostrarListadoGenero] = useState(false);
   const [beneficiariosPorPagina, setBeneficiariosPorPagina] = useState(20);
   const [mostrarGestionDoctos, setMostrarGestionDoctos] = useState(false);
   const [mostrarEncargadosFolios, setMostrarEncargadosFolios] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [totalSacosMeta, setTotalSacosMeta] = useState(7100);
   const [mostrarConfigMeta, setMostrarConfigMeta] = useState(false);
 
   const [filtros, setFiltros] = useState(() => {
@@ -85,16 +84,15 @@ export default function VerBeneficiarios() {
 
   const router = useRouter();
   const { permisos, rol, cargando: cargandoUsuario } = useUserData();
-
-  const cargarDatos = useCallback(async (anioParaCargar: string) => {
-    if (!anioParaCargar) return;
-    setInitialLoading(true);
-    const data = await cargarBeneficiariosPorAnio(anioParaCargar);
-    const sacos = await obtenerConfiguracionFertilizante(anioParaCargar);
-    setBeneficiarios(data);
-    setTotalSacosMeta(sacos);
-    setInitialLoading(false);
-  }, []);
+  const { data: aniosDisponibles = [] } = useAniosFertilizante();
+  const { data: beneficiarios = [], isLoading: loadingBeneficiarios } =
+    useBeneficiariosPorAnio(filtros.anio);
+  const { data: totalSacosMeta = 7100, isLoading: loadingConfig } =
+    useConfigFertilizante(filtros.anio);
+  const cargarDatos = useInvalidarFertilizante();
+  const initialLoading =
+    (!filtros.anio && aniosDisponibles.length === 0) ||
+    (Boolean(filtros.anio) && (loadingBeneficiarios || loadingConfig));
 
   // Persistir filtros en localStorage
   useEffect(() => {
@@ -108,37 +106,25 @@ export default function VerBeneficiarios() {
   }, [orden]);
 
   useEffect(() => {
-    const inicializar = async () => {
-      const anios = await obtenerAniosDisponibles();
-      setAniosDisponibles(anios);
+    if (aniosDisponibles.length === 0) return;
 
-      // Intentar restaurar el año guardado, si existe y está disponible
-      const savedAnio =
-        typeof window !== "undefined"
-          ? localStorage.getItem("fertilizanteAnio")
-          : null;
-      const anioActual = new Date().getFullYear().toString();
+    const savedAnio =
+      typeof window !== "undefined"
+        ? localStorage.getItem("fertilizanteAnio")
+        : null;
+    const anioActual = new Date().getFullYear().toString();
 
-      let anioInicial = anioActual;
-      if (savedAnio && anios.includes(savedAnio)) {
-        anioInicial = savedAnio;
-      } else if (anios.length > 0 && !anios.includes(anioActual)) {
-        anioInicial = anios[0];
-      }
-
-      setFiltros((prev) => ({ ...prev, anio: anioInicial }));
-      await cargarDatos(anioInicial);
-    };
-
-    inicializar();
-  }, [cargarDatos]);
-
-  // Efecto para cambios manuales en el select de año
-  useEffect(() => {
-    if (filtros.anio && !initialLoading) {
-      cargarDatos(filtros.anio);
+    let anioInicial = anioActual;
+    if (savedAnio && aniosDisponibles.includes(savedAnio)) {
+      anioInicial = savedAnio;
+    } else if (!aniosDisponibles.includes(anioActual)) {
+      anioInicial = aniosDisponibles[0];
     }
-  }, [filtros.anio, cargarDatos]);
+
+    setFiltros((prev) =>
+      prev.anio === anioInicial ? prev : { ...prev, anio: anioInicial },
+    );
+  }, [aniosDisponibles]);
 
   const beneficiariosFiltrados = filtrarYOrdenarBeneficiarios(
     beneficiarios,
@@ -237,7 +223,7 @@ export default function VerBeneficiarios() {
           totalMeta={totalSacosMeta}
           anioActual={filtros.anio}
           userRol={rol}
-          onConfigChange={() => cargarDatos(filtros.anio)}
+          onConfigChange={() => cargarDatos()}
         />
       </motion.div>
 
@@ -424,7 +410,7 @@ export default function VerBeneficiarios() {
           visible={mostrarGestionDoctos}
           onClose={() => setMostrarGestionDoctos(false)}
           aniosDisponibles={aniosDisponibles}
-          onGuardado={() => cargarDatos(filtros.anio)}
+          onGuardado={() => cargarDatos()}
         />
         <EncargadosFoliosModal
           visible={mostrarEncargadosFolios}
@@ -435,7 +421,7 @@ export default function VerBeneficiarios() {
           onClose={() => setMostrarConfigMeta(false)}
           anioActual={filtros.anio}
           totalMeta={totalSacosMeta}
-          onGuardado={() => cargarDatos(filtros.anio)}
+          onGuardado={() => cargarDatos()}
         />
       </motion.div>
 
@@ -455,7 +441,7 @@ export default function VerBeneficiarios() {
             resumen={resumen}
             isLoading={false}
             permisos={permisos}
-            onDataChange={() => cargarDatos(filtros.anio)}
+            onDataChange={() => cargarDatos()}
             viewMode={viewMode}
             setViewMode={setViewMode}
           />

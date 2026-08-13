@@ -13,6 +13,7 @@ import {
 } from "@/components/permisos/lib/mensajes";
 import { PERMISOS_QUERY_ROOT, permisosQueryKeys } from "./query-keys";
 import type { PermisoEmpleado } from "@/components/permisos/types";
+import { useBloqueosGlobales } from "@/components/layout/bloqueos/hooks";
 
 export type ModoFiltroPermisos = "dia" | "semana" | "rango" | "pendientes";
 
@@ -87,4 +88,16 @@ export function useLecturasNotificaciones(tipoVista: TipoVistaLecturas) {
     queryFn: () => obtenerLecturasNotificaciones(tipoVista),
     staleTime: STALE_MS,
   });
+}
+
+export const MENSAJE_PERMISO_PENDIENTE_KEY = ["bloqueo-permiso-mensaje"] as const;
+
+export function useMensajePendientePermiso() {
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: data?.mensajePermiso ?? null,
+    isLoading,
+    refetch,
+  };
 }

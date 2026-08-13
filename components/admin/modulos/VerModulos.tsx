@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useState, Fragment } from 'react';
 import {
   Dialog,
   DialogPanel,
@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import TablaModulos from './TablaModulos';
 import CrearModuloForm from './CrearModuloForm';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/utils/supabase/client';
+import { useModulosAdmin } from './hooks';
 
 type Modulo = {
   id: string;
@@ -20,33 +20,16 @@ type Modulo = {
 };
 
 export default function VerModulos() {
-  const [modulos, setModulos] = useState<Modulo[]>([]);
+  const { modulos, refetch: fetchModulos } = useModulosAdmin();
   const [mostrarCrear, setMostrarCrear] = useState(false);
   const router = useRouter();
 
-  const fetchModulos = async () => {
-    const supabase = createClient();
-    const { data, error } = await supabase.from('modulos').select('id, nombre');
-    if (error) {
-      console.error('Error al cargar módulos:', error);
-      return;
-    }
-    const modulosFiltrados = data?.filter(modulo => modulo.nombre !== 'AFILIACION') || [];
-    setModulos(modulosFiltrados);
-  };
-
-  useEffect(() => {
-    fetchModulos();
-  }, []);
-
-  const handleModuloCreado = (nuevoModulo: Modulo) => {
-    if (nuevoModulo.nombre !== 'AFILIACION') {
-      setModulos((prev) => [...prev, nuevoModulo]);
-    }
+  const handleModuloCreado = (_nuevoModulo: Modulo) => {
+    void fetchModulos();
     setMostrarCrear(false);
   };
 
-  const handleModuloActualizado = async (_: Modulo) => {
+  const handleModuloActualizado = async (_modulo: Modulo) => {
     await fetchModulos();
   };
 

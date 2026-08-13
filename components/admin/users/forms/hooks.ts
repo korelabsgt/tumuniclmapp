@@ -6,8 +6,9 @@ import { actualizarInfoPersonal, obtenerInfoUsuario } from './action';
 import { obtenerLlamadasAtencion, eliminarLlamadaAtencion, obtenerTodasFaltas } from './llamadaAtencionActions';
 import { obtenerCitacionesUsuario, obtenerTodasCitaciones, confirmarCitacion, eliminarCitacion } from './citacionActions';
 import Swal from 'sweetalert2';
+import { useBloqueosGlobales } from '@/components/layout/bloqueos/hooks';
 
-export function useLlamadasAtencion(userId: string) {
+export function useLlamadasAtencion(userId: string, enabled = true) {
   const queryClient = useQueryClient();
   const queryKey = ['llamadasAtencion', userId];
 
@@ -19,7 +20,8 @@ export function useLlamadasAtencion(userId: string) {
       return result.data || [];
     },
     staleTime: 5 * 60 * 1000,
-    enabled: !!userId,
+    enabled: enabled && !!userId,
+    refetchOnMount: false,
   });
 
   const invalidate = () => {
@@ -138,6 +140,18 @@ export function useTodasCitaciones(enabled = true) {
     citaciones,
     loading,
     invalidate,
+  };
+}
+
+export const CITACION_PENDIENTE_KEY = ['bloqueo-citacion'] as const;
+
+export function useCitacionPendiente() {
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: data?.citacion ?? null,
+    isLoading,
+    refetch,
   };
 }
 

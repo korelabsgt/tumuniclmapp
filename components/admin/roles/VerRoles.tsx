@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Fragment } from 'react';
+import { useState, Fragment } from 'react';
 import {
   Dialog,
   DialogPanel,
@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import TablaRoles from './TablaRoles';
 import CrearRolForm from './CrearRolForm';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@/utils/supabase/client';
+import { useRolesAdmin } from './hooks';
 
 type Rol = {
   id: string;
@@ -20,34 +20,17 @@ type Rol = {
 };
 
 export default function VerRoles() {
-  const [roles, setRoles] = useState<Rol[]>([]);
+  const { roles, refetch: fetchRoles } = useRolesAdmin();
   const [mostrarCrear, setMostrarCrear] = useState(false);
   const router = useRouter();
 
-  const fetchRoles = async () => {
-    const supabase = createClient();
-    const { data, error } = await supabase.from('roles').select('id, nombre');
-    if (error) {
-      console.error('Error al cargar roles:', error);
-      return;
-    }
-    const rolesFiltrados = data?.filter(rol => rol.nombre !== 'AFILIADOR' && rol.nombre !== 'ADMIN-AFILIACION') || [];
-    setRoles(rolesFiltrados);
-  };
-
-  useEffect(() => {
-    fetchRoles();
-  }, []);
-
-  const handleRolCreado = (nuevoRol: Rol) => {
-    if (nuevoRol.nombre !== 'AFILIADOR' && nuevoRol.nombre !== 'ADMIN-AFILIACION') {
-      setRoles((prev) => [...prev, nuevoRol]);
-    }
+  const handleRolCreado = (_nuevoRol: Rol) => {
+    void fetchRoles();
     setMostrarCrear(false);
   };
 
-const handleRolActualizado = async (_: Rol) => {
-  await fetchRoles(); // vuelve a cargar los datos desde Supabase
+const handleRolActualizado = async (_rol: Rol) => {
+  await fetchRoles();
 };
 
 

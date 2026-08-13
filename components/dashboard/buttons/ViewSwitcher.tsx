@@ -4,47 +4,101 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import AnimatedIcon from "@/components/ui/AnimatedIcon";
 
-interface ViewSwitcherProps {
-  isSuper: boolean;
+type QuickNavCardProps = {
+  titulo: string;
+  iconKey: string;
+  activo: boolean;
+  cardClass: string;
+  stripClass: string;
+  textClass: string;
+  onEnter: () => void;
+  onLeave: () => void;
+  onClick: () => void;
+};
+
+function QuickNavCard({
+  titulo,
+  iconKey,
+  activo,
+  cardClass,
+  stripClass,
+  textClass,
+  onEnter,
+  onLeave,
+  onClick,
+}: QuickNavCardProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      onMouseEnter={onEnter}
+      onMouseLeave={onLeave}
+      className={`group flex w-full cursor-pointer items-stretch overflow-hidden rounded-md border text-left shadow-sm transition-colors hover:brightness-[1.02] md:w-fit dark:shadow-none ${cardClass}`}
+    >
+      <div
+        className={`flex w-12 shrink-0 items-center justify-center self-stretch rounded-l-md px-2 py-1 sm:w-[4.25rem] sm:px-3 ${stripClass}`}
+      >
+        <AnimatedIcon
+          iconKey={iconKey}
+          className="h-full w-full min-h-[2.75rem] sm:min-h-[3rem]"
+          trigger={activo ? "loop" : undefined}
+        />
+      </div>
+
+      <div className="flex min-w-0 flex-1 items-center py-2 pr-3 pl-2 sm:pr-4 sm:pl-3 md:flex-none">
+        <span className={`truncate text-xs font-bold uppercase tracking-wide sm:text-sm md:whitespace-nowrap ${textClass}`}>
+          {titulo}
+        </span>
+      </div>
+    </button>
+  );
 }
 
-export default function ViewSwitcher({ isSuper }: ViewSwitcherProps) {
+export function AsistenciaQuickNav() {
   const router = useRouter();
-  const [hovered, setHovered] = useState<string | null>(null);
+  const [activo, setActivo] = useState(false);
 
   return (
-    <div
-      className={`flex gap-2 h-14 order-1 md:order-3 ${isSuper ? "md:col-span-5" : "md:col-span-8"}`}
-    >
-      <button
-        type="button"
-        onClick={() => router.push("/protected/mis-asistencias")}
-        onMouseEnter={() => setHovered("asistencia")}
-        onMouseLeave={() => setHovered(null)}
-        className="flex-1 flex items-center justify-center gap-2 h-full rounded-md bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 shadow-sm border border-green-200 dark:border-green-800 text-base md:text-lg font-bold transition-colors duration-200"
-      >
-        <AnimatedIcon
-          iconKey="sgtmgpft"
-          className="w-8 h-8"
-          trigger={hovered === "asistencia" ? "loop" : undefined}
-        />
-        <span className="truncate">Asistencia</span>
-      </button>
+    <QuickNavCard
+      titulo="Asistencia"
+      iconKey="sgtmgpft"
+      activo={activo}
+      cardClass="border-green-200/90 bg-green-50 dark:border-green-800/55 dark:bg-green-950/30"
+      stripClass="bg-green-100/90 dark:bg-green-900/45"
+      textClass="text-green-700 dark:text-green-400"
+      onEnter={() => setActivo(true)}
+      onLeave={() => setActivo(false)}
+      onClick={() => router.push("/protected/mis-asistencias")}
+    />
+  );
+}
 
-      <button
-        type="button"
-        onClick={() => router.push("/protected/mis-comisiones")}
-        onMouseEnter={() => setHovered("comisiones")}
-        onMouseLeave={() => setHovered(null)}
-        className="flex-1 flex items-center justify-center gap-2 h-full rounded-md bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-400 hover:bg-purple-200 dark:hover:bg-purple-900/50 shadow-sm border border-purple-200 dark:border-purple-800 text-base md:text-lg font-bold transition-colors duration-200"
-      >
-        <AnimatedIcon
-          iconKey="vqkaxtlm"
-          className="w-8 h-8"
-          trigger={hovered === "comisiones" ? "loop" : undefined}
-        />
-        <span className="truncate">Comisiones</span>
-      </button>
+export function ComisionesQuickNav() {
+  const router = useRouter();
+  const [activo, setActivo] = useState(false);
+
+  return (
+    <QuickNavCard
+      titulo="Comisiones"
+      iconKey="vqkaxtlm"
+      activo={activo}
+      cardClass="border-purple-200/90 bg-purple-50 dark:border-purple-800/55 dark:bg-purple-950/30"
+      stripClass="bg-purple-100/90 dark:bg-purple-900/45"
+      textClass="text-purple-700 dark:text-purple-400"
+      onEnter={() => setActivo(true)}
+      onLeave={() => setActivo(false)}
+      onClick={() => router.push("/protected/mis-comisiones")}
+    />
+  );
+}
+
+export function QuickNavPair({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`grid w-full grid-cols-2 gap-2.5 md:mx-auto md:flex md:w-fit md:justify-center md:gap-3 ${className}`}
+    >
+      <AsistenciaQuickNav />
+      <ComisionesQuickNav />
     </div>
   );
 }

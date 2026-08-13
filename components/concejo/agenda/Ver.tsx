@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState, useMemo, memo } from 'react';
 import useUserData from '@/hooks/sesion/useUserData';
-import { cargarAgendas, eliminarAgenda } from './lib/acciones';
+import { eliminarAgenda } from './lib/acciones';
+import { useAgendasConcejo } from './lib/hooks';
 import { type AgendaConcejo } from './lib/esquemas';
 import AgendaForm from './forms/Sesion';
 import ResumenAsistencia from './modals/ResumenAsistencia';
@@ -177,9 +178,7 @@ type VistaType = 'hoy' | 'proximas' | 'terminadas' | 'actividades';
 export default function Ver() {
   const router = useRouter();
   const { permisos, rol, cargando: cargandoUsuario } = useUserData();
-  const [agendas, setAgendas] = useState<AgendaConcejo[]>([]);
-  const [cargandoAgendas, setCargandoAgendas] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { agendas, cargando: cargandoAgendas, error, fetchAgendas } = useAgendasConcejo();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isResumenOpen, setIsResumenOpen] = useState(false);
   const [isInformeOpen, setIsInformeOpen] = useState(false);
@@ -221,22 +220,6 @@ export default function Ver() {
     numero: i.toString(),
     nombre: format(setMonth(new Date(), i), 'LLLL', { locale: es }),
   }));
-
-  const fetchAgendas = async () => {
-    setCargandoAgendas(true);
-    try {
-      const data = await cargarAgendas();
-      setAgendas(data);
-    } catch (e: any) {
-      setError("Ocurrió un error al cargar las agendas.");
-    } finally {
-      setCargandoAgendas(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAgendas();
-  }, []);
 
   const agendasFiltradasBase = useMemo(() => {
     return agendas.filter(agenda => {

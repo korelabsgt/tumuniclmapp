@@ -14,6 +14,7 @@ import {
 import { getCategoriaAcuerdo, getCategoriaAcuerdoBadgeClass } from "../categorias";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { ModalPortal } from "@/components/ui/modal-portal";
 import { type PerfilUsuario } from "@/components/permisos/acciones";
 import { TipoVistaAcuerdos } from "../hooks";
 
@@ -71,7 +72,7 @@ export default function PreviewAcuerdo({
         : "bg-amber-500 text-white";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <ModalPortal open={isOpen} onClose={onClose} className="p-4">
       <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b-2 border-blue-600">
           <div className="flex items-center gap-3">
@@ -223,6 +224,6 @@ export default function PreviewAcuerdo({
           </div>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

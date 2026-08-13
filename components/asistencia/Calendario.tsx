@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Fragment, useMemo } from 'react';
+import React, { useState, Fragment, useMemo, useRef } from 'react';
 import { es } from 'date-fns/locale';
 import { 
   format, 
@@ -10,8 +10,6 @@ import {
   isToday, 
   addDays, 
   subDays, 
-  getYear, 
-  getMonth, 
   isSameDay, 
   startOfDay,
   endOfDay,
@@ -21,7 +19,7 @@ import {
   isValid,
   getDay
 } from 'date-fns';
-import { ChevronsLeft, ChevronsRight, PartyPopper, Briefcase } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PartyPopper, Briefcase } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PermisoEmpleado } from '@/components/permisos/types';
@@ -56,17 +54,21 @@ import {
   getCategoriaAcuerdoDotClass,
 } from '@/components/permisos/acuerdos/categorias';
 import type { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
+import { ModalPortal } from '@/components/ui/modal-portal';
 import {
   resolverEstadoMarcaje,
   getEstadoMarcajeMeta,
   esEntradaTardeMarcaje,
   resolverHorarioEntradaDia,
+  resolverMarcajeHoraTextClass,
   esTipoMarcajeLibre,
-  ENTRADA_TARDE_TIME_CLASS,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
-  MARCaje_HORA_CLASS,
 } from '@/components/asistencia/lib/estado-marcaje';
+import {
+  MARCaje_JUSTIFICACION_GRID_CLASS,
+  JUSTIFICACION_COL_CLASS,
+} from '@/components/asistencia/lib/marcaje-layout';
 
 interface CalendarioProps {
   todosLosRegistros: any[];
@@ -119,7 +121,7 @@ const MarcajeSkeleton = () => (
 );
 
 const JUSTIFICACION_BADGE_CLASS =
-  "w-full min-h-[2.35rem] py-2 px-2 rounded-md font-bold flex items-center justify-center gap-1.5 text-center text-[11px] sm:text-xs leading-snug border shadow-sm";
+  "w-full min-h-[2.35rem] py-1.5 px-1.5 rounded-md font-bold flex items-center justify-center gap-1 text-center text-[10px] sm:text-[11px] leading-tight border shadow-sm";
 const JUSTIFICACION_ICON_CLASS = "w-4 h-4 flex-shrink-0";
 
 const JustificacionSkeleton = () => (
@@ -129,6 +131,9 @@ const JustificacionSkeleton = () => (
 const TiempoSkeleton = () => (
   <span className="inline-block h-4 w-12 rounded bg-gray-200 dark:bg-neutral-700 animate-pulse align-middle" />
 );
+
+const WEEK_NAV_BTN_CLASS =
+  "flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center text-slate-500 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200";
 
 export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaHoraGt, esHorarioMultiple = false, permisosEmpleado = [], comisionesEmpleado = [], horarioDias, horarioEntrada, horarioSalida, cargandoJustificaciones = false }: CalendarioProps) {
   const { dependencia_id } = useUserData();
@@ -147,6 +152,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
   const [comisionPreview, setComisionPreview] = useState<ComisionConFechaYHoraSeparada | null>(null);
   const [mapaComisionRegistros, setMapaComisionRegistros] = useState<any>(null);
   const [mapaComisionNombre, setMapaComisionNombre] = useState('');
+  const monthInputRef = useRef<HTMLInputElement>(null);
 
   const diasDeLaSemana = useMemo(() => getWeekDays(fechaDeReferencia), [fechaDeReferencia]);
 
@@ -280,6 +286,23 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
     const nuevaFecha = new Date(anio, mes, 1);
     setFechaDeReferencia(startOfWeek(nuevaFecha, { locale: es, weekStartsOn: 1 }));
     setDiaSeleccionado(undefined);
+  };
+
+  const handleMonthInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (!value) return;
+    const [anioStr, mesStr] = value.split('-');
+    handleSeleccionFecha(parseInt(anioStr, 10), parseInt(mesStr, 10) - 1);
+  };
+
+  const abrirSelectorMesAnio = () => {
+    const input = monthInputRef.current;
+    if (!input) return;
+    if (typeof input.showPicker === 'function') {
+      input.showPicker();
+      return;
+    }
+    input.click();
   };
 
   const handleSeleccionDia = (dia: Date) => {
@@ -474,15 +497,17 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
   };
 
   return (
-    <div className="p-1 bg-white dark:bg-neutral-950 rounded-lg shadow-md space-y-4 w-full transition-colors duration-200">
+    <>
+    <div className="w-full space-y-4">
 
-      <div className="flex items-center bg-gray-100 dark:bg-neutral-900 rounded-lg p-0 transition-colors">
-        <div className="flex w-[40%] h-full rounded-l-lg overflow-hidden flex-shrink-0">
+      <div className="flex w-full justify-center">
+      <div className="flex w-fit max-w-full flex-row items-center gap-2 rounded-lg bg-gray-100 p-1 transition-colors dark:bg-neutral-900">
+        <div className="flex shrink-0 overflow-hidden rounded-lg">
           <Button 
             variant={filtroTipo === 'semanal' ? 'default' : 'ghost'} 
             size="sm" 
             onClick={() => handleFiltroTipoClick('semanal')} 
-            className={`h-7 flex-1 px-1 text-[11px] rounded-r-none ${filtroTipo === 'semanal' ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800'}`}
+            className={`h-7 min-w-[4.5rem] px-2 text-[11px] rounded-r-none ${filtroTipo === 'semanal' ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800'}`}
           >
             Semanal
           </Button>
@@ -490,58 +515,62 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
             variant={filtroTipo === 'rango' ? 'default' : 'ghost'} 
             size="sm" 
             onClick={() => handleFiltroTipoClick('rango')} 
-            className={`h-7 flex-1 px-1 text-[11px] rounded-l-none ${filtroTipo === 'rango' ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800'}`}
+            className={`h-7 min-w-[4.5rem] px-2 text-[11px] rounded-l-none ${filtroTipo === 'rango' ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white shadow-md' : 'text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-neutral-900 hover:bg-gray-200 dark:hover:bg-neutral-800'}`}
           >
             Rango
           </Button>
         </div>
-        <div className="w-px h-6 bg-gray-300 dark:bg-neutral-700 mx-1"></div>
-        <div className="flex w-[70%] items-center justify-end p-1">
-          {filtroTipo === 'semanal' ? (
-            <div className="flex justify-between items-center w-full xl:justify-center xl:gap-4">
-              <button onClick={irSemanaAnterior} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-neutral-800"><ChevronsLeft className="h-4 w-4 text-gray-600 dark:text-gray-400 xl:h-6 xl:w-6" /></button>
-              <div className='flex gap-1 text-xs xl:text-base xl:gap-2 w-full justify-between xl:w-auto'>
-                <select 
-                  value={getMonth(fechaDeReferencia)} 
-                  onChange={(e) => handleSeleccionFecha(getYear(fechaDeReferencia), parseInt(e.target.value))} 
-                  className="p-1 border border-gray-300 dark:border-neutral-700 rounded-md text-xs bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 h-7 focus:ring-0 appearance-none w-1/2 xl:text-lg xl:h-10 xl:w-32 xl:p-2 text-center"
-                >
-                  {Array.from({ length: 12 }).map((_, i) => (<option key={i} value={i} className="capitalize">{format(new Date(2000, i, 1), 'LLLL', { locale: es })}</option>))}
-                </select>
-                <select 
-                  value={getYear(fechaDeReferencia)} 
-                  onChange={(e) => handleSeleccionFecha(parseInt(e.target.value), getMonth(fechaDeReferencia))} 
-                  className="p-1 border border-gray-300 dark:border-neutral-700 rounded-md text-xs bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-gray-100 h-7 focus:ring-0 appearance-none w-1/2 xl:text-lg xl:h-10 xl:w-28 xl:p-2 text-center"
-                >
-                  {Array.from({ length: 10 }).map((_, i) => { const anio = getYear(new Date()) - 5 + i; return <option key={anio} value={anio}>{anio}</option>; })}
-                </select>
-              </div>
-              <button onClick={irSemanaSiguiente} className="p-1 rounded-full hover:bg-slate-200 dark:hover:bg-neutral-800"><ChevronsRight className="h-4 w-4 text-gray-600 dark:text-gray-400 xl:h-6 xl:w-6" /></button>
-            </div>
-          ) : (
-            <div className="flex text-xs lg:text-lg items-center gap-1 w-full xl:justify-center xl:gap-4">
-              <Input 
-                type="date" 
-                value={fechaInicialRango} 
-                onChange={(e) => setFechaInicialRango(e.target.value)} 
-                className="w-1/2 text-[10px] h-7 px-1 py-0 border border-gray-300 dark:border-neutral-700 focus-visible:ring-0 bg-gray-100 dark:bg-neutral-800 dark:text-gray-100 xl:text-lg xl:h-10 xl:px-3" 
-                placeholder="Fecha Inicial" 
-              />
-              <span className="text-gray-500 dark:text-gray-400 text-[10px] flex-shrink-0 xl:text-base">a</span>
-              <Input 
-                type="date" 
-                value={fechaFinalRango} 
-                onChange={(e) => setFechaFinalRango(e.target.value)} 
-                className="w-1/2 text-[10px] h-7 px-1 py-0 border border-gray-300 dark:border-neutral-700 focus-visible:ring-0 bg-gray-100 dark:bg-neutral-800 dark:text-gray-100 xl:text-lg xl:h-10 xl:px-3" 
-                placeholder="Fecha Final" 
-              />
-            </div>
-          )}
-        </div>
+        <div className="h-6 w-px shrink-0 bg-gray-300 dark:bg-neutral-700" />
+        {filtroTipo === 'semanal' ? (
+          <div className="relative shrink-0">
+            <input
+              ref={monthInputRef}
+              type="month"
+              value={format(fechaDeReferencia, 'yyyy-MM')}
+              onChange={handleMonthInputChange}
+              className="sr-only"
+              tabIndex={-1}
+              aria-hidden
+            />
+            <button
+              type="button"
+              onClick={abrirSelectorMesAnio}
+              className="h-7 shrink-0 rounded-md border border-gray-300 bg-gray-100 px-2.5 text-xs capitalize text-gray-900 transition-colors hover:bg-gray-200 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+            >
+              {format(fechaDeReferencia, 'LLLL yyyy', { locale: es })}
+            </button>
+          </div>
+        ) : (
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Input 
+              type="date" 
+              value={fechaInicialRango} 
+              onChange={(e) => setFechaInicialRango(e.target.value)} 
+              className="h-7 w-[8.75rem] shrink-0 px-1 py-0 text-[11px] border border-gray-300 focus-visible:ring-0 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100" 
+            />
+            <span className="shrink-0 text-[10px] text-gray-500 dark:text-gray-400">a</span>
+            <Input 
+              type="date" 
+              value={fechaFinalRango} 
+              onChange={(e) => setFechaFinalRango(e.target.value)} 
+              className="h-7 w-[8.75rem] shrink-0 px-1 py-0 text-[11px] border border-gray-300 focus-visible:ring-0 bg-gray-100 dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100" 
+            />
+          </div>
+        )}
+      </div>
       </div>
 
       {filtroTipo === 'semanal' && (
-        <div className="flex justify-around items-center pt-2">
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={irSemanaAnterior}
+            aria-label="Semana anterior"
+            className={WEEK_NAV_BTN_CLASS}
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <div className="flex flex-1 max-w-sm items-center justify-around">
           {diasDeLaSemana.map((dia) => {
             const diaStr = format(dia, 'yyyy-MM-dd');
             const esDiaSeleccionado = diaSeleccionado ? isSameDay(dia, diaSeleccionado) : false;
@@ -554,7 +583,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
               <div 
                 key={dia.toString()} 
                 onClick={() => handleSeleccionDia(dia)} 
-                className={`flex flex-col items-center justify-center w-10 h-10 rounded-md transition-all cursor-pointer relative
+                className={`flex flex-col items-center justify-center w-11 h-11 rounded-md transition-all cursor-pointer relative
                   ${isToday(dia) && !esDiaSeleccionado ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300' : ''} 
                   ${isSameDay(dia, new Date(fechaHoraGt)) ? 'border border-blue-400 dark:border-blue-500' : ''} 
                   ${esDiaSeleccionado ? 'bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white font-bold shadow-lg scale-105' : 'hover:bg-slate-100 dark:hover:bg-neutral-800 text-slate-600 dark:text-slate-400'}`}
@@ -573,6 +602,15 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
               </div>
             );
           })}
+          </div>
+          <button
+            type="button"
+            onClick={irSemanaSiguiente}
+            aria-label="Semana siguiente"
+            className={WEEK_NAV_BTN_CLASS}
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
         </div>
       )}
 
@@ -588,9 +626,9 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                 {!esVistaIndividual && <th className="px-3 py-2 text-xs w-1/4">Empleado</th>}
                 {!esVistaIndividual && <th className="px-3 py-2 text-xs w-1/4">Puesto</th>}
                 <th className="px-3 py-2 text-xs" colSpan={2}>
-                  <div className="flex items-center">
-                    <span className="flex-1 min-w-0">{esHorarioMultiple ? 'Marcajes' : 'Marcaje'}</span>
-                    <span className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0 text-center text-indigo-500 dark:text-indigo-400">Justificación</span>
+                  <div className={MARCaje_JUSTIFICACION_GRID_CLASS}>
+                    <span className="min-w-0">{esHorarioMultiple ? 'Marcajes' : 'Marcaje'}</span>
+                    <span className={`${JUSTIFICACION_COL_CLASS} text-center text-indigo-500 dark:text-indigo-400`}>Justificación</span>
                   </div>
                 </th>
               </tr>
@@ -608,27 +646,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                 const comisionDelDia = getComisionParaDia(diaString);
                 const tieneEventoJustificable =
                   !!asuetoDelDia || !!justificacionDelDia || !!comisionDelDia;
-                const diaSinMarcaje =
-                  usuariosDelDia.length === 0 ||
-                  usuariosDelDia.every(
-                    (u) => !u.entrada && !u.salida && !u.tieneMultiple,
-                  );
-                const etiquetaDiaSinMarcaje = asuetoDelDia
-                  ? asuetoDelDia.nombre
-                  : justificacionDelDia
-                    ? esTipoAcuerdo(justificacionDelDia.tipo)
-                      ? getCategoriaAcuerdoLabel(getCategoriaAcuerdo(justificacionDelDia))
-                      : getCategoriaLabel(getCategoriaPermiso(justificacionDelDia))
-                    : comisionDelDia
-                      ? 'Comisión'
-                      : null;
-                const colorEtiquetaDiaSinMarcaje = asuetoDelDia
-                  ? 'text-amber-600 dark:text-amber-400'
-                  : justificacionDelDia
-                    ? getJustificacionTextClass(justificacionDelDia)
-                    : comisionDelDia
-                      ? COMISION_TEXT_CLASS
-                      : '';
 
                 if (esFuturo && usuariosDelDia.length === 0 && !tieneEventoJustificable) {
                   return null;
@@ -643,9 +660,9 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                         className="px-4 py-2 font-bold border-t border-b transition-colors bg-slate-100 dark:bg-neutral-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-neutral-700 capitalize"
                       >
                         {format(fechaDia, "eeee, d 'de' LLLL", { locale: es })}
-                        {diaSinMarcaje && etiquetaDiaSinMarcaje && (
-                          <span className={`ml-1 text-[10px] italic font-medium normal-case ${colorEtiquetaDiaSinMarcaje}`}>
-                            — {etiquetaDiaSinMarcaje}
+                        {asuetoDelDia && (
+                          <span className="ml-1 text-[10px] italic font-medium normal-case text-amber-600 dark:text-amber-400">
+                            — {asuetoDelDia.nombre}
                           </span>
                         )}
                       </td>
@@ -664,10 +681,9 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                             {!esVistaIndividual && (<td className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">{usuario.puesto_nombre}</td>)}
 
                             <td colSpan={2} className="px-3 py-2">
-                              <div className="flex items-center gap-1">
-                                {/* Columna 3/4: Asistencia */}
+                              <div className={MARCaje_JUSTIFICACION_GRID_CLASS}>
                                 <div
-                                  className={`flex-1 min-w-0 ${!sinRegistros ? 'cursor-pointer' : ''}`}
+                                  className={`min-w-0 ${!sinRegistros ? 'cursor-pointer' : ''}`}
                                   onClick={() => !sinRegistros && onAbrirMapa(usuario.entrada || usuario.salida || usuario.representante)}
                                 >
                                   {sinRegistros ? (
@@ -694,11 +710,9 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                   ) : (
                                     <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center justify-left">
                                       {(() => {
-                                        const textClass = getMarcajeDashClass(
-                                          justificacionDelDia,
-                                          asuetoDelDia,
-                                          comisionDelDia,
-                                        );
+                                        const justificacionTextClass = justificacionDelDia
+                                          ? getJustificacionTextClass(justificacionDelDia)
+                                          : null;
                                         const horarioEntradaDia = resolverHorarioEntradaDia(
                                           diaString,
                                           horarioEntrada,
@@ -706,40 +720,76 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                           justificacionDelDia,
                                         );
                                         const entradaEsTarde =
-                                          usuario.entrada && !justificacionDelDia
-                                            ? esEntradaTardeMarcaje({
-                                                marcaEntradaAt: usuario.entrada.created_at,
-                                                horarioEntrada: horarioEntradaDia,
-                                                diaString,
-                                                notas: usuario.entrada.notas,
-                                              })
-                                            : false;
+                                          !!usuario.entrada &&
+                                          !justificacionDelDia &&
+                                          esEntradaTardeMarcaje({
+                                            marcaEntradaAt: usuario.entrada.created_at,
+                                            horarioEntrada: horarioEntradaDia,
+                                            diaString,
+                                            notas: usuario.entrada.notas,
+                                          });
+                                        const estadoMarcaje = resolverEstadoMarcaje({
+                                          fechaStr: diaString,
+                                          tieneEntrada: !!usuario.entrada,
+                                          tieneSalida: !!usuario.salida,
+                                          notasEntrada: usuario.entrada?.notas,
+                                          notasSalida: usuario.salida?.notas,
+                                          marcaEntradaAt: usuario.entrada?.created_at,
+                                          horarioEntrada: horarioEntradaDia,
+                                          cantidadMarcajes: null,
+                                        });
+                                        const entradaHoraClass = resolverMarcajeHoraTextClass({
+                                          justificacionTextClass,
+                                          asueto: !!asuetoDelDia,
+                                          comision:
+                                            !!comisionDelDia &&
+                                            !justificacionDelDia &&
+                                            !asuetoDelDia,
+                                          tieneMarca: !!usuario.entrada,
+                                          esEntradaTarde: entradaEsTarde,
+                                          estadoMarcaje,
+                                        });
+                                        const salidaHoraClass = resolverMarcajeHoraTextClass({
+                                          justificacionTextClass,
+                                          asueto: !!asuetoDelDia,
+                                          comision:
+                                            !!comisionDelDia &&
+                                            !justificacionDelDia &&
+                                            !asuetoDelDia,
+                                          tieneMarca: !!usuario.salida,
+                                          estadoMarcaje,
+                                        });
+                                        const dashClass = getMarcajeDashClass(
+                                          justificacionDelDia,
+                                          asuetoDelDia,
+                                          comisionDelDia,
+                                        );
                                         return (
                                           <>
                                       <span className={MARCaje_FILA_CLASS}>
                                         <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
                                         {usuario.entrada 
                                           ? (
-                                            <span className={entradaEsTarde ? ENTRADA_TARDE_TIME_CLASS : MARCaje_HORA_CLASS}>
+                                            <span className={entradaHoraClass}>
                                               {format(new Date(usuario.entrada.created_at), 'hh:mm aa', { locale: es })}
                                             </span>
                                           )
                                           : esperandoJustificaciones
                                             ? <TiempoSkeleton />
-                                            : <span className={`${textClass} font-normal`}>--:--</span>}
+                                            : <span className={`${dashClass} font-normal`}>--:--</span>}
                                       </span>
                                       <span className="text-gray-300 dark:text-neutral-700">|</span>
                                       <span className={MARCaje_FILA_CLASS}>
                                         <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
                                         {usuario.salida 
                                           ? (
-                                            <span className={MARCaje_HORA_CLASS}>
+                                            <span className={salidaHoraClass}>
                                               {format(new Date(usuario.salida.created_at), 'hh:mm aa', { locale: es })}
                                             </span>
                                           )
                                           : esperandoJustificaciones
                                             ? <TiempoSkeleton />
-                                            : <span className={`${textClass} font-normal`}>--:--</span>}
+                                            : <span className={`${dashClass} font-normal`}>--:--</span>}
                                       </span>
                                           </>
                                         );
@@ -747,8 +797,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                     </div>
                                   )}
                                 </div>
-                                {/* Columna 1/4: Justificación */}
-                                <div className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0">
+                                <div className={JUSTIFICACION_COL_CLASS}>
                                     <JustificacionBtn
                                       justificacion={esAsueto ? null : justificacionDelDia}
                                       asueto={asuetoDelDia}
@@ -781,8 +830,8 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                     ) : (
                       <tr>
                         <td colSpan={colSpanCount} className="px-3 py-2">
-                          <div className="flex items-center gap-1">
-                          <div className="flex-1 min-w-0">
+                          <div className={MARCaje_JUSTIFICACION_GRID_CLASS}>
+                          <div className="min-w-0">
                               {esperandoJustificaciones ? (
                                 <MarcajeSkeleton />
                               ) : renderMarcajeSinRegistro(
@@ -796,7 +845,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                   : null
                               )}
                             </div>
-                            <div className="w-[38%] sm:w-[32%] min-w-[6.75rem] flex-shrink-0 cursor-pointer">
+                            <div className={`${JUSTIFICACION_COL_CLASS} cursor-pointer`}>
                               <JustificacionBtn
                                 justificacion={esAsueto ? null : justificacionDelDia}
                                 asueto={asuetoDelDia}
@@ -832,9 +881,10 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
       />
 
       {comisionPreview && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setComisionPreview(null); }}
+        <ModalPortal
+          open={!!comisionPreview}
+          onClose={() => setComisionPreview(null)}
+          className="p-4"
         >
           <div className="bg-white dark:bg-neutral-950 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <VerComision
@@ -850,7 +900,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
               onAprobar={() => {}}
             />
           </div>
-        </div>
+        </ModalPortal>
       )}
 
       {mapaComisionRegistros && (
@@ -863,5 +913,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
         />
       )}
     </div>
+    </>
   );
 }

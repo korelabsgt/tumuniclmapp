@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Calendar } from 'lucide-react';
-import { obtenerCitacionPendienteActual, confirmarCitacion } from './forms/citacionActions';
+import { confirmarCitacion } from './forms/citacionActions';
+import { useCitacionPendiente } from './forms/hooks';
+import { BLOQUEOS_GLOBALES_KEY } from "@/components/layout/bloqueos/hooks";
+import { useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 
 const formatearFecha = (fechaStr: string) => {
@@ -22,22 +25,9 @@ const formatearFecha = (fechaStr: string) => {
 };
 
 export default function BloqueoCitacion() {
-  const [citacion, setCitacion] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: citacion, isLoading: loading } = useCitacionPendiente();
   const [confirming, setConfirming] = useState(false);
-
-  useEffect(() => {
-    const fetchCitacion = async () => {
-      setLoading(true);
-      const result = await obtenerCitacionPendienteActual();
-      if (result.success && result.data) {
-        setCitacion(result.data);
-      }
-      setLoading(false);
-    };
-
-    fetchCitacion();
-  }, []);
 
   if (loading || !citacion) return null;
 
@@ -55,8 +45,16 @@ export default function BloqueoCitacion() {
         background: '#18181b',
         color: '#ffffff'
       });
-      // Remove the block
-      setCitacion(null);
+      queryClient.setQueryData(BLOQUEOS_GLOBALES_KEY, (prev: {
+        citacion: unknown;
+        actividad: unknown;
+        mensajePermiso: unknown;
+        solicitudJefe: unknown;
+      } | undefined) =>
+        prev ? { ...prev, citacion: null } : prev,
+      );
+      void queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
+      void queryClient.invalidateQueries({ queryKey: ['citaciones'] });
     } else {
       Swal.fire({
         title: 'Error',

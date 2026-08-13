@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -12,10 +12,11 @@ import { Plus, Clock, Users, Trash2, Edit, Search } from 'lucide-react';
 import BotonVolver from '@/components/ui/botones/BotonVolver';
 
 import useUserData from '@/hooks/sesion/useUserData';
-import { fetchHorarios, eliminarHorario } from './actions';
+import { eliminarHorario } from './actions';
 import type { Horario } from './actions';
 import FormularioHorario from './FormHorarios';
 import AsignarUsuario from './AsignarUsuarios'; 
+import { useHorarios } from './hooks'; 
 
 const formatTime = (timeString: string | null) => {
   if (!timeString) return 'N/A';
@@ -96,8 +97,7 @@ function ListaHorarios({ horarios, onEditar, onEliminar, onAbrirAsignar }: Lista
 
 export default function Horarios() {
   const router = useRouter();
-  const [horarios, setHorarios] = useState<Horario[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { horarios, loading, refetch: handleFetchHorarios } = useHorarios();
   const [horarioAEditar, setHorarioAEditar] = useState<Horario | null>(null);
   
   const [isModalAsignarOpen, setIsModalAsignarOpen] = useState(false);
@@ -132,17 +132,6 @@ export default function Horarios() {
     return filteredBySearch;
 
   }, [horarios, rol, searchTerm]);
-
-  const handleFetchHorarios = useCallback(async () => {
-    setLoading(true);
-    const data = await fetchHorarios();
-    setHorarios(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    handleFetchHorarios();
-  }, [handleFetchHorarios]);
 
   const handleEditar = (horario: Horario) => {
     setHorarioAEditar(horario);

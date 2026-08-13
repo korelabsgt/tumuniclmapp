@@ -9,14 +9,18 @@ import {
   cambiarEstado,
   eliminarTarea,
   duplicarTarea,
-  actualizarArchivosTarea
+  actualizarArchivosTarea,
 } from "./actions";
 import { TipoVistaTareas, NewTaskState, ChecklistItem, ArchivoAdjunto } from "./types";
+import { BLOQUEOS_GLOBALES_KEY, useBloqueosGlobales } from "@/components/layout/bloqueos/hooks";
 
-const KEYS = {
+export const TAREAS_KEYS = {
   gestor: (vista: string) => ["gestor-tareas", vista],
-  all: ["gestor-tareas"] 
+  all: ["gestor-tareas"],
+  pendiente: ["bloqueo-actividad-pendiente"],
 };
+
+const KEYS = TAREAS_KEYS;
 
 const FIVE_MINUTES = 1000 * 60 * 5;
 
@@ -32,7 +36,10 @@ export const useGestorData = (tipoVista: TipoVistaTareas, initialData: any) => {
 export const useTareaMutations = () => {
   const queryClient = useQueryClient();
 
-  const invalidar = () => queryClient.invalidateQueries({ queryKey: KEYS.all });
+  const invalidar = () => {
+    queryClient.invalidateQueries({ queryKey: KEYS.all });
+    queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
+  };
 
   const crear = useMutation({
     mutationFn: (data: NewTaskState) => crearTarea(data),
@@ -71,3 +78,13 @@ export const useTareaMutations = () => {
 
   return { crear, actualizar, actualizarChecklist, cambiarStatus, eliminar, duplicar, actualizarArchivos };
 };
+
+export function useActividadPendiente() {
+  const { data, isLoading, refetch } = useBloqueosGlobales();
+
+  return {
+    data: data?.actividad ?? null,
+    isLoading,
+    refetch,
+  };
+}

@@ -10,6 +10,7 @@ import { format, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "react-toastify";
 import { Button } from "@/components/ui/button";
+import { ModalPortal } from "@/components/ui/modal-portal";
 
 interface Props {
   permiso: PermisoEmpleado | null;
@@ -59,7 +60,7 @@ export default function PreviewPermiso({ permiso, isOpen, onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <ModalPortal open={isOpen} onClose={onClose} className="p-4">
       {/* PermisoTemplate oculto — solo para generar la imagen al descargar */}
       <div style={{ position: "absolute", left: "-9999px", top: 0, opacity: 0, pointerEvents: "none" }}>
         <PermisoTemplate ref={templateRef} permiso={permiso} />
@@ -233,6 +234,6 @@ export default function PreviewPermiso({ permiso, isOpen, onClose }: Props) {
           </Button>
         </div>
       </div>
-    </div>
+    </ModalPortal>
   );
 }

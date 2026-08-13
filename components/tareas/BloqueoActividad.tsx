@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { CheckCircle2, Calendar, ClipboardList } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
-import { obtenerActividadPendienteConfirmacion, confirmarActividad } from './actions';
+import { confirmarActividad } from './actions';
+import { useActividadPendiente, TAREAS_KEYS } from './hooks';
+import { BLOQUEOS_GLOBALES_KEY } from '@/components/layout/bloqueos/hooks';
 import { ACTIVIDAD_PENDIENTE_REFRESH } from '@/components/push/Listener';
 import Swal from 'sweetalert2';
 import { useTheme } from 'next-themes';
@@ -40,46 +42,26 @@ export default function BloqueoActividad() {
   const queryClient = useQueryClient();
   const pathname = usePathname();
   const { resolvedTheme } = useTheme();
-  const [actividad, setActividad] = useState<ActividadPendiente | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data, isLoading: loading, refetch } = useActividadPendiente();
+  const actividad = (data as ActividadPendiente | null) ?? null;
   const [confirming, setConfirming] = useState(false);
-
-  const fetchActividad = useCallback(async (silent = false) => {
-    if (!silent) setLoading(true);
-
-    try {
-      const result = await obtenerActividadPendienteConfirmacion();
-      if (result.success && result.data) {
-        setActividad(result.data as ActividadPendiente);
-      } else {
-        setActividad(null);
-      }
-    } finally {
-      if (!silent) setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchActividad();
-  }, [fetchActividad]);
 
   useEffect(() => {
     if (pathname === '/protected/actividades') {
-      fetchActividad(true);
+      void refetch();
     }
-  }, [pathname, fetchActividad]);
+  }, [pathname, refetch]);
 
   useEffect(() => {
-    const onRefresh = () => fetchActividad(true);
+    const onRefresh = () => {
+      void refetch();
+    };
 
     window.addEventListener(ACTIVIDAD_PENDIENTE_REFRESH, onRefresh);
-    window.addEventListener('focus', onRefresh);
-
     return () => {
       window.removeEventListener(ACTIVIDAD_PENDIENTE_REFRESH, onRefresh);
-      window.removeEventListener('focus', onRefresh);
     };
-  }, [fetchActividad]);
+  }, [refetch]);
 
   if (loading || !actividad) return null;
 
@@ -111,7 +93,14 @@ export default function BloqueoActividad() {
       }
 
       const confirmedAt = result.confirmed_at || new Date().toISOString();
-      setActividad(null);
+      queryClient.setQueryData(BLOQUEOS_GLOBALES_KEY, (prev: {
+        citacion: unknown;
+        actividad: unknown;
+        mensajePermiso: unknown;
+        solicitudJefe: unknown;
+      } | undefined) =>
+        prev ? { ...prev, actividad: null } : prev,
+      );
 
       await Swal.fire({
         title: 'Confirmado',
@@ -125,8 +114,9 @@ export default function BloqueoActividad() {
         ...swalTheme,
       });
 
-      queryClient.invalidateQueries({ queryKey: ['gestor-tareas'] });
-      await fetchActividad(true);
+      queryClient.invalidateQueries({ queryKey: TAREAS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: BLOQUEOS_GLOBALES_KEY });
+      await refetch();
     } finally {
       setConfirming(false);
     }

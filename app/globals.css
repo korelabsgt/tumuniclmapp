@@ -116,6 +116,31 @@
     opacity: 0;
     }
   }
+  @keyframes colon-blink {
+  0%, 45% {
+    opacity: 1;
+    }
+  50%, 95% {
+    opacity: 0.2;
+    }
+  100% {
+    opacity: 1;
+    }
+  }
+  .animate-colon-blink {
+    animation: colon-blink 1.2s ease-in-out infinite;
+  }
+  @keyframes cintillo-pulse {
+  0%, 100% {
+    filter: brightness(1);
+    }
+  50% {
+    filter: brightness(1.5);
+    }
+  }
+  .animate-cintillo-pulse {
+    animation: cintillo-pulse 1.8s ease-in-out infinite;
+  }
 }
   ::view-transition-old(root), ::view-transition-new(root) {
     animation: none;

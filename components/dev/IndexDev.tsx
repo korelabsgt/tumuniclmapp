@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Pencil, AlertTriangle, Clock, Loader2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MensajeDev } from './zod';
-import { getMensajesDev } from './actions/mensajes';
 import MensajeDevModal from './modals/MensajeDevModal';
 import { getNivelConfig } from './nivelConfig';
 import { MensajeFormateado } from './mensajeFormato';
+import { useMensajesDev, useInvalidarMensajesDev } from './lib/hooks';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -47,8 +47,8 @@ function formatFechaCreado(fechaStr: string) {
 }
 
 export default function IndexDev() {
-  const [mensajes, setMensajes] = useState<MensajeDev[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: mensajes = [], isLoading: loading } = useMensajesDev();
+  const invalidarMensajes = useInvalidarMensajesDev();
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<MensajeDev | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,16 +59,7 @@ export default function IndexDev() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const cargarMensajes = useCallback(async () => {
-    setLoading(true);
-    const data = await getMensajesDev();
-    setMensajes(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    cargarMensajes();
-  }, [cargarMensajes]);
+  const cargarMensajes = invalidarMensajes;
 
   useEffect(() => {
     setCurrentPage((p) => Math.min(p, totalPages));

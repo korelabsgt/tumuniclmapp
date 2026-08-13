@@ -4,43 +4,66 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { urlBase64ToUint8Array } from "@/app/utils/vapid";
 import { Bell, BellOff, Loader2, Check } from "lucide-react";
+import { motion } from "framer-motion";
 
-export default function SubscribeButton({ userId }: { userId: string | null }) {
+export default function SubscribeButton({
+  userId,
+  className,
+  variant = "default",
+  reserveSlot = false,
+}: {
+  userId: string | null;
+  className?: string;
+  variant?: "default" | "plain";
+  reserveSlot?: boolean;
+}) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [statusConfirmed, setStatusConfirmed] = useState(false);
   const supabase = createClient();
 
   useEffect(() => {
     setMounted(true);
+    setStatusConfirmed(false);
+
     const checkStatus = async () => {
-      if ("serviceWorker" in navigator && userId) {
-        try {
-          const reg = await navigator.serviceWorker.getRegistration();
-          if (reg) {
-            const sub = await reg.pushManager.getSubscription();
-            if (sub) {
-              const subJson = JSON.parse(JSON.stringify(sub));
+      if (!("serviceWorker" in navigator) || !userId) {
+        setIsSubscribed(false);
+        setStatusConfirmed(true);
+        return;
+      }
 
-              const { data } = await supabase
-                .from("push_subscriptions")
-                .select("id")
-                .match({ user_id: userId })
-                .contains("subscription", subJson)
-                .maybeSingle();
+      try {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) {
+            const subJson = JSON.parse(JSON.stringify(sub));
 
-              if (data) {
-                setIsSubscribed(true);
-              } else {
-                await sub.unsubscribe();
-                setIsSubscribed(false);
-              }
+            const { data } = await supabase
+              .from("push_subscriptions")
+              .select("id")
+              .match({ user_id: userId })
+              .contains("subscription", subJson)
+              .maybeSingle();
+
+            if (data) {
+              setIsSubscribed(true);
+            } else {
+              await sub.unsubscribe();
+              setIsSubscribed(false);
             }
           }
-        } catch (e) {}
+        }
+      } catch (e) {
+        setIsSubscribed(false);
+      } finally {
+        setStatusConfirmed(true);
       }
     };
-    checkStatus();
+
+    void checkStatus();
   }, [userId]);
 
   const handleToggle = async () => {
@@ -98,15 +121,39 @@ export default function SubscribeButton({ userId }: { userId: string | null }) {
     }
   };
 
+  const esPlano = variant === "plain";
+
+  if (!mounted || !statusConfirmed || !userId) {
+    if (reserveSlot) {
+      return (
+        <div
+          className={`h-10 w-10 shrink-0 ${className ?? ""}`}
+          aria-hidden
+        />
+      );
+    }
+    return null;
+  }
+
   return (
-    <button
+    <motion.div
+      initial={{ opacity: 0, scale: 0.88 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <button
+      type="button"
       onClick={handleToggle}
-      disabled={!mounted || loading || !userId}
-      className={`h-14 w-full flex items-center justify-center rounded-md border transition-all duration-200 ${
-        isSubscribed
-          ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
-          : "bg-gray-100 dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-neutral-800"
-      }`}
+      disabled={loading}
+      className={`flex items-center justify-center transition-all duration-200 cursor-pointer disabled:cursor-not-allowed ${
+        esPlano
+          ? "h-10 w-10 bg-transparent border-0 shadow-none hover:opacity-80"
+          : `h-14 w-full rounded-md border ${
+              isSubscribed
+                ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-100 dark:hover:bg-yellow-900/30"
+                : "bg-zinc-100 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-gray-500 dark:text-gray-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+            }`
+      } ${className ?? ""}`}
       title={
         isSubscribed ? "Desactivar notificaciones" : "Activar notificaciones"
       }
@@ -116,13 +163,20 @@ export default function SubscribeButton({ userId }: { userId: string | null }) {
       ) : isSubscribed ? (
         <div className="relative">
           <Bell className="h-7 w-7 text-yellow-500 dark:text-yellow-400 fill-yellow-500 dark:fill-yellow-400" />
-          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white dark:border-neutral-900">
-            <Check className="h-2.5 w-2.5 text-white stroke-[4]" />
-          </div>
+          {!esPlano ? (
+            <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white dark:border-neutral-900">
+              <Check className="h-2.5 w-2.5 text-white stroke-[4]" />
+            </div>
+          ) : (
+            <div className="absolute -top-0.5 -right-0.5 bg-green-500 rounded-full p-0.5">
+              <Check className="h-2 w-2 text-white stroke-[4]" />
+            </div>
+          )}
         </div>
       ) : (
         <BellOff className="h-7 w-7 text-gray-400 dark:text-gray-500" />
       )}
-    </button>
+      </button>
+    </motion.div>
   );
 }

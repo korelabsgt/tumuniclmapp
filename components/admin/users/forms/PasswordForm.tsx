@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Typewriter } from "react-simple-typewriter";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CheckCircle2, Circle, Eye, EyeOff } from "lucide-react";
@@ -15,11 +16,36 @@ type Props = {
 };
 
 const REQUISITOS = [
-  { id: "longitud", label: "8 car.", cumple: (v: string) => v.length >= 8 },
-  { id: "mayus", label: "A-Z", cumple: (v: string) => /[A-Z]/.test(v) },
-  { id: "minus", label: "a-z", cumple: (v: string) => /[a-z]/.test(v) },
-  { id: "numero", label: "123", cumple: (v: string) => /\d/.test(v) },
-  { id: "simbolo", label: "@#$", cumple: (v: string) => /[^A-Za-z0-9]/.test(v) },
+  {
+    id: "mayus",
+    label: "A-Z",
+    descripcion: "Al menos una mayúscula",
+    cumple: (v: string) => /[A-Z]/.test(v),
+  },
+  {
+    id: "minus",
+    label: "a-z",
+    descripcion: "Al menos una minúscula",
+    cumple: (v: string) => /[a-z]/.test(v),
+  },
+  {
+    id: "numero",
+    label: "123",
+    descripcion: "Al menos un número",
+    cumple: (v: string) => /\d/.test(v),
+  },
+  {
+    id: "simbolo",
+    label: "@#$",
+    descripcion: "Al menos un símbolo",
+    cumple: (v: string) => /[^A-Za-z0-9]/.test(v),
+  },
+  {
+    id: "longitud",
+    label: "8 car.",
+    descripcion: "Al menos 8 caracteres",
+    cumple: (v: string) => v.length >= 8,
+  },
 ] as const;
 
 function nivelFortaleza(cumplidos: number) {
@@ -73,6 +99,17 @@ export default function PasswordSection({
 }: Props) {
   const [mostrarPass, setMostrarPass] = useState(false);
   const [mostrarConfirm, setMostrarConfirm] = useState(false);
+  const [requisitoActivo, setRequisitoActivo] = useState<string | null>(null);
+  const [requisitoFijado, setRequisitoFijado] = useState(false);
+  const [flechaLeft, setFlechaLeft] = useState(0);
+  const [faltanteConDelay, setFaltanteConDelay] = useState<
+    (typeof REQUISITOS)[number] | undefined
+  >(undefined);
+  const [desajusteConDelay, setDesajusteConDelay] = useState(false);
+  const barraRef = useRef<HTMLDivElement>(null);
+  const requisitosRef = useRef<HTMLDivElement>(null);
+  const activoRef = useRef<string | null>(null);
+  const fijadoRef = useRef(false);
 
   const contraseñasCoinciden = password === confirmar;
   const requisitos = REQUISITOS.map((r) => ({
@@ -94,6 +131,62 @@ export default function PasswordSection({
           ? "border-emerald-600 dark:border-emerald-400"
           : "border-zinc-300 dark:border-zinc-700"
     }`;
+  const requisitoVisible = requisitos.find((r) => r.id === requisitoActivo);
+  const hayIntento = password.length > 0;
+  const primerFaltante = hayIntento
+    ? requisitos.find((r) => !r.ok)
+    : undefined;
+  const primerFaltanteId = primerFaltante?.id;
+
+  useEffect(() => {
+    if (!primerFaltanteId) {
+      setFaltanteConDelay(undefined);
+      return;
+    }
+    const t = setTimeout(() => {
+      setFaltanteConDelay(REQUISITOS.find((r) => r.id === primerFaltanteId));
+    }, 500);
+    return () => clearTimeout(t);
+  }, [primerFaltanteId]);
+
+  useEffect(() => {
+    if (!confirmar || contraseñasCoinciden) {
+      setDesajusteConDelay(false);
+      return;
+    }
+    const t = setTimeout(() => setDesajusteConDelay(true), 500);
+    return () => clearTimeout(t);
+  }, [confirmar, contraseñasCoinciden]);
+
+  const marcarRequisito = (id: string, el: HTMLElement) => {
+    const barra = barraRef.current;
+    if (!barra) return;
+    const barraRect = barra.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    setFlechaLeft(elRect.left - barraRect.left + elRect.width / 2);
+    activoRef.current = id;
+    setRequisitoActivo(id);
+  };
+
+  const cerrarRequisito = () => {
+    activoRef.current = null;
+    fijadoRef.current = false;
+    setRequisitoActivo(null);
+    setRequisitoFijado(false);
+  };
+
+  useEffect(() => {
+    const onPointerDown = (e: PointerEvent) => {
+      if (!activoRef.current) return;
+      const nodo = e.target;
+      if (nodo instanceof Node && requisitosRef.current?.contains(nodo)) {
+        return;
+      }
+      cerrarRequisito();
+    };
+    document.addEventListener("pointerdown", onPointerDown, true);
+    return () => document.removeEventListener("pointerdown", onPointerDown, true);
+  }, []);
 
   return (
     <div className="flex flex-col gap-5">
@@ -121,7 +214,7 @@ export default function PasswordSection({
           </button>
         </div>
 
-        <div className="mt-2.5">
+        <div className="relative mt-2.5" ref={barraRef}>
           <div className="mb-1.5 flex items-center justify-between text-xs font-medium">
             <span className="text-zinc-600 dark:text-zinc-400">
               Fortaleza de contraseña
@@ -134,24 +227,88 @@ export default function PasswordSection({
               style={{ width: `${porcentaje}%` }}
             />
           </div>
-          <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
-            {requisitos.map((r) => (
-              <span
-                key={r.id}
-                className={`inline-flex items-center gap-1.5 text-xs font-medium ${
-                  r.ok
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-zinc-400 dark:text-zinc-500"
-                }`}
-              >
-                {r.ok ? (
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                ) : (
-                  <Circle className="h-4 w-4 shrink-0" />
-                )}
-                {r.label}
-              </span>
-            ))}
+          <div
+            ref={requisitosRef}
+            className="relative mt-3"
+            onMouseLeave={() => {
+              if (!fijadoRef.current) {
+                activoRef.current = null;
+                setRequisitoActivo(null);
+              }
+            }}
+          >
+            {requisitoVisible ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-full z-20 mb-2">
+                <div
+                  className={`relative min-h-[2.25rem] rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-center text-xs font-medium shadow-sm dark:border-zinc-600 dark:bg-zinc-900 ${
+                    requisitoVisible.ok
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : hayIntento
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-zinc-500 dark:text-zinc-400"
+                  }`}
+                >
+                  <Typewriter
+                    key={requisitoVisible.id}
+                    words={[requisitoVisible.descripcion]}
+                    loop={1}
+                    cursor={false}
+                    typeSpeed={38}
+                    deleteSpeed={0}
+                  />
+                  <span
+                    className="absolute top-full left-0 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rotate-45 border-r border-b border-zinc-200 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900"
+                    style={{ left: flechaLeft }}
+                  />
+                </div>
+              </div>
+            ) : null}
+            <div className="flex w-full items-center justify-evenly">
+              {requisitos.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  onMouseEnter={(e) => {
+                    marcarRequisito(r.id, e.currentTarget);
+                  }}
+                  onFocus={(e) => {
+                    marcarRequisito(r.id, e.currentTarget);
+                  }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    fijadoRef.current = true;
+                    setRequisitoFijado(true);
+                    marcarRequisito(r.id, e.currentTarget);
+                  }}
+                  className={`inline-flex cursor-pointer items-center gap-1.5 text-xs font-medium ${
+                    r.ok
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : hayIntento
+                        ? "text-red-600 dark:text-red-400"
+                        : "text-zinc-400 dark:text-zinc-500"
+                  }`}
+                >
+                  {r.ok ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  ) : (
+                    <Circle className="h-4 w-4 shrink-0" />
+                  )}
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            {faltanteConDelay ? (
+              <p className="mt-2 min-h-[1rem] text-center text-[11px] font-medium text-red-600 dark:text-red-400">
+                <Typewriter
+                  key={faltanteConDelay.id}
+                  words={[faltanteConDelay.descripcion]}
+                  loop={1}
+                  cursor={false}
+                  typeSpeed={38}
+                  deleteSpeed={0}
+                />
+              </p>
+            ) : null}
           </div>
         </div>
       </div>
@@ -183,9 +340,16 @@ export default function PasswordSection({
             {mostrarConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
           </button>
         </div>
-        {confirmar && !contraseñasCoinciden ? (
-          <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
-            Las contraseñas no coinciden.
+        {desajusteConDelay ? (
+          <p className="mt-1.5 min-h-[1.25rem] text-sm text-red-600 dark:text-red-400">
+            <Typewriter
+              key="contrasenas-no-coinciden"
+              words={["Las contraseñas no coinciden."]}
+              loop={1}
+              cursor={false}
+              typeSpeed={38}
+              deleteSpeed={0}
+            />
           </p>
         ) : null}
       </div>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 
 export function useAppChromeOffset() {
   const [topOffset, setTopOffset] = useState(80);
-  const [bottomOffset, setBottomOffset] = useState(160);
+  const [bottomOffset, setBottomOffset] = useState(120);
 
   const measure = useCallback(() => {
     const nav = document.getElementById("app-main-nav");
@@ -21,7 +21,7 @@ export function useAppChromeOffset() {
       return;
     }
 
-    setBottomOffset(160);
+    setBottomOffset(120);
   }, []);
 
   useEffect(() => {

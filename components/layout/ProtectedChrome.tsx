@@ -16,7 +16,7 @@ export default function ProtectedChrome({
   children: React.ReactNode;
 }) {
   const { bottomOffset } = useAppChromeOffset();
-  const footerSpace = bottomOffset > 0 ? bottomOffset : 160;
+  const footerSpace = bottomOffset > 0 ? bottomOffset : 120;
 
   return (
     <>

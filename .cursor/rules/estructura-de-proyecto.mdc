@@ -79,49 +79,25 @@ export default function Page() {
 
 ## Modales
 
-Implementación única en `components/ui/general-modal.tsx`. Los formularios reutilizan `ModalShell`, inputs y footer; el feedback con `toast` de react-toastify y `modalActionMessage` de `modal-toast.ts`.
+Implementación única en `components/ui/general-modal.tsx`. Estilo visual alineado con `components/login/Form.tsx` (ver `.cursor/rules/diseno-ux-ui.mdc`). Los formularios reutilizan `ModalShell`, `ModalInput`, `ModalCancel`, `ModalSubmit` y footer; el feedback con `toast` de react-toastify y `modalActionMessage` de `modal-toast.ts`.
 
 ### Comportamiento
 
-- Portal al `body` con `createPortal`; `z-index` por encima del header de la app.
+- Portal al `body` con `createPortal`; `z-[200]` por encima del header de la app.
 - Bloquear scroll del `body` mientras el modal esté abierto.
-- **Escritorio:** modal centrado, ancho máximo moderado, padding alrededor.
-- **Teléfono:** pantalla completa (`100dvh`), sin padding exterior, sin borde animado; panel plano zinc de borde a borde.
+- **Escritorio:** modal centrado, `max-w-2xl`, padding alrededor.
+- **Teléfono:** pantalla completa (`100dvh`), sin padding exterior; panel plano zinc de borde a borde.
 
-### Overlay
+### Contenedor y campos
 
-- Escritorio: tinte `zinc-700` semitransparente con `backdrop-blur` suave; sin capa blanca.
-- Teléfono: fondo sólido zinc (claro `zinc-100` / oscuro `zinc-900`), sin blur.
-
-### Contenedor (escritorio)
-
-- Esquinas muy redondeadas.
-- Borde animado celeste (gradiente radial que sigue el cursor) solo en escritorio; en teléfono no aplica.
-- Sombra ligera.
-
-### Superficies y tema
-
-- Tema claro: modal en `zinc-100` uniforme en header y cuerpo.
-- Tema oscuro: header/footer en `zinc-800`; zona de campos en `zinc-900`.
-- Tonos zinc alineados con header y layout de la app.
-
-### Header
-
-- Título en `foreground`; subtítulo en mayúsculas pequeñas, tracking amplio, color apagado.
-- Sin icono decorativo ni línea divisoria.
-- Cierre únicamente con X celeste, área táctil amplia, hover suave.
-- En teléfono: respetar safe area superior (notch).
-
-### Campos
-
-- Sin placeholder.
-- Borde celeste de marca, grosor visible; fondo transparente; texto `foreground`; focus ring celeste.
-- Ancho completo del contenedor (especialmente en teléfono).
+- Card zinc con `rounded-3xl`, borde fino zinc y `shadow-xl`; **sin** borde animado ni magic card.
+- Campos: `h-12 rounded-xl border border-zinc-300`, focus ring `#0066cc`; usar constantes `MODAL_*_CLASS` de `general-modal.tsx`.
+- Header con título en acento `#0066cc`, `CintilloInstitucional` y cierre X zinc.
 
 ### Acción principal
 
-- Un solo botón «Guardar», centrado en el footer.
-- Estilo outline esmeralda (sin relleno sólido).
+- Footer con `ModalCancel` + `ModalSubmit` (texto contextual permitido, p. ej. «Crear evaluación»).
+- Botón primario zinc (`MODAL_PRIMARY_BTN_CLASS`), no outline esmeralda.
 - Footer con safe area inferior en teléfono.
 - Todos los botones con `cursor-pointer`; deshabilitado con `cursor-not-allowed`.
 
@@ -136,5 +112,6 @@ Implementación única en `components/ui/general-modal.tsx`. Los formularios reu
 
 - `Dialog` de shadcn u otros modales ad hoc para formularios del sistema.
 - SweetAlert en formularios que usen `ModalShell`.
+- Bordes animados, magic card o `border-2` celeste en modales.
 - Fondos negro/blanco fijos fuera de la paleta zinc.
 - Alturas mínimas artificiales en el cuerpo del modal.

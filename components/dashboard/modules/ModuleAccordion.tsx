@@ -3,7 +3,6 @@
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import AnimatedIcon from '@/components/ui/AnimatedIcon';
 import { accordionPanelTransition } from './accordion-motion';
-import { useLordIconHoverLoop } from '../lib/useLordIconHoverLoop';
 import { MODULE_ICON_STRIP_CLASS } from './module-icon-strip';
 
 interface ModuleAccordionProps {
@@ -27,18 +26,17 @@ export default function ModuleAccordion({
   onToggle,
   disabled = false,
 }: ModuleAccordionProps) {
-  const { trigger, onPointerEnter, onPointerLeave } = useLordIconHoverLoop();
+  const buttonId = `module-accordion-${id}`;
 
   if (!children || (Array.isArray(children) && children.length === 0)) return null;
 
   return (
     <div className="w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:shadow-none">
       <button
+        id={buttonId}
         type="button"
         onClick={() => onToggle(id)}
         disabled={disabled}
-        onMouseEnter={onPointerEnter}
-        onMouseLeave={onPointerLeave}
         className={`flex w-full items-stretch text-left transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-70 ${isOpen ? 'border-b border-gray-200 dark:border-zinc-700/80' : ''}`}
       >
         <div
@@ -47,7 +45,8 @@ export default function ModuleAccordion({
           <AnimatedIcon
             iconKey={iconKey}
             className="h-full w-full"
-            trigger={trigger}
+            trigger="loop-on-hover"
+            target={`#${buttonId}`}
           />
         </div>
 

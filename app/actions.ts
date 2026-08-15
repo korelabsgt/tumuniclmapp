@@ -7,6 +7,10 @@ import { redirect } from "next/navigation";
 import supabaseAdmin from '@/utils/supabase/admin';
 import { registrarLogServer } from '@/utils/registrarLogServer';
 import { obtenerFechaYFormatoGT } from '@/utils/formatoFechaGT';
+import {
+  passwordEstaVencida,
+  yaEsHoraDeRevisar,
+} from '@/components/cambiar-contrasena/lib/password-age';
 
 type FormState = {
   type: 'error' | 'success' | null;
@@ -113,6 +117,16 @@ export const signInAction = async (prevState: FormState, formData: FormData): Pr
     fecha,
     user_id: user?.id,
   });
+
+  if (user && passwordEstaVencida(user) && yaEsHoraDeRevisar()) {
+    await registrarLogServer({
+      accion: 'PASSWORD_VENCIDA',
+      descripcion: 'Inicio de sesión con contraseña vencida.',
+      nombreModulo: 'SISTEMA',
+      fecha,
+      user_id: user.id,
+    });
+  }
 
   if (rol === 'SUPER') {
     redirect('/protected/admin');

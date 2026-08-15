@@ -3,29 +3,92 @@ alwaysApply: true
 ---
 # Diseño UX/UI
 
+Referencia principal: `components/login/Form.tsx`. La UI es limpia, con superficies zinc y acento institucional azul `#0066cc` (`dark:text-blue-400`). Sin bordes gruesos celestes, sin magic card ni bordes animados que sigan el cursor.
+
+## Color de acento
+
+- Títulos y acentos: `text-[#0066cc] dark:text-blue-400`
+- Focus en campos: `focus-visible:ring-1 focus-visible:ring-[#0066cc]` (claro) / `dark:focus-visible:ring-blue-400` (oscuro)
+- Cintillo institucional (`CintilloInstitucional`) como separador de marca en login, modales y vistas principales de módulo
+- Prohibido como estilo base: `#1a95d3`, `border-2 border-celeste-trifinio`, gradientes radiales animados en contenedores
+
 ## Tema y fondos
 
 - Tema claro: fondo de página blanco; cards y componentes en zinc claro (`zinc-50`, header/layout `zinc-100`).
 - Tema oscuro: fondo de página `zinc-900`; cards y componentes en un tono de gris más claro (`zinc-800`).
-- La UI usa tonos zinc para fondos de superficie.
+- La UI usa tonos zinc para fondos de superficie; evitar negro/blanco puros fuera de inputs puntuales.
 
-## Botones (UI general)
+## Cards y contenedores
 
-- Texto y borde en color de acento del proyecto (primary o token de marca).
-- Fondo: `bg-zinc-100` en tema claro, `dark:bg-zinc-800` en tema oscuro.
-- Hover: un tono más claro u oscuro según el tema.
-- Siempre `cursor-pointer`; deshabilitado: `cursor-not-allowed`.
+Patrón de card (login y módulos):
+
+```
+rounded-3xl border border-zinc-200 bg-zinc-50 shadow-xl
+dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-black/50
+```
+
+- Esquinas `rounded-3xl`; borde fino zinc; sombra ligera.
+- Listas e ítems: `rounded-2xl border border-zinc-200 bg-white` con hover suave (`hover:bg-zinc-50`), sin cambiar borde a color de acento.
+- Estados vacíos: misma paleta zinc, texto `text-muted-foreground`.
+
+## Campos de formulario
+
+Patrón compartido (login, modales, páginas de módulo):
+
+```
+h-12 rounded-xl border border-zinc-300 bg-white px-4 text-sm
+focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0
+dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400
+```
+
+- Labels: `text-sm font-semibold text-zinc-800 dark:text-white`
+- Sin placeholder salvo casos legacy justificados.
+- Textareas: misma paleta; `min-h-[88px]`, `rounded-xl`.
+- Selección activa (opciones, tabs): fondo zinc + ring sutil del acento, no `border-2` ni fondos sky/celeste.
+
+## Botones
+
+### Primario
+
+```
+h-12 rounded-xl bg-zinc-200 px-5 text-sm font-semibold text-zinc-900
+hover:bg-zinc-300
+dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600
+```
+
+### Secundario / cancelar
+
+```
+h-12 rounded-xl border border-zinc-300 bg-white px-5 text-sm font-semibold text-zinc-700
+hover:bg-zinc-50
+dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800
+```
+
+### Destructivo
+
+- Borde rojo fino (`border-red-300` / `dark:border-red-800`), fondo blanco o zinc; sin `border-2` grueso.
+
+### General
+
+- Siempre `cursor-pointer`; deshabilitado: `cursor-not-allowed disabled:opacity-50`.
+- Reutilizar constantes exportadas de `general-modal.tsx` (`MODAL_*_CLASS`) o tokens locales del módulo (p. ej. `lib/ui.ts`) en lugar de duplicar clases largas.
+
+## Pestañas y navegación interna
+
+- Pills `rounded-xl`, sin borde de acento.
+- Activa: `bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-white`
+- Inactiva: `text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/80`
 
 ## Modales
 
-Implementación única: `components/ui/general-modal.tsx` (`ModalShell`, `ModalInput`, `ModalLabel`, `ModalTextarea`, `ModalSubmit`, `ModalFooter`, `ModalConfirmDelete`).
+Implementación única: `components/ui/general-modal.tsx` (`ModalShell`, `ModalInput`, `ModalLabel`, `ModalTextarea`, `ModalSelect`, `ModalSubmit`, `ModalCancel`, `ModalFooter`, `ModalConfirmDelete`).
 
 ### Comportamiento
 
 - Portal al `body` con `createPortal`; `z-[200]` por encima del header.
 - Bloquear scroll del `body` mientras el modal esté abierto.
-- **Escritorio:** modal centrado, ancho máximo moderado, padding alrededor.
-- **Teléfono:** pantalla completa (`100dvh`), sin padding exterior, sin borde animado; panel plano zinc de borde a borde.
+- **Escritorio:** modal centrado, `max-w-2xl`, padding alrededor (`sm:p-4`).
+- **Teléfono:** pantalla completa (`100dvh`), sin padding exterior; panel plano zinc de borde a borde.
 
 ### Overlay
 
@@ -34,26 +97,28 @@ Implementación única: `components/ui/general-modal.tsx` (`ModalShell`, `ModalI
 
 ### Contenedor (escritorio)
 
-- Esquinas muy redondeadas (`rounded-3xl`).
-- Borde animado celeste solo en escritorio: padding 3px y gradiente radial (`#1a95d3` → `#5ec8f0`) que sigue el cursor; interior sólido encima.
-- Sombra ligera.
+- Esquinas `rounded-3xl`.
+- Borde fino zinc (`border-zinc-200` / `dark:border-zinc-700`) y `shadow-xl`.
+- **Sin** borde animado, gradiente radial ni padding decorativo alrededor del panel.
 
 ### Superficies
 
-- Tema claro: `bg-zinc-100` uniforme en header y cuerpo.
-- Tema oscuro: header/footer `zinc-800`; zona de campos `zinc-900`.
+- Tema claro: `bg-zinc-50` en el panel; header y cuerpo coherentes con zinc.
+- Tema oscuro: panel `bg-zinc-800`; footer con `border-t border-zinc-700`.
 
 ### Header y cierre
 
-- Título `foreground`; subtítulo `text-[10px] uppercase tracking-widest text-muted-foreground`.
-- Sin icono decorativo ni línea divisoria.
-- Cierre únicamente con X celeste, área táctil amplia, hover suave.
+- Título en acento `#0066cc` / `dark:text-blue-400`; subtítulo `text-[10px] uppercase tracking-widest text-muted-foreground`.
+- `CintilloInstitucional` debajo del título en el header del modal.
+- Sin icono decorativo ni línea divisoria extra.
+- Cierre con X zinc (`text-zinc-400`, hover en fondo zinc), área táctil amplia.
 - En teléfono: safe area superior e inferior.
 
 ### Campos y acción
 
-- Sin placeholder; `border-2 border-celeste-trifinio`; fondo transparente; focus ring celeste; ancho completo.
-- Un solo botón «Guardar» centrado en el footer; outline esmeralda (`border-emerald-600` / `dark:border-emerald-400`), sin relleno sólido.
+- Usar `ModalInput`, `ModalLabel`, etc. con las clases exportadas (`MODAL_FIELD_CLASS`, etc.).
+- Footer: `ModalFooter` con `ModalCancel` + `ModalSubmit` (o texto contextual del botón principal, p. ej. «Crear evaluación»).
+- Botón primario zinc (no outline esmeralda).
 
 ### Feedback en modales
 
@@ -63,9 +128,9 @@ Implementación única: `components/ui/general-modal.tsx` (`ModalShell`, `ModalI
 
 ### Prohibido en modales
 
-- `Dialog` de shadcn u otros modales ad hoc para formularios.
+- `Dialog` de shadcn u otros modales ad hoc para formularios del sistema.
 - SweetAlert en formularios con `ModalShell`.
-- Botones Cancelar, Atrás o segundo control de cierre.
+- Bordes animados, magic card o `border-2` celeste en contenedor o campos.
 - Fondos negro/blanco fijos fuera de la paleta zinc; `min-h-*` artificial en el body.
 - `ToastContainer` duplicado por página (usar el global del layout).
 

@@ -6,6 +6,7 @@ interface AnimatedIconProps {
   iconKey: string;
   className?: string;
   trigger?: string;
+  target?: string;
   delay?: string | number;
   speed?: string | number;
   primaryColor?: string;
@@ -17,6 +18,7 @@ export default function AnimatedIcon({
   iconKey,
   className = 'w-24 h-24',
   trigger = 'hover',
+  target,
   delay = 0,
   speed = 2,
   primaryColor,
@@ -50,6 +52,9 @@ export default function AnimatedIcon({
     }
 
     icon.setAttribute('trigger', trigger ?? 'hover');
+    if (target) {
+      icon.setAttribute('target', target);
+    }
 
     container.innerHTML = '';
     container.appendChild(icon);
@@ -64,7 +69,12 @@ export default function AnimatedIcon({
     const icon = iconRef.current;
     if (!icon) return;
     icon.setAttribute('trigger', trigger ?? 'hover');
-  }, [trigger]);
+    if (target) {
+      icon.setAttribute('target', target);
+    } else {
+      icon.removeAttribute('target');
+    }
+  }, [trigger, target]);
 
   return <div ref={containerRef} className={`${className} [&_lord-icon]:!h-full [&_lord-icon]:!w-full`} />;
 }

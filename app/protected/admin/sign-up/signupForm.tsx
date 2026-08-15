@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { UserPlus } from "lucide-react";
+import { ChevronsLeft, UserPlus } from "lucide-react";
 import Swal from "sweetalert2";
 import { signUpAction } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -118,14 +119,23 @@ export function SignupForm() {
   }, []);
 
   return (
-    <div className="flex w-full justify-center px-4 py-6 sm:py-8">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.45 }}
-        className="relative w-full max-w-[400px] rounded-3xl border border-zinc-200 bg-zinc-50 px-7 py-8 shadow-xl transition-colors dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-black/50 sm:px-8 sm:py-9"
-      >
-        <h1 className="mb-6 text-center text-[1.65rem] font-bold leading-tight tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-[1.85rem]">
+    <div className="flex w-full justify-center px-4 pb-6 pt-1 sm:pb-8">
+      <div className="flex w-full max-w-[400px] flex-col">
+        <Link
+          href="/protected/admin/users"
+          className="mb-2 inline-flex cursor-pointer items-center gap-1.5 self-start text-sm font-semibold text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
+        >
+          <ChevronsLeft className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+          Volver
+        </Link>
+
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          className="relative w-full rounded-3xl border border-zinc-200 bg-zinc-50 px-7 pb-8 pt-4 shadow-xl transition-colors dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-black/50 sm:px-8 sm:pb-9 sm:pt-5"
+        >
+          <h1 className="mb-6 text-center text-[1.65rem] font-bold leading-tight tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-[1.85rem]">
           Nuevo Usuario
         </h1>
 
@@ -223,7 +233,8 @@ export function SignupForm() {
             Crear Usuario
           </SubmitButton>
         </form>
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

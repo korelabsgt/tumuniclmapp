@@ -1,0 +1,33 @@
+import { z } from "zod";
+
+const REQUISITO_PASSWORD =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+export const CAMBIAR_CONTRASENA_ERRORES = {
+  NO_SESSION: "Debe iniciar sesión.",
+  WRONG_PASSWORD: "La contraseña actual no es correcta.",
+  SAME_PASSWORD: "La nueva contraseña debe ser distinta a la actual.",
+  UPDATE_FAILED: "No se pudo actualizar la contraseña.",
+  INVALID: "Revise los datos del formulario.",
+} as const;
+
+export type CodigoCambiarContrasena = keyof typeof CAMBIAR_CONTRASENA_ERRORES;
+
+export const cambiarContrasenaSchema = z
+  .object({
+    actual: z.string().min(1, CAMBIAR_CONTRASENA_ERRORES.INVALID),
+    nueva: z
+      .string()
+      .regex(REQUISITO_PASSWORD, CAMBIAR_CONTRASENA_ERRORES.INVALID),
+    confirmar: z.string().min(1, CAMBIAR_CONTRASENA_ERRORES.INVALID),
+  })
+  .refine((datos) => datos.nueva === datos.confirmar, {
+    message: CAMBIAR_CONTRASENA_ERRORES.INVALID,
+    path: ["confirmar"],
+  })
+  .refine((datos) => datos.nueva !== datos.actual, {
+    message: CAMBIAR_CONTRASENA_ERRORES.SAME_PASSWORD,
+    path: ["nueva"],
+  });
+
+export type CambiarContrasenaInput = z.infer<typeof cambiarContrasenaSchema>;

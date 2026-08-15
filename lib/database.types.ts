@@ -441,6 +441,155 @@ export type Database = {
           },
         ]
       }
+      detalle_evaluaciones: {
+        Row: {
+          aspecto_id: string
+          evaluacion_id: string
+          fecha_creacion: string
+          id: string
+          opcion_id: string
+          puntuacion_obtenida: number
+        }
+        Insert: {
+          aspecto_id: string
+          evaluacion_id: string
+          fecha_creacion?: string
+          id?: string
+          opcion_id: string
+          puntuacion_obtenida: number
+        }
+        Update: {
+          aspecto_id?: string
+          evaluacion_id?: string
+          fecha_creacion?: string
+          id?: string
+          opcion_id?: string
+          puntuacion_obtenida?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "detalle_evaluaciones_aspecto_id_fkey"
+            columns: ["aspecto_id"]
+            isOneToOne: false
+            referencedRelation: "aspectos_evaluacion"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_evaluaciones_evaluacion_id_fkey"
+            columns: ["evaluacion_id"]
+            isOneToOne: false
+            referencedRelation: "evaluaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "detalle_evaluaciones_opcion_id_fkey"
+            columns: ["opcion_id"]
+            isOneToOne: false
+            referencedRelation: "opciones_aspecto"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      formularios_evaluacion: {
+        Row: {
+          activo: boolean
+          fecha_creacion: string
+          fecha_fin: string
+          fecha_inicio: string
+          id: string
+          nombre: string
+        }
+        Insert: {
+          activo?: boolean
+          fecha_creacion?: string
+          fecha_fin: string
+          fecha_inicio: string
+          id?: string
+          nombre: string
+        }
+        Update: {
+          activo?: boolean
+          fecha_creacion?: string
+          fecha_fin?: string
+          fecha_inicio?: string
+          id?: string
+          nombre?: string
+        }
+        Relationships: []
+      }
+      evaluaciones: {
+        Row: {
+          esta_completada: boolean
+          evaluado_id: string
+          evaluador_id: string
+          fecha_creacion: string
+          formulario_id: string | null
+          id: string
+          tipo_evaluacion: string
+        }
+        Insert: {
+          esta_completada?: boolean
+          evaluado_id: string
+          evaluador_id: string
+          fecha_creacion?: string
+          formulario_id?: string | null
+          id?: string
+          tipo_evaluacion: string
+        }
+        Update: {
+          esta_completada?: boolean
+          evaluado_id?: string
+          evaluador_id?: string
+          fecha_creacion?: string
+          formulario_id?: string | null
+          id?: string
+          tipo_evaluacion?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluaciones_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios_evaluacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aspectos_evaluacion: {
+        Row: {
+          descripcion: string
+          dirigido_a: string
+          fecha_creacion: string
+          formulario_id: string | null
+          id: string
+          titulo: string
+        }
+        Insert: {
+          descripcion?: string
+          dirigido_a?: string
+          fecha_creacion?: string
+          formulario_id?: string | null
+          id?: string
+          titulo: string
+        }
+        Update: {
+          descripcion?: string
+          dirigido_a?: string
+          fecha_creacion?: string
+          formulario_id?: string | null
+          id?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aspectos_evaluacion_formulario_id_fkey"
+            columns: ["formulario_id"]
+            isOneToOne: false
+            referencedRelation: "formularios_evaluacion"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       horarios: {
         Row: {
           dias: number[] | null
@@ -759,6 +908,41 @@ export type Database = {
             columns: ["id_usuario_registro"]
             isOneToOne: false
             referencedRelation: "vista_usuarios_detalle"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opciones_aspecto: {
+        Row: {
+          aspecto_id: string
+          descripcion: string
+          fecha_creacion: string
+          id: string
+          letra_calificacion: string
+          valor_puntuacion: number
+        }
+        Insert: {
+          aspecto_id: string
+          descripcion?: string
+          fecha_creacion?: string
+          id?: string
+          letra_calificacion: string
+          valor_puntuacion: number
+        }
+        Update: {
+          aspecto_id?: string
+          descripcion?: string
+          fecha_creacion?: string
+          id?: string
+          letra_calificacion?: string
+          valor_puntuacion?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opciones_aspecto_aspecto_id_fkey"
+            columns: ["aspecto_id"]
+            isOneToOne: false
+            referencedRelation: "aspectos_evaluacion"
             referencedColumns: ["id"]
           },
         ]

@@ -18,7 +18,7 @@ export function CintilloInstitucional({
 }: CintilloInstitucionalProps) {
   return (
     <div
-      className={`flex h-1.5 w-full shrink-0 sm:h-2 ${className}`}
+      className={`flex h-1.5 w-full shrink-0 overflow-hidden sm:h-2 ${className}`}
       aria-hidden
     >
       {SEGMENTOS.map((segmento) => (

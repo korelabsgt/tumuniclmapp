@@ -1,12 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import HeaderAuth from "@/components/header-auth";
 import LogoLink from "@/components/ui/LogoLink";
+import AppBreadcrumb from "@/components/layout/AppBreadcrumb";
 import useUserData from "@/hooks/sesion/useUserData";
 import { CHROME_BG_CLASS } from "@/components/layout/chrome";
 
@@ -51,25 +50,29 @@ export default function AppHeader() {
       id="app-main-nav"
       className={`w-full shrink-0 ${CHROME_BG_CLASS}`}
     >
-      <div className="flex w-full items-center justify-between gap-3 px-3 py-2 sm:px-5">
-        <div className="flex min-w-0 flex-col justify-center gap-2 overflow-hidden">
-          <LogoLink />
-          <AnimatePresence initial={false}>
-            {mostrarVolver && (
-              <motion.div key="volver-inicio" {...fadeSuave}>
-                <Link
-                  href={rutaInicio(rol)}
-                  className="inline-flex w-fit cursor-pointer items-center gap-2 text-sm font-semibold text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
-                >
-                  <LogOut className="h-4 w-4 rotate-180" />
-                  Volver a inicio
-                </Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
+      <div className="flex w-full flex-col px-3 py-2 sm:px-5">
+        <div className="flex w-full items-center justify-between gap-3">
+          <div className="min-w-0">
+            <LogoLink />
+          </div>
+          <div className="shrink-0">
+            <HeaderAuth
+              menuAbierto={menuAbierto}
+              onMenuOpenChange={setMenuAbierto}
+            />
+          </div>
         </div>
-
-        <HeaderAuth menuAbierto={menuAbierto} onMenuOpenChange={setMenuAbierto} />
+        <AnimatePresence initial={false}>
+          {mostrarVolver && (
+            <motion.div
+              key="breadcrumb"
+              className="min-w-0 pt-1"
+              {...fadeSuave}
+            >
+              <AppBreadcrumb homeHref={rutaInicio(rol)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </nav>
   );

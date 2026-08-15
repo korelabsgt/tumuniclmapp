@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useActionState } from "react";
 import { signInAction } from "@/app/actions";
 import { SubmitButton } from "@/components/submit-button";
@@ -10,7 +10,7 @@ import { PAGE_BG_CLASS } from "@/components/layout/chrome";
 import { CintilloInstitucional } from "@/components/ui/cintillo-institucional";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { Eye, EyeOff, User } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 import { Typewriter } from "react-simple-typewriter";
 import Image from "next/image";
 import {
@@ -26,6 +26,9 @@ const initialState = {
 const inputClass =
   "h-12 rounded-xl border-zinc-300 bg-white px-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:placeholder:text-zinc-500 dark:focus-visible:ring-blue-400 [&:-webkit-autofill]:[-webkit-text-fill-color:#18181b] [&:-webkit-autofill]:shadow-[0_0_0_1000px_#fff_inset] dark:[&:-webkit-autofill]:[-webkit-text-fill-color:white] dark:[&:-webkit-autofill]:shadow-[0_0_0_1000px_#18181b_inset]";
 
+const inputErrorClass =
+  "border-red-400 focus-visible:ring-red-400 dark:border-red-600 dark:focus-visible:ring-red-500";
+
 export function LoginForm() {
   const [state, formAction] = useActionState(signInAction, initialState);
   const [verPassword, setVerPassword] = useState(false);
@@ -33,6 +36,22 @@ export function LoginForm() {
     extraerUsuario(state?.email || ""),
   );
   const [passwordValue, setPasswordValue] = useState("");
+  const [errorNonce, setErrorNonce] = useState(0);
+  const fieldControls = useAnimation();
+  const prevStateRef = useRef(state);
+
+  const hasError = state?.type === "error";
+
+  useEffect(() => {
+    if (state?.type === "error" && state !== prevStateRef.current) {
+      prevStateRef.current = state;
+      setErrorNonce((n) => n + 1);
+      void fieldControls.start({
+        x: [0, -10, 10, -8, 8, -4, 4, 0],
+        transition: { duration: 0.45, ease: "easeInOut" },
+      });
+    }
+  }, [state, fieldControls]);
 
   const correoCompleto = correoDesdeUsuario(usuarioValue);
 
@@ -72,7 +91,7 @@ export function LoginForm() {
         <CintilloInstitucional className="mb-6 rounded-full" />
 
         <form action={formAction} className="flex flex-col gap-5">
-          {state?.type === "error" && (
+          {hasError && (
             <div className="flex min-h-[50px] items-center justify-center rounded-xl border border-red-200 bg-red-100 p-3 text-center text-sm text-red-700 dark:border-red-800/50 dark:bg-red-950/40 dark:text-red-300">
               <Typewriter
                 words={[state.message || ""]}
@@ -80,67 +99,73 @@ export function LoginForm() {
                 cursor
                 cursorStyle="_"
                 typeSpeed={40}
-                key={state.message}
+                key={errorNonce}
               />
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label
-              htmlFor="email"
-              className="text-sm font-semibold text-zinc-800 dark:text-white"
-            >
-              Usuario
-            </Label>
-            <input type="hidden" name="email" value={correoCompleto} />
-            <Input
-              id="email"
-              type="text"
-              inputMode="text"
-              autoComplete="username"
-              autoCapitalize="none"
-              autoCorrect="off"
-              spellCheck={false}
-              placeholder="Tu usuario"
-              required
-              className={inputClass}
-              value={usuarioValue}
-              onChange={(e) => setUsuarioValue(extraerUsuario(e.target.value))}
-              onKeyDown={(e) => {
-                if (e.key === "@" || e.key === " ") {
-                  e.preventDefault();
-                }
-              }}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label
-              htmlFor="password"
-              className="text-sm font-semibold text-zinc-800 dark:text-white"
-            >
-              Contraseña
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                name="password"
-                type={verPassword ? "text" : "password"}
-                required
-                className={`${inputClass} pr-11`}
-                value={passwordValue}
-                onChange={(e) => setPasswordValue(e.target.value)}
-              />
-              <button
-                type="button"
-                onClick={() => setVerPassword(!verPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-white"
-                aria-label="Mostrar/Ocultar contraseña"
+          <motion.div
+            animate={fieldControls}
+            className="flex flex-col gap-5"
+          >
+            <div className="space-y-2">
+              <Label
+                htmlFor="email"
+                className="text-sm font-semibold text-zinc-800 dark:text-white"
               >
-                {verPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
+                Usuario
+              </Label>
+              <input type="hidden" name="email" value={correoCompleto} />
+              <Input
+                id="email"
+                type="text"
+                inputMode="text"
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                placeholder="Tu usuario"
+                required
+                className={`${inputClass} ${hasError ? inputErrorClass : ""}`}
+                value={usuarioValue}
+                onChange={(e) => setUsuarioValue(extraerUsuario(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key === "@" || e.key === " ") {
+                    e.preventDefault();
+                  }
+                }}
+              />
             </div>
-          </div>
+
+            <div className="space-y-2">
+              <Label
+                htmlFor="password"
+                className="text-sm font-semibold text-zinc-800 dark:text-white"
+              >
+                Contraseña
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={verPassword ? "text" : "password"}
+                  placeholder="Tu contraseña"
+                  required
+                  className={`${inputClass} pr-11 ${hasError ? inputErrorClass : ""}`}
+                  value={passwordValue}
+                  onChange={(e) => setPasswordValue(e.target.value)}
+                />
+                <button
+                  type="button"
+                  onClick={() => setVerPassword(!verPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-white"
+                  aria-label="Mostrar/Ocultar contraseña"
+                >
+                  {verPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+          </motion.div>
 
           <SubmitButton
             pendingText="Verificando..."

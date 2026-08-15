@@ -32,7 +32,7 @@ export default function ProtectedChrome({
         <DevBanner />
         <AppHeader />
 
-        <div className={`relative ${PAGE_BG_CLASS}`}>
+        <div className={`relative flex flex-1 flex-col ${PAGE_BG_CLASS}`}>
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
             <DotPattern
               width={20}
@@ -46,7 +46,7 @@ export default function ProtectedChrome({
           </div>
 
           <main
-            className="relative z-10 mx-auto flex w-full flex-col gap-5 pt-2"
+            className="relative z-10 mx-auto flex w-full flex-1 flex-col gap-5 pt-2"
             style={{ paddingBottom: CONTENT_SCROLL_END_GAP_PX }}
           >
             {children}

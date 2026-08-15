@@ -58,6 +58,7 @@ export default function ModulesView({
             "PERMISOS",
             "SOLICITUDCOMBUSTIBLE",
             "MIS_BIENES",
+            "EVALUACIONES",
           ].includes(m.id)
         )
           return true;
@@ -68,6 +69,7 @@ export default function ModulesView({
             "PERMISOS_JEFE",
             "ACTIVIDADES_JEFE",
             "INVENTARIO_JEFE",
+            "EVALUACIONES_JEFE",
           ].includes(m.id)
         )
           return esjefe;
@@ -85,6 +87,7 @@ export default function ModulesView({
             "ACTIVIDADES_GESTION",
             "RRHH",
             "ORGANOS_RRHH",
+            "EVALUACIONES_GESTION",
           ].includes(m.id)
         ) {
           return (
@@ -219,7 +222,7 @@ export default function ModulesView({
       modulosGestion.filter(
         (m) =>
           !m.subgrupo &&
-          !["ACTIVIDADES", "PERMISOS", "DEV"].includes(m.id),
+          !["ACTIVIDADES", "PERMISOS", "EVALUACIONES", "DEV"].includes(m.id),
       ),
     [modulosGestion],
   );

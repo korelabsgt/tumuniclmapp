@@ -2,10 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import AnimatedIcon from '@/components/ui/AnimatedIcon';
+import { ModuleIcon } from '@/components/ui/ModuleIcon';
+import { cn } from '@/lib/utils';
 import { registrarLog } from '@/utils/registrarLog';
 import { TODOS_LOS_MODULOS } from '../constants';
-import { useLordIconHoverLoop } from '../lib/useLordIconHoverLoop';
 import { MODULE_ICON_STRIP_CLASS } from './module-icon-strip';
 import { NAVIGATION_DIM_CLASS } from './navigation-dim';
 import { ACCORDION_FADE_MS } from './accordion-motion';
@@ -26,9 +26,7 @@ export default function ModuleCard({
   const router = useRouter();
   const isLoadingThisModule = loadingModule === modulo.id;
   const isDummy = modulo.ruta === '#';
-  const { trigger, onPointerEnter, onPointerLeave } = useLordIconHoverLoop(
-    isLoadingThisModule,
-  );
+  const buttonId = `module-card-${modulo.id}`;
 
   const irA = (nombreModulo: string, ruta: string) => {
     if (ruta === '#') return;
@@ -49,7 +47,10 @@ export default function ModuleCard({
   return (
     <motion.div
       className={`w-full py-1 transition-[opacity,filter] ease-[cubic-bezier(0.4,0,0.2,1)] ${isLoadingThisModule ? 'relative z-10' : ''} ${loadingModule && !isLoadingThisModule ? NAVIGATION_DIM_CLASS : ''}`}
-      style={{ transitionDuration: `${ACCORDION_FADE_MS}ms` }}
+      style={{
+        transitionDuration: `${ACCORDION_FADE_MS}ms`,
+        transformOrigin: 'center center',
+      }}
       animate={
         isLoadingThisModule
           ? { scale: [1, 1.025, 1, 1.015, 1] }
@@ -60,22 +61,29 @@ export default function ModuleCard({
           ? { duration: 2.4, repeat: Infinity, ease: 'easeInOut' }
           : { duration: 0.2 }
       }
-      style={{ transformOrigin: 'center center' }}
     >
       <button
+        id={buttonId}
         type="button"
         className={`group relative flex w-full items-stretch overflow-hidden rounded-2xl border border-gray-200 bg-white text-left shadow-sm transition-colors dark:border-zinc-700/80 dark:bg-zinc-800/90 dark:shadow-none hover:border-gray-300 dark:hover:border-zinc-500/50 ${isDummy ? 'cursor-default' : 'cursor-pointer'}`}
         onClick={loadingModule ? undefined : () => irA(modulo.id, modulo.ruta)}
-        onMouseEnter={onPointerEnter}
-        onMouseLeave={onPointerLeave}
       >
         <div
-          className={`flex w-[4.25rem] shrink-0 items-center justify-center self-stretch rounded-l-2xl px-3 ${MODULE_ICON_STRIP_CLASS}`}
+          className={cn(
+            'relative w-[4.25rem] shrink-0 self-stretch overflow-hidden rounded-l-2xl',
+            modulo.iconoLottie
+              ? 'px-0'
+              : 'flex items-center justify-center px-3',
+            MODULE_ICON_STRIP_CLASS,
+          )}
         >
-          <AnimatedIcon
-            iconKey={modulo.iconoKey}
+          <ModuleIcon
+            iconoKey={modulo.iconoKey}
+            iconoLottie={modulo.iconoLottie}
+            lottieSpeed={modulo.lottieSpeed}
             className="h-full w-full"
-            trigger={trigger}
+            trigger={isLoadingThisModule ? 'loop' : 'loop-on-hover'}
+            target={isLoadingThisModule ? undefined : `#${buttonId}`}
             {...modulo.colorProps}
           />
         </div>

@@ -1,8 +1,27 @@
-// 1. DEFINICIÓN DEL TIPO 'Vistas' (Esto es lo que faltaba)
 export type Vistas = "modulos" | "asistencia" | "comisiones";
 
-// 2. ARRAY DE MÓDULOS (Con la configuración de Actividades y Permisos)
-export const TODOS_LOS_MODULOS = [
+export type ModuloColorProps = {
+  primaryColor?: string;
+  secondaryColor?: string;
+  tertiaryColor?: string;
+  primaryFrom?: string;
+};
+
+export type ModuloDashboard = {
+  id: string;
+  permiso: string;
+  titulo: string;
+  descripcion: string;
+  ruta: string;
+  iconoKey: string;
+  iconoLottie?: string;
+  lottieSpeed?: number;
+  colorProps?: ModuloColorProps;
+  categoria: string;
+  subgrupo?: string;
+};
+
+export const TODOS_LOS_MODULOS: ModuloDashboard[] = [
   {
     id: "EDUCACION",
     permiso: "EDUCACION",
@@ -51,6 +70,19 @@ export const TODOS_LOS_MODULOS = [
     descripcion: "Consulta y control de tus bienes asignados.",
     ruta: "/protected/inventario/propias",
     iconoKey: "gbzbfgyf",
+    categoria: "Gestión Administrativa",
+    subgrupo: "Gestión Propia",
+  },
+  {
+    id: "EVALUACIONES",
+    permiso: "EVALUACIONES",
+    titulo: "Evaluaciones de Desempeño",
+    descripcion: "Autoevaluación y evaluación de su jefe o de su personal.",
+    ruta: "/protected/evaluaciones-desempeno",
+    iconoKey: "svsvmktd",
+    iconoLottie:
+      "https://lottie.host/ffe0f547-a629-4478-9ac0-6d6a689ed440/xNhwc5Y81u.lottie",
+    lottieSpeed: 1.2,
     categoria: "Gestión Administrativa",
     subgrupo: "Gestión Propia",
   },
@@ -173,6 +205,19 @@ export const TODOS_LOS_MODULOS = [
     ruta: "/protected/admin/dependencias",
     iconoKey: "vrxmikgh",
     colorProps: { primaryColor: "#ebe6ef", secondaryColor: "#b26836" },
+    categoria: "Gestión Administrativa",
+    subgrupo: "Recursos Humanos",
+  },
+  {
+    id: "EVALUACIONES_GESTION",
+    permiso: "RRHH",
+    titulo: "Evaluaciones de Desempeño",
+    descripcion: "Formularios, asignaciones y resultados de todo el personal.",
+    ruta: "/protected/evaluaciones-desempeno/rrhh",
+    iconoKey: "svsvmktd",
+    iconoLottie:
+      "https://lottie.host/ffe0f547-a629-4478-9ac0-6d6a689ed440/xNhwc5Y81u.lottie",
+    lottieSpeed: 1.2,
     categoria: "Gestión Administrativa",
     subgrupo: "Recursos Humanos",
   },

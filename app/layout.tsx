@@ -13,6 +13,7 @@ import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
 import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
 import BloqueoPermisoMensaje from "@/components/permisos/BloqueoPermisoMensaje";
+import BloqueoContrasenaVencida from "@/components/cambiar-contrasena/BloqueoContrasenaVencida";
 import ProtectedChrome from "@/components/layout/ProtectedChrome";
 import { PAGE_BG_CLASS } from "@/components/layout/chrome";
 
@@ -73,6 +74,7 @@ export default async function RootLayout({
                 <BloqueoActividad />
                 <BloqueoPermisoMensaje />
                 <BloqueoSolicitudesJefes />
+                <BloqueoContrasenaVencida />
 
                 {isStandalonePage ? (
                   <main className="w-full flex-1 overflow-y-auto">{children}</main>
@@ -81,8 +83,8 @@ export default async function RootLayout({
                 )}
 
                 <ToastContainer
-                  position="top-right"
-                  autoClose={5000}
+                  position="top-center"
+                  autoClose={3000}
                   theme="colored"
                 />
                 <script

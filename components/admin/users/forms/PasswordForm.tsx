@@ -13,6 +13,13 @@ type Props = {
   onConfirmarChange: (val: string) => void;
   inputClassName?: string;
   labelClassName?: string;
+  passwordLabel?: string;
+  confirmarLabel?: string;
+  idPrefix?: string;
+  passwordName?: string;
+  confirmarName?: string;
+  passwordAutoComplete?: string;
+  confirmarAutoComplete?: string;
 };
 
 const REQUISITOS = [
@@ -96,7 +103,16 @@ export default function PasswordSection({
   onConfirmarChange,
   inputClassName,
   labelClassName,
+  passwordLabel = "Contraseña",
+  confirmarLabel = "Confirmar contraseña",
+  idPrefix = "",
+  passwordName = "password",
+  confirmarName = "confirmar",
+  passwordAutoComplete,
+  confirmarAutoComplete,
 }: Props) {
+  const idPassword = `${idPrefix}password`;
+  const idConfirmar = `${idPrefix}confirmar`;
   const [mostrarPass, setMostrarPass] = useState(false);
   const [mostrarConfirm, setMostrarConfirm] = useState(false);
   const [requisitoActivo, setRequisitoActivo] = useState<string | null>(null);
@@ -191,14 +207,15 @@ export default function PasswordSection({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <Label htmlFor="password" className={`mb-1.5 block ${etiqueta}`}>
-          Contraseña
+        <Label htmlFor={idPassword} className={`mb-1.5 block ${etiqueta}`}>
+          {passwordLabel}
         </Label>
         <div className="relative">
           <Input
-            id="password"
+            id={idPassword}
             type={mostrarPass ? "text" : "password"}
-            name="password"
+            name={passwordName}
+            autoComplete={passwordAutoComplete}
             value={password}
             onChange={(e) => onPasswordChange(e.target.value)}
             required
@@ -314,14 +331,15 @@ export default function PasswordSection({
       </div>
 
       <div>
-        <Label htmlFor="confirmar" className={`mb-1.5 block ${etiqueta}`}>
-          Confirmar contraseña
+        <Label htmlFor={idConfirmar} className={`mb-1.5 block ${etiqueta}`}>
+          {confirmarLabel}
         </Label>
         <div className="relative">
           <Input
-            id="confirmar"
+            id={idConfirmar}
             type={mostrarConfirm ? "text" : "password"}
-            name="confirmar"
+            name={confirmarName}
+            autoComplete={confirmarAutoComplete}
             value={confirmar}
             onChange={(e) => onConfirmarChange(e.target.value)}
             required

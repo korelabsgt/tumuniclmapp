@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { LogOut, Megaphone, MoreVertical, X } from "lucide-react";
+import { ChevronsLeft, ChevronsRight, LogOut, Megaphone, MoreVertical, X } from "lucide-react";
 import Swal from "sweetalert2";
 import useUserData from "@/hooks/sesion/useUserData";
 import { useInfoUsuario } from "@/hooks/usuarios/useInfoUsuario";
@@ -17,6 +17,7 @@ import LlamadaAtencionManager from "@/components/admin/users/forms/LlamadaAtenci
 import { ThemeSwitcher } from "@/components/themes/theme-switcher";
 import { useAppChromeOffset } from "@/components/layout/useAppChromeOffset";
 import { CHROME_BG_CLASS } from "@/components/layout/chrome";
+import CambiarContrasenaForm from "@/components/cambiar-contrasena/CambiarContrasenaForm";
 
 function obtenerCargoYOficina(puestoPathJerarquico: string | null | undefined) {
   if (!puestoPathJerarquico) {
@@ -129,6 +130,7 @@ export default function AuthButton({
   const queryClient = useQueryClient();
   const [mostrarTarjeta, setMostrarTarjeta] = useState(false);
   const [mostrarCitacionesFaltas, setMostrarCitacionesFaltas] = useState(false);
+  const [vistaContrasena, setVistaContrasena] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -154,6 +156,12 @@ export default function AuthButton({
     return () => {
       document.body.style.overflow = prev;
     };
+  }, [menuAbierto]);
+
+  useEffect(() => {
+    if (!menuAbierto) {
+      setVistaContrasena(false);
+    }
   }, [menuAbierto]);
 
   const cerrarMenu = () => onMenuOpenChange(false);
@@ -330,42 +338,75 @@ export default function AuthButton({
                 </div>
               </div>
 
-              <MenuSectionHeader
-                titulo="Registros"
-                colorClass="text-[#0066cc] dark:text-blue-400"
-                dotClass="bg-[#0066cc] dark:bg-blue-400"
-              />
-
-              <div className="flex flex-col gap-2">
-                {menuItemsPrincipales.map((item) => (
-                  <MenuItemCard
-                    key={item.id}
-                    item={item}
-                    activo={hovered === item.id}
-                    onHover={() => setHovered(item.id)}
-                    onLeave={() => setHovered(null)}
+              {vistaContrasena ? (
+                <div className="flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => setVistaContrasena(false)}
+                    className="mb-2 inline-flex cursor-pointer items-center gap-1.5 self-start text-sm font-semibold text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
+                  >
+                    <ChevronsLeft className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                    Volver
+                  </button>
+                  <CambiarContrasenaForm
+                    variant="menu"
+                    onSuccess={() => setVistaContrasena(false)}
                   />
-                ))}
-              </div>
+                </div>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setVistaContrasena(true)}
+                    className="mb-4 flex w-full cursor-pointer items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:bg-zinc-100 dark:border-neutral-700 dark:bg-neutral-900/40 dark:hover:bg-zinc-800/80"
+                  >
+                    <span className="text-sm font-semibold text-[#0066cc] dark:text-blue-400">
+                      Cambiar contraseña
+                    </span>
+                    <ChevronsRight
+                      className="h-4 w-4 shrink-0 text-[#0066cc] dark:text-blue-400"
+                      strokeWidth={2.5}
+                    />
+                  </button>
 
-              <MenuSectionHeader
-                titulo="Mi Cuenta"
-                colorClass="text-violet-500"
-                dotClass="bg-violet-500"
-                className="mt-4"
-              />
-
-              <div className="flex flex-col gap-2">
-                {menuItemsSecundarios.map((item) => (
-                  <MenuItemCard
-                    key={item.id}
-                    item={item}
-                    activo={hovered === item.id}
-                    onHover={() => setHovered(item.id)}
-                    onLeave={() => setHovered(null)}
+                  <MenuSectionHeader
+                    titulo="Registros"
+                    colorClass="text-[#0066cc] dark:text-blue-400"
+                    dotClass="bg-[#0066cc] dark:bg-blue-400"
                   />
-                ))}
-              </div>
+
+                  <div className="flex flex-col gap-2">
+                    {menuItemsPrincipales.map((item) => (
+                      <MenuItemCard
+                        key={item.id}
+                        item={item}
+                        activo={hovered === item.id}
+                        onHover={() => setHovered(item.id)}
+                        onLeave={() => setHovered(null)}
+                      />
+                    ))}
+                  </div>
+
+                  <MenuSectionHeader
+                    titulo="Mi Cuenta"
+                    colorClass="text-violet-500"
+                    dotClass="bg-violet-500"
+                    className="mt-4"
+                  />
+
+                  <div className="flex flex-col gap-2">
+                    {menuItemsSecundarios.map((item) => (
+                      <MenuItemCard
+                        key={item.id}
+                        item={item}
+                        activo={hovered === item.id}
+                        onHover={() => setHovered(item.id)}
+                        onLeave={() => setHovered(null)}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </motion.aside>
         </>

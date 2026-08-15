@@ -442,15 +442,15 @@ export default function AuthButton({
             className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 cursor-pointer text-foreground hover:text-[#0066cc] dark:hover:text-blue-400 transition-colors focus-visible:outline-none"
           >
             <span className="relative w-7 h-7 sm:w-6 sm:h-6 block">
-              <AnimatePresence mode="wait" initial={false}>
+              <AnimatePresence initial={false}>
                 {menuAbierto ? (
                   <motion.span
                     key="x"
                     className="absolute inset-0 flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    initial={{ opacity: 0, scale: 0.55, rotate: -90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                    transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <X className="h-6 w-6" strokeWidth={2.25} />
                   </motion.span>
@@ -458,10 +458,10 @@ export default function AuthButton({
                   <motion.span
                     key="dots"
                     className="absolute inset-0 flex items-center justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.15, ease: "easeOut" }}
+                    initial={{ opacity: 0, scale: 0.55, rotate: 90 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    exit={{ opacity: 0, scale: 0.55, rotate: -90 }}
+                    transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
                   >
                     <MoreVertical className="h-6 w-6" strokeWidth={2.25} />
                   </motion.span>

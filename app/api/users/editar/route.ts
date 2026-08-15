@@ -12,6 +12,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Faltan datos obligatorios' }, { status: 400 });
     }
 
+    const supabase = await createClient();
+    const {
+      data: { user: usuarioEditor },
+    } = await supabase.auth.getUser();
+
+    if (!usuarioEditor) {
+      return NextResponse.json({ error: 'Debe iniciar sesión.' }, { status: 401 });
+    }
+
+    if (
+      usuarioEditor.id === id &&
+      (activo === false || activo === 'false')
+    ) {
+      return NextResponse.json(
+        { error: 'No puede inactivarse a sí mismo.' },
+        { status: 400 },
+      );
+    }
+
     // 1. Obtener datos actuales
     const { data: perfilActual, error: errorPerfilActual } = await supabaseAdmin
       .from('info_usuario')
@@ -136,23 +155,14 @@ export async function POST(req: Request) {
       cambios.push(`Contraseña: actualizada`);
     }
 
-    // 6. Registrar log con usuario en sesión real
     const { fecha } = obtenerFechaYFormatoGT();
-    const supabase = await createClient();
-
-    const {
-      data: { user: usuarioEditor },
-    } = await supabase.auth.getUser();
-
-    const user_id_editor = usuarioEditor?.id;
-    const emailEditor = usuarioEditor?.email ?? 'correo_desconocido';
 
     await registrarLogServer({
       accion: 'EDITAR_USUARIO',
       descripcion: `<br> Se editó al usuario ${email}:<br><br>${cambios.join('<br><br>')}<br><br>`,
       nombreModulo: 'SISTEMA',
       fecha,
-      user_id: user_id_editor,
+      user_id: usuarioEditor.id,
     });
 
     return NextResponse.json({ message: 'Usuario actualizado con éxito' });

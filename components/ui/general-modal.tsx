@@ -14,10 +14,10 @@ import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const MODAL_FIELD_CLASS =
-  "h-12 rounded-xl border-zinc-300 bg-white px-4 text-sm text-zinc-900 focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400";
+  "h-12 rounded-xl border border-zinc-300 bg-white px-4 text-sm text-zinc-900 focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400";
 
 export const MODAL_TEXTAREA_CLASS =
-  "min-h-[88px] rounded-xl border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400";
+  "min-h-[88px] rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm text-zinc-900 focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400";
 
 export const MODAL_LABEL_CLASS =
   "text-sm font-semibold text-zinc-800 dark:text-white";

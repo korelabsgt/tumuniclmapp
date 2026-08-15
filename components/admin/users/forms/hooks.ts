@@ -164,11 +164,10 @@ export function useInfoForm(userId: string) {
     queryKey: queryKey,
     queryFn: () => obtenerInfoUsuario(userId),
     enabled: !!userId,
-    
-   
-    staleTime: 1000 * 60 * 6, 
-    gcTime: 1000 * 60 * 10,   
-    refetchOnWindowFocus: false, 
+    staleTime: 1000 * 60 * 6,
+    gcTime: 1000 * 60 * 10,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   const mutation = useMutation({

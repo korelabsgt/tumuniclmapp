@@ -18,7 +18,7 @@ export default function BloqueoContrasenaVencida() {
   }, [mostrar]);
 
   if (!mostrar || ocultoLocal) return null;
-  if (pathname === "/" || pathname.startsWith("/albergues")) return null;
+  if (pathname === "/" || pathname.startsWith("/albergues") || pathname.startsWith("/restablecer-contrasena")) return null;
 
   return (
     <div

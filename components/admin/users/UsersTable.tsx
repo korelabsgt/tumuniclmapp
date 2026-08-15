@@ -5,12 +5,6 @@ import { useRouter } from "next/navigation";
 import { Usuario } from "@/lib/usuarios/esquemas";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogPanel,
-  Transition,
-  TransitionChild,
-} from "@headlessui/react";
 import { motion, AnimatePresence } from "framer-motion";
 import UsuarioForm from "./forms/UsuarioForm";
 import Swal from "sweetalert2";
@@ -31,7 +25,6 @@ import { useDependencias } from "@/hooks/dependencias/useDependencias";
 import Cargando from "@/components/ui/animations/Cargando";
 import {
   Clock,
-  LogOut,
   Trash2,
   Search,
   ChevronDown,
@@ -44,6 +37,7 @@ import {
 
 // --- 1. IMPORTAMOS EL COMPONENTE DEL INFORME ---
 import InformeEmpleados from "./reportes/InformeEmpleados";
+import { ModalShell } from "@/components/ui/general-modal";
 
 type UsuarioConJerarquia = Usuario & {
   puesto_nombre: string | null;
@@ -727,56 +721,38 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
         onClose={() => setMostrarPlanilla(false)}
       />
 
-      <Transition show={!!usuarioIdSeleccionado} as={Fragment}>
-        <Dialog onClose={() => {}} className="relative z-50">
-          <TransitionChild
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/30 dark:bg-black/70 backdrop-blur-sm" />
-          </TransitionChild>
-          <div className="fixed inset-0 flex items-center justify-center p-4">
-            <DialogPanel className="bg-white dark:bg-neutral-900 rounded-lg w-full max-w-lg min-h-[600px] p-6 shadow-xl border dark:border-neutral-800">
-              <AnimatePresence mode="wait">
-                {usuarioIdSeleccionado && (
-                  <motion.div
-                    key="editar"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <UsuarioForm
-                      id={usuarioIdSeleccionado}
-                      onSuccess={handleSuccess}
-                      onCancel={handleCancel}
-                      rolUsuarioActual={rolActual || ""}
-                      botonEliminar={
-                        rolActual === "SUPER" ? (
-                          <Button
-                            variant="ghost"
-                            onClick={handleEliminarUsuario}
-                            disabled={eliminando}
-                            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2 px-3"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            {eliminando ? "Eliminando..." : "Eliminar"}
-                          </Button>
-                        ) : null
-                      }
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </DialogPanel>
-          </div>
-        </Dialog>
-      </Transition>
+      <ModalShell
+        open={Boolean(usuarioIdSeleccionado)}
+        onClose={handleCancel}
+        title="Editar usuario"
+        subtitle={
+          listaUsuarios.find((u) => u.id === usuarioIdSeleccionado)?.nombre ||
+          listaUsuarios.find((u) => u.id === usuarioIdSeleccionado)?.email ||
+          "Cuenta"
+        }
+      >
+        {usuarioIdSeleccionado ? (
+          <UsuarioForm
+            id={usuarioIdSeleccionado}
+            onSuccess={handleSuccess}
+            onCancel={handleCancel}
+            rolUsuarioActual={rolActual || ""}
+            botonEliminar={
+              rolActual === "SUPER" ? (
+                <Button
+                  variant="ghost"
+                  onClick={handleEliminarUsuario}
+                  disabled={eliminando}
+                  className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/40"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {eliminando ? "Eliminando..." : "Eliminar"}
+                </Button>
+              ) : null
+            }
+          />
+        ) : null}
+      </ModalShell>
     </>
   );
 }

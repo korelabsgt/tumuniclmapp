@@ -1,32 +1,83 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useInfoForm } from './hooks';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { 
-  Phone, Fingerprint, Hash, Shield, 
-  CircleDollarSign, MapPin, Calendar, Loader2 
-} from 'lucide-react';
+import { useLayoutEffect, useMemo, useState } from "react";
+import {
+  Calendar,
+  CircleDollarSign,
+  Fingerprint,
+  Hash,
+  MapPin,
+  Phone,
+  Shield,
+} from "lucide-react";
+import { MODAL_FIELD_CLASS, ModalInput } from "@/components/ui/general-modal";
+import {
+  CAMPO_MONO_CLASS,
+  CAMPO_SUBMIT_BTN_CLASS,
+  CampoFormulario,
+} from "./CampoFormulario";
+import { useInfoForm } from "./hooks";
 
-export default function InfoForm({ userData }: { userData: any }) {
-  const userId = userData?.id || userData?.user_id;
+type InfoFormData = {
+  telefono: string;
+  dpi: string;
+  nit: string;
+  igss: string;
+  cuenta_no: string;
+  direccion: string;
+  nacimiento: string;
+};
 
-  const { usuarioData, isLoadingData, handleSave, isSaving } = useInfoForm(userId);
+type InfoFormUser = {
+  id?: string;
+  user_id?: string;
+  telefono?: string | null;
+  dpi?: string | null;
+  nit?: string | null;
+  igss?: string | null;
+  cuenta_no?: string | null;
+  direccion?: string | null;
+  nacimiento?: string | null;
+};
 
-  const [formData, setFormData] = useState({
-    telefono: '',
-    dpi: '',
-    nit: '',
-    igss: '',
-    cuenta_no: '',
-    direccion: '',
-    nacimiento: '',
+export default function InfoForm({ userData }: { userData: InfoFormUser }) {
+  const userId = userData?.id || userData?.user_id || "";
+
+  const { usuarioData, isLoadingData, handleSave, isSaving } =
+    useInfoForm(userId);
+
+  const [formData, setFormData] = useState<InfoFormData>({
+    telefono: "",
+    dpi: "",
+    nit: "",
+    igss: "",
+    cuenta_no: "",
+    direccion: "",
+    nacimiento: "",
+  });
+  const [original, setOriginal] = useState<InfoFormData>({
+    telefono: "",
+    dpi: "",
+    nit: "",
+    igss: "",
+    cuenta_no: "",
+    direccion: "",
+    nacimiento: "",
   });
 
+  const cleanNumbers = (val: string) => val.toString().replace(/\D/g, "");
 
-  const cleanNumbers = (val: string) => val.toString().replace(/\D/g, '');
+  const snapshotDesdeDatos = (datos: InfoFormUser): InfoFormData => ({
+    telefono: cleanNumbers(datos.telefono || ""),
+    dpi: cleanNumbers(datos.dpi || ""),
+    nit: cleanNumbers(datos.nit || ""),
+    igss: cleanNumbers(datos.igss || ""),
+    cuenta_no: cleanNumbers(datos.cuenta_no || ""),
+    direccion: datos.direccion || "",
+    nacimiento: datos.nacimiento
+      ? String(datos.nacimiento).split("T")[0]
+      : "",
+  });
 
   const formatPhoneDisplay = (val: string) => {
     const clean = cleanNumbers(val).slice(0, 8);
@@ -42,172 +93,172 @@ export default function InfoForm({ userData }: { userData: any }) {
   };
 
   const formatEveryFour = (val: string) => {
-    return cleanNumbers(val).replace(/(.{4})/g, '$1 ').trim();
+    return cleanNumbers(val)
+      .replace(/(.{4})/g, "$1 ")
+      .trim();
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const datos = usuarioData || userData;
 
     if (datos) {
-      setFormData({
-        telefono: cleanNumbers(datos.telefono || ''),
-        dpi: cleanNumbers(datos.dpi || ''),
-        nit: cleanNumbers(datos.nit || ''),
-        igss: cleanNumbers(datos.igss || ''),
-        cuenta_no: cleanNumbers(datos.cuenta_no || ''),
-        direccion: datos.direccion || '',
-        nacimiento: datos.nacimiento ? String(datos.nacimiento).split('T')[0] : '',
-      });
+      const snapshot = snapshotDesdeDatos(datos);
+      setFormData(snapshot);
+      setOriginal(snapshot);
     }
   }, [usuarioData, userData]);
 
+  const hayCambios = useMemo(
+    () =>
+      formData.telefono !== original.telefono ||
+      formData.dpi !== original.dpi ||
+      formData.nit !== original.nit ||
+      formData.igss !== original.igss ||
+      formData.cuenta_no !== original.cuenta_no ||
+      formData.direccion !== original.direccion ||
+      formData.nacimiento !== original.nacimiento,
+    [formData, original],
+  );
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (['telefono', 'dpi', 'igss', 'nit', 'cuenta_no'].includes(name)) {
-      setFormData(prev => ({ ...prev, [name]: cleanNumbers(value) }));
+    if (["telefono", "dpi", "igss", "nit", "cuenta_no"].includes(name)) {
+      setFormData((prev) => ({ ...prev, [name]: cleanNumbers(value) }));
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!hayCambios || isSaving) return;
     handleSave(formData);
   };
 
-
   if (isLoadingData) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-3">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">Cargando información...</p>
+      <div className="flex flex-col gap-3 py-1" aria-busy>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i}>
+              <div className="flex items-center gap-2 pt-1">
+                <div className="h-9 w-9 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+                <div className="h-3 w-28 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+              </div>
+              <div className="h-12 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+          ))}
+          <div className="md:col-span-2">
+            <div className="flex items-center gap-2 pt-1">
+              <div className="h-9 w-9 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+              <div className="h-3 w-40 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+            </div>
+            <div className="h-12 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
+          </div>
+        </div>
+        <div className="h-12 w-full animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-700" />
       </div>
     );
   }
 
+  const igssComoDpi =
+    formData.igss === formData.dpi && formData.igss !== "";
+
   return (
-    <form 
-      onSubmit={onSubmit} 
-      className="flex flex-col gap-6 p-4 animate-in fade-in duration-500"
+    <form
+      onSubmit={onSubmit}
+      className="flex animate-in flex-col gap-3 py-1 duration-500 fade-in"
     >
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <Calendar size={12} /> Fecha de Nacimiento
-          </Label>
-          <Input 
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <CampoFormulario icon={Calendar} label="Fecha de nacimiento">
+          <ModalInput
             type="date"
             name="nacimiento"
             value={formData.nacimiento}
             onChange={handleChange}
-            className="h-11 dark:bg-zinc-900 dark:border-zinc-800"
           />
-        </div>
+        </CampoFormulario>
 
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <Phone size={12} /> Teléfono
-          </Label>
-          <Input 
-            type="text"
+        <CampoFormulario icon={Phone} label="Teléfono">
+          <ModalInput
+            type="tel"
             name="telefono"
             value={formatPhoneDisplay(formData.telefono)}
             onChange={handleChange}
             inputMode="numeric"
-            placeholder="0000 0000"
-            className="h-11 dark:bg-zinc-900 dark:border-zinc-800 font-mono tracking-wider"
+            autoComplete="tel"
+            className={CAMPO_MONO_CLASS}
           />
-        </div>
+        </CampoFormulario>
 
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <Fingerprint size={12} /> DPI
-          </Label>
-          <Input 
+        <CampoFormulario icon={Fingerprint} label="DPI">
+          <ModalInput
             type="text"
             name="dpi"
             value={formatDPIDisplay(formData.dpi)}
             onChange={handleChange}
             inputMode="numeric"
-            placeholder="0000 00000 0000"
-            className="h-11 dark:bg-zinc-900 dark:border-zinc-800 font-mono tracking-wider"
+            className={CAMPO_MONO_CLASS}
           />
-        </div>
+        </CampoFormulario>
 
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <Hash size={12} /> NIT
-          </Label>
-          <Input 
+        <CampoFormulario icon={Hash} label="NIT">
+          <ModalInput
             type="text"
             name="nit"
             value={formatEveryFour(formData.nit)}
             onChange={handleChange}
             inputMode="numeric"
-            placeholder="Ingrese NIT"
-            className="h-11 dark:bg-zinc-900 dark:border-zinc-800 font-mono tracking-wider"
+            className={CAMPO_MONO_CLASS}
           />
-        </div>
+        </CampoFormulario>
 
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <Shield size={12} /> Afiliación IGSS
-          </Label>
-          <Input 
+        <CampoFormulario icon={Shield} label="Afiliación IGSS">
+          <ModalInput
             type="text"
             name="igss"
-            value={formData.igss === formData.dpi && formData.igss !== '' ? formatDPIDisplay(formData.igss) : formData.igss}
+            value={
+              igssComoDpi
+                ? formatDPIDisplay(formData.igss)
+                : formData.igss
+            }
             onChange={handleChange}
             inputMode="numeric"
-            placeholder="No. de afiliación"
-            className={`h-11 dark:bg-zinc-900 dark:border-zinc-800 ${formData.igss === formData.dpi && formData.igss !== '' ? 'font-mono tracking-wider' : ''}`}
+            className={igssComoDpi ? CAMPO_MONO_CLASS : MODAL_FIELD_CLASS}
           />
-        </div>
+        </CampoFormulario>
 
-        <div className="space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <CircleDollarSign size={12} /> No. Cuenta (BANRURAL)
-          </Label>
-          <Input 
+        <CampoFormulario icon={CircleDollarSign} label="No. cuenta (Banrural)">
+          <ModalInput
             type="text"
             name="cuenta_no"
             value={formatEveryFour(formData.cuenta_no)}
             onChange={handleChange}
             inputMode="numeric"
-            placeholder="No. de cuenta bancaria"
-            className="h-11 dark:bg-zinc-900 dark:border-zinc-800 font-mono tracking-wider"
+            className={CAMPO_MONO_CLASS}
           />
-        </div>
+        </CampoFormulario>
 
-        <div className="md:col-span-2 space-y-2">
-          <Label className="text-[10px] uppercase dark:text-zinc-500 flex items-center gap-2 font-bold tracking-tighter">
-            <MapPin size={12} /> Dirección de Residencia
-          </Label>
-          <Input 
+        <CampoFormulario
+          icon={MapPin}
+          label="Dirección de residencia"
+          className="md:col-span-2"
+        >
+          <ModalInput
             name="direccion"
             value={formData.direccion}
             onChange={handleChange}
-            placeholder="Dirección completa"
-            className="h-11 dark:bg-zinc-900 dark:border-zinc-800"
           />
-        </div>
+        </CampoFormulario>
       </div>
 
-      <Button 
-        type="submit" 
-        disabled={isSaving}
-        className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-6 transition-all active:scale-[0.98]"
+      <button
+        type="submit"
+        disabled={!hayCambios || isSaving}
+        className={CAMPO_SUBMIT_BTN_CLASS}
       >
-        {isSaving ? (
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" /> Guardando...
-          </div>
-        ) : (
-          'Actualizar Información'
-        )}
-      </Button>
+        {isSaving ? "Guardando..." : "Guardar información personal"}
+      </button>
     </form>
   );
 }

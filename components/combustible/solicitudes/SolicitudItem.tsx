@@ -138,10 +138,12 @@ export const SolicitudItem: React.FC<Props> = ({ sol, isExpanded, onToggleExpand
     <>
     <div className={`
         group w-full bg-white dark:bg-neutral-900 rounded-2xl border transition-all duration-300 overflow-hidden
-        ${isExpanded 
-            ? 'border-blue-500/30 shadow-xl ring-1 ring-blue-500/10' 
-            : 'border-slate-200 dark:border-neutral-800 hover:border-blue-300 dark:hover:border-neutral-700 hover:shadow-md'
+        ${
+          color === 'emerald' ? 'border-emerald-500/80 dark:border-emerald-400/80' :
+          color === 'amber' ? 'border-amber-500/80 dark:border-amber-400/80' :
+          'border-red-500/80 dark:border-red-400/80'
         }
+        ${isExpanded ? 'bg-slate-50/50 dark:bg-neutral-800/50' : 'hover:bg-slate-50/50 dark:hover:bg-neutral-800/50'}
     `}>
         
         <div 
@@ -151,16 +153,6 @@ export const SolicitudItem: React.FC<Props> = ({ sol, isExpanded, onToggleExpand
             <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between">
                 
                 <div className="flex items-start gap-4 overflow-hidden">
-                    <div className={`
-                        w-12 h-12 shrink-0 rounded-xl flex items-center justify-center border-2 transition-colors
-                        ${color === 'emerald' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/10 dark:border-emerald-900/30' : ''}
-                        ${color === 'amber' ? 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/10 dark:border-amber-900/30' : ''}
-                        ${color === 'red' ? 'bg-red-50 text-red-600 border-red-100 dark:bg-red-900/10 dark:border-red-900/30' : ''}
-                    `}>
-                        {color === 'amber' && <Clock size={24} />}
-                        {color === 'emerald' && <CheckCircle2 size={24} />}
-                        {color === 'red' && <XCircle size={24} />}
-                    </div>
 
                     <div className="flex flex-col min-w-0 gap-1">
                         <div className="flex items-center gap-2">
@@ -188,7 +180,7 @@ export const SolicitudItem: React.FC<Props> = ({ sol, isExpanded, onToggleExpand
                     </div>
                 </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pl-16 sm:pl-0">
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                     
                     {sol.estado === 'pendiente' && (
                         <div className="flex items-center gap-1 mr-2">

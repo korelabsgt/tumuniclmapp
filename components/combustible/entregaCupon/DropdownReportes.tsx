@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Table2, Layers, FileDown, Loader2, ChevronDown } from 'lucide-react';
+import { Table2, Layers, FileDown, Loader2, ChevronDown, Car } from 'lucide-react';
 
-export type TipoReporte = 'consumos' | 'liquidaciones' | 'mensual';
+export type TipoReporte = 'consumos' | 'liquidaciones' | 'mensual' | 'vehiculos';
 
 interface Props {
   onSelect: (tipo: TipoReporte) => void;
@@ -16,25 +16,31 @@ const OPCIONES: {
   icon: React.ReactNode;
   estilos: string;
 }[] = [
-  {
-    id: 'consumos',
-    titulo: 'Generar reporte de consumos',
-    icon: <Table2 size={16} />,
-    estilos: 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
-  },
-  {
-    id: 'liquidaciones',
-    titulo: 'Generar reporte de liquidaciones',
-    icon: <Layers size={16} />,
-    estilos: 'text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
-  },
-  {
-    id: 'mensual',
-    titulo: 'Generar reporte mensual DAFIM',
-    icon: <FileDown size={16} />,
-    estilos: 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-800',
-  },
-];
+    {
+      id: 'consumos',
+      titulo: 'Reporte de consumos',
+      icon: <Table2 size={16} />,
+      estilos: 'text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/20',
+    },
+    {
+      id: 'liquidaciones',
+      titulo: 'Reporte de liquidaciones',
+      icon: <Layers size={16} />,
+      estilos: 'text-indigo-700 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20',
+    },
+    {
+      id: 'mensual',
+      titulo: 'Reporte mensual DAFIM',
+      icon: <FileDown size={16} />,
+      estilos: 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-800',
+    },
+    {
+      id: 'vehiculos',
+      titulo: 'Reporte por vehículos',
+      icon: <Car size={16} />,
+      estilos: 'text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-900/20',
+    },
+  ];
 
 export default function DropdownReportes({ onSelect, reportLoading = false }: Props) {
   const [open, setOpen] = useState(false);
@@ -55,6 +61,7 @@ export default function DropdownReportes({ onSelect, reportLoading = false }: Pr
     setOpen(false);
     onSelect(tipo);
   };
+
 
   return (
     <div ref={ref} className="relative w-full sm:w-auto">

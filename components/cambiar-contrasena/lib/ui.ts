@@ -11,7 +11,7 @@ export const CAMBIO_PASSWORD_CARD_MENU_CLASS =
   "relative w-full rounded-3xl border border-zinc-200 bg-zinc-50 px-5 pb-6 pt-4 shadow-xl transition-colors dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-black/50";
 
 export const CAMBIO_PASSWORD_TITLE_CLASS =
-  "mb-6 text-center text-[1.45rem] font-bold leading-tight tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-[1.65rem]";
+  "mb-3 text-center text-[1.45rem] font-bold leading-tight tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-[1.65rem]";
 
 export const CAMBIO_PASSWORD_SUBMIT_CLASS =
   "mt-1 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-200 text-base font-semibold text-zinc-900 hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600";

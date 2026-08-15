@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { createClient } from "@/utils/supabase/client";
 import type { Session } from "@supabase/supabase-js";
 import {
-  msHastaLas9HoyGT,
   msHastaVencimiento,
+  passwordChangedAtIso,
   passwordEstaVencida,
   timeoutAcotado,
-  yaEsHoraDeRevisar,
 } from "./password-age";
 
 export function useForzarCambioContrasena() {
@@ -49,15 +49,7 @@ export function useForzarCambioContrasena() {
         return;
       }
 
-      if (yaEsHoraDeRevisar()) {
-        setMostrar(true);
-        return;
-      }
-
-      setMostrar(false);
-      programar(msHastaLas9HoyGT(), () => {
-        if (!cancelled) setMostrar(true);
-      });
+      setMostrar(true);
     };
 
     const {
@@ -74,4 +66,17 @@ export function useForzarCambioContrasena() {
   }, []);
 
   return mostrar;
+}
+
+export function usePasswordChangedAt() {
+  return useQuery({
+    queryKey: ["password-changed-at"],
+    queryFn: async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
+      if (!data.session?.user) return null;
+      return passwordChangedAtIso(data.session.user);
+    },
+    staleTime: 1000 * 60,
+  });
 }

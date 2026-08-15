@@ -15,19 +15,39 @@ export type CodigoCambiarContrasena = keyof typeof CAMBIAR_CONTRASENA_ERRORES;
 
 export const cambiarContrasenaSchema = z
   .object({
-    actual: z.string().min(1, CAMBIAR_CONTRASENA_ERRORES.INVALID),
+    exigirActual: z.boolean(),
+    actual: z.string().optional(),
     nueva: z
       .string()
       .regex(REQUISITO_PASSWORD, CAMBIAR_CONTRASENA_ERRORES.INVALID),
     confirmar: z.string().min(1, CAMBIAR_CONTRASENA_ERRORES.INVALID),
   })
-  .refine((datos) => datos.nueva === datos.confirmar, {
-    message: CAMBIAR_CONTRASENA_ERRORES.INVALID,
-    path: ["confirmar"],
-  })
-  .refine((datos) => datos.nueva !== datos.actual, {
-    message: CAMBIAR_CONTRASENA_ERRORES.SAME_PASSWORD,
-    path: ["nueva"],
+  .superRefine((datos, ctx) => {
+    if (datos.nueva !== datos.confirmar) {
+      ctx.addIssue({
+        code: "custom",
+        message: CAMBIAR_CONTRASENA_ERRORES.INVALID,
+        path: ["confirmar"],
+      });
+    }
+    if (!datos.exigirActual) {
+      return;
+    }
+    if (!datos.actual) {
+      ctx.addIssue({
+        code: "custom",
+        message: CAMBIAR_CONTRASENA_ERRORES.INVALID,
+        path: ["actual"],
+      });
+      return;
+    }
+    if (datos.nueva === datos.actual) {
+      ctx.addIssue({
+        code: "custom",
+        message: CAMBIAR_CONTRASENA_ERRORES.SAME_PASSWORD,
+        path: ["nueva"],
+      });
+    }
   });
 
 export type CambiarContrasenaInput = z.infer<typeof cambiarContrasenaSchema>;

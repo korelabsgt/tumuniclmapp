@@ -46,17 +46,19 @@ export async function cambiarContrasena(
       };
     }
 
-    const { error: errorActual } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: parsed.data.actual,
-    });
+    if (parsed.data.exigirActual) {
+      const { error: errorActual } = await supabase.auth.signInWithPassword({
+        email: user.email,
+        password: parsed.data.actual ?? "",
+      });
 
-    if (errorActual) {
-      return {
-        ok: false,
-        code: "WRONG_PASSWORD",
-        message: CAMBIAR_CONTRASENA_ERRORES.WRONG_PASSWORD,
-      };
+      if (errorActual) {
+        return {
+          ok: false,
+          code: "WRONG_PASSWORD",
+          message: CAMBIAR_CONTRASENA_ERRORES.WRONG_PASSWORD,
+        };
+      }
     }
 
     const { error } = await supabase.auth.updateUser({

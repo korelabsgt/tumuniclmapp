@@ -36,7 +36,6 @@ import {
   formatearFechaCorta,
   formatearFechaInstanteCorta,
 } from "./lib/fechas";
-import { resultadoConEnfoque } from "./lib/resultado-enfoque";
 import {
   useEvaluacionesPlantilla,
   useEvaluacionPorId,
@@ -45,6 +44,7 @@ import {
   usePerfilEvaluaciones,
   useResultadosEvaluacion,
 } from "./lib/hooks";
+import { resultadoConEnfoque } from "./lib/resultado-enfoque";
 import {
   itemPorSlug,
   rutaBaseEvaluaciones,
@@ -82,10 +82,10 @@ import {
   EVAL_VOLVER_LINK,
 } from "./lib/ui";
 import {
+  tipoEvaluacionSchema,
   type EvaluacionPlantilla,
   type PendienteEvaluacion,
   type ResultadoPersona,
-  tipoEvaluacionSchema,
   type TipoVistaEvaluaciones,
 } from "./lib/zod";
 
@@ -283,7 +283,10 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
     );
   };
 
-  const irAResultado = (resultado: ResultadoPersona, enfoque?: PendienteEvaluacion["tipo_evaluacion"]) => {
+  const irAResultado = (
+    resultado: ResultadoPersona,
+    enfoque?: PendienteEvaluacion["tipo_evaluacion"],
+  ) => {
     if (tipoVista === "rrhh") {
       router.push(
         rutaResultadoPersona(
@@ -379,9 +382,7 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
 
   const listaPropiaVista = useMemo(
     () =>
-      pendientes
-        .filter(filtroAmbitoPendiente)
-        .filter(filtroPeriodoPendiente),
+      pendientes.filter(filtroAmbitoPendiente).filter(filtroPeriodoPendiente),
     [pendientes, filtroAmbitoPendiente, filtroPeriodoPendiente],
   );
 
@@ -390,7 +391,8 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
     [listaPropiaVista],
   );
   const pendientesPorIniciarVista = useMemo(
-    () => asignacionesVista.filter((p) => !p.esta_completada && !p.evaluacion_id),
+    () =>
+      asignacionesVista.filter((p) => !p.esta_completada && !p.evaluacion_id),
     [asignacionesVista],
   );
   const borradoresVista = useMemo(
@@ -700,9 +702,7 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
             {!datosListos ? (
               <Cargando texto="Cargando evaluaciones..." />
             ) : pestanas.length === 0 &&
-              !(
-                tipoVista === "propia" && listaPropiaVista.length > 0
-              ) ? (
+              !(tipoVista === "propia" && listaPropiaVista.length > 0) ? (
               <EvalEstadoVacio
                 icon={<ClipboardCheck className="h-7 w-7" strokeWidth={2} />}
                 titulo="No hay evaluaciones por mostrar"

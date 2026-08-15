@@ -179,7 +179,7 @@ export function ListaPendientesEvaluacion({
                   <div className="px-3 py-3 text-center text-sm font-semibold tabular-nums text-[#0066cc] dark:text-blue-400">
                     {index + 1}
                   </div>
-                  <div className={EVAL_TD_NAME}>{grupo.formulario_nombre}</div>
+                  <div className={`${EVAL_TD_NAME} min-w-0 truncate`}>{grupo.formulario_nombre}</div>
                   <div className="px-3 py-3 text-xs font-medium tracking-wide text-zinc-500 dark:text-zinc-400">
                     {ETIQUETAS_TIPO[grupo.tipo_evaluacion]}
                   </div>

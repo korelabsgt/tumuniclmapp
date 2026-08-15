@@ -12,6 +12,7 @@ import {
 import { ModalLabel } from "@/components/ui/general-modal";
 import { cn } from "@/lib/utils";
 import { EvalAnimatedAccordionSlot } from "../EvalAnimatedAccordionSlot";
+import { EvalRolTabBar } from "../EvalRolTabBar";
 import { accordionPanelTransition } from "../lib/accordion-motion";
 import { useAccordionSequence } from "../lib/useAccordionSequence";
 import {
@@ -32,16 +33,21 @@ import {
   EVAL_ASPECT_ACTION_DELETE,
   EVAL_ASPECT_ACTIONS,
   EVAL_ASPECT_BODY,
+  EVAL_ASPECT_FIELD_WRAP,
   EVAL_ACCENT_TEXT,
   EVAL_EMPTY,
   EVAL_ERROR_TEXT,
   EVAL_FIELD_CLASS,
   EVAL_FIELD_ERROR_RING,
-  EVAL_NIVEL_CELL_CENTER,
+  EVAL_NIVEL_CELL_DELETE,
+  EVAL_NIVEL_CELL_DESC,
+  EVAL_NIVEL_CELL_LETTER,
+  EVAL_NIVEL_CELL_PTS,
   EVAL_NIVEL_DELETE_BTN,
   EVAL_NIVEL_FIELD_CLASS,
   EVAL_NIVEL_LETTER_CLASS,
   EVAL_NIVEL_ROW,
+  EVAL_NIVEL_ROW_TOOLS,
   EVAL_NIVELES_BAND,
   EVAL_NIVELES_HEAD,
   EVAL_NIVELES_HEAD_TITLE,
@@ -180,8 +186,6 @@ type Props = {
   bloqueado: boolean;
 };
 
-const TABS_DIRIGIDO_A: DirigidoAAspecto[] = ["empleado", "jefe"];
-
 export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
   const { aspectos } = useMutacionesEvaluacion();
   const [aspectosLocal, setAspectosLocal] = useState<AspectoInput[]>(() =>
@@ -218,12 +222,6 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
     resetAccordion();
     setErrores(erroresVaciosDesempenos());
   }, [evaluacion.id, firmaAspectos, resetAccordion]);
-
-  const conteoPorRol = useMemo(() => {
-    const acc: Record<DirigidoAAspecto, number> = { empleado: 0, jefe: 0 };
-    for (const a of aspectosLocal) acc[a.dirigido_a] += 1;
-    return acc;
-  }, [aspectosLocal]);
 
   const aspectosVisibles = useMemo(
     () =>
@@ -317,38 +315,14 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
         </p>
       ) : null}
 
-      <div className={`${EVAL_SECTION_PAD} flex flex-wrap gap-2 border-b border-zinc-200 py-3 dark:border-zinc-700`}>
-        {TABS_DIRIGIDO_A.map((rol) => {
-          const activa = tabRol === rol;
-          return (
-            <button
-              key={rol}
-              type="button"
-              onClick={() => {
-                setTabRol(rol);
-                closeAccordion();
-              }}
-              className={cn(
-                "inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
-                activa
-                  ? "bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-white"
-                  : "text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/80",
-              )}
-            >
-              {ETIQUETAS_DIRIGIDO_A[rol]}
-              <span
-                className={cn(
-                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-bold tabular-nums",
-                  activa
-                    ? "bg-white text-zinc-700 dark:bg-zinc-900 dark:text-white"
-                    : "bg-zinc-200 text-zinc-600 dark:bg-zinc-700 dark:text-zinc-200",
-                )}
-              >
-                {conteoPorRol[rol]}
-              </span>
-            </button>
-          );
-        })}
+      <div className={EVAL_SECTION_PAD}>
+        <EvalRolTabBar
+          active={tabRol}
+          onChange={(rol) => {
+            setTabRol(rol);
+            closeAccordion();
+          }}
+        />
       </div>
 
       {aspectosVisibles.length === 0 ? (
@@ -444,18 +418,20 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                               key={`${key}-lectura-${oi}`}
                               className={EVAL_NIVEL_ROW}
                             >
-                              <span
-                                className={`${EVAL_NIVEL_CELL_CENTER} justify-center text-sm font-bold ${EVAL_ACCENT_TEXT}`}
-                              >
-                                {op.letra_calificacion}
-                              </span>
-                              <span className="min-w-0 self-center whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-200">
+                              <div className={EVAL_NIVEL_ROW_TOOLS}>
+                                <span
+                                  className={`${EVAL_NIVEL_CELL_LETTER} text-sm font-bold ${EVAL_ACCENT_TEXT}`}
+                                >
+                                  {op.letra_calificacion}
+                                </span>
+                                <span className={`${EVAL_NIVEL_CELL_PTS} text-sm font-semibold tabular-nums text-muted-foreground`}>
+                                  {op.valor_puntuacion}
+                                </span>
+                                <span className={EVAL_NIVEL_CELL_DELETE} />
+                              </div>
+                              <span className={`${EVAL_NIVEL_CELL_DESC} whitespace-pre-wrap break-words text-sm text-zinc-700 dark:text-zinc-200`}>
                                 {op.descripcion || "—"}
                               </span>
-                              <span className={`${EVAL_NIVEL_CELL_CENTER} justify-center text-sm font-semibold tabular-nums text-muted-foreground`}>
-                                {op.valor_puntuacion}
-                              </span>
-                              <span />
                             </div>
                           ))}
                           </div>
@@ -469,9 +445,9 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                             {errAspecto.general}
                           </p>
                         ) : null}
-                        <div>
+                        <div className={EVAL_ASPECT_FIELD_WRAP}>
                           <ModalLabel>Título</ModalLabel>
-                          <div className="flex items-center gap-2">
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                           <input
                             value={aspecto.titulo}
                             onChange={(e) => {
@@ -485,11 +461,11 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                               );
                             }}
                             className={claseCampo(
-                              EVAL_FIELD_CLASS,
+                              `${EVAL_FIELD_CLASS} min-w-0 flex-1`,
                               Boolean(errAspecto?.titulo),
                             )}
                           />
-                            <div className={EVAL_ASPECT_ACTIONS}>
+                            <div className={`${EVAL_ASPECT_ACTIONS} w-full sm:w-auto`}>
                           <button
                             type="button"
                             onClick={() => mover(posVisible, -1)}
@@ -525,7 +501,7 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                           </div>
                           <CampoError mensaje={errAspecto?.titulo} />
                         </div>
-                        <div>
+                        <div className={EVAL_ASPECT_FIELD_WRAP}>
                           <ModalLabel>Descripción</ModalLabel>
                           <TextareaAutoAltura
                             value={aspecto.descripcion}
@@ -572,7 +548,8 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                               key={`${key}-nivel-${oi}`}
                               className={EVAL_NIVEL_ROW}
                             >
-                              <div className={EVAL_NIVEL_CELL_CENTER}>
+                              <div className={EVAL_NIVEL_ROW_TOOLS}>
+                              <div className={EVAL_NIVEL_CELL_LETTER}>
                                 <input
                                   value={op.letra_calificacion}
                                   maxLength={MAX_LONGITUD_ETIQUETA_NIVEL}
@@ -604,34 +581,7 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                                 />
                                 <CampoError mensaje={errOp?.letra} />
                               </div>
-                              <div>
-                                <TextareaAutoAltura
-                                  value={op.descripcion}
-                                  onChange={(descripcion) => {
-                                    limpiarErrorAspecto(index);
-                                    setAspectosLocal((prev) =>
-                                      prev.map((a, i) =>
-                                        i === index
-                                          ? {
-                                              ...a,
-                                              opciones: a.opciones.map((o, j) =>
-                                                j === oi
-                                                  ? { ...o, descripcion }
-                                                  : o,
-                                              ),
-                                            }
-                                          : a,
-                                      ),
-                                    );
-                                  }}
-                                  className={claseCampo(
-                                    EVAL_NIVEL_TEXTAREA_CLASS,
-                                    Boolean(errOp?.descripcion),
-                                  )}
-                                />
-                                <CampoError mensaje={errOp?.descripcion} />
-                              </div>
-                              <div className={EVAL_NIVEL_CELL_CENTER}>
+                              <div className={EVAL_NIVEL_CELL_PTS}>
                                 <input
                                   type="number"
                                   inputMode="numeric"
@@ -666,7 +616,7 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                                 />
                                 <CampoError mensaje={errOp?.puntaje} />
                               </div>
-                              <div className={EVAL_NIVEL_CELL_CENTER}>
+                              <div className={EVAL_NIVEL_CELL_DELETE}>
                               <button
                                 type="button"
                                 disabled={aspecto.opciones.length <= 1}
@@ -689,6 +639,34 @@ export function DesempenosEditor({ evaluacion, bloqueado }: Props) {
                               >
                                 <Trash2 className="h-5 w-5" />
                               </button>
+                              </div>
+                              </div>
+                              <div className={EVAL_NIVEL_CELL_DESC}>
+                                <TextareaAutoAltura
+                                  value={op.descripcion}
+                                  onChange={(descripcion) => {
+                                    limpiarErrorAspecto(index);
+                                    setAspectosLocal((prev) =>
+                                      prev.map((a, i) =>
+                                        i === index
+                                          ? {
+                                              ...a,
+                                              opciones: a.opciones.map((o, j) =>
+                                                j === oi
+                                                  ? { ...o, descripcion }
+                                                  : o,
+                                              ),
+                                            }
+                                          : a,
+                                      ),
+                                    );
+                                  }}
+                                  className={claseCampo(
+                                    EVAL_NIVEL_TEXTAREA_CLASS,
+                                    Boolean(errOp?.descripcion),
+                                  )}
+                                />
+                                <CampoError mensaje={errOp?.descripcion} />
                               </div>
                             </div>
                           );

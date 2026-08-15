@@ -143,7 +143,7 @@ export function VerEditarEvaluacion({
     : "Inactiva";
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 px-4 sm:px-0">
       {pestanas.length > 1 ? (
         <EvalTabBar
           tabs={pestanas}
@@ -172,23 +172,23 @@ export function VerEditarEvaluacion({
                   No aparecerá en pendientes hasta estar dentro del rango de fechas.
                 </p>
               ) : null}
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:gap-10">
+              <div className="flex flex-col gap-4">
                 <FilaDato
-                  className="lg:min-w-0 lg:flex-1"
                   etiqueta="Nombre"
                   valor={evaluacion.nombre}
                   valorClassName="text-lg font-bold text-zinc-900 dark:text-white sm:text-xl"
                 />
-                <FilaDato
-                  className="lg:shrink-0"
-                  etiqueta="Inicio"
-                  valor={formatearFechaCorta(evaluacion.fecha_inicio)}
-                />
-                <FilaDato
-                  className="lg:shrink-0"
-                  etiqueta="Fin"
-                  valor={formatearFechaCorta(evaluacion.fecha_fin)}
-                />
+                <div className="flex items-end justify-between gap-4">
+                  <FilaDato
+                    etiqueta="Inicio"
+                    valor={formatearFechaCorta(evaluacion.fecha_inicio)}
+                  />
+                  <FilaDato
+                    className="items-end text-right"
+                    etiqueta="Fin"
+                    valor={formatearFechaCorta(evaluacion.fecha_fin)}
+                  />
+                </div>
               </div>
             </div>
           </section>

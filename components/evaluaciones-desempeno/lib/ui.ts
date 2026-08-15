@@ -2,7 +2,7 @@ export const EVAL_CARD_CLASS =
   "rounded-3xl border border-zinc-200 bg-zinc-50 transition-colors dark:border-zinc-700 dark:bg-zinc-800";
 
 export const EVAL_FIELD_CLASS =
-  "h-12 w-full rounded-xl border border-zinc-300 bg-white px-4 text-sm font-semibold tracking-tight text-zinc-900 outline-none focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400";
+  "min-h-14 w-full rounded-xl border border-zinc-300 bg-white px-4 py-3 text-sm font-semibold tracking-tight text-zinc-900 outline-none focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white dark:focus-visible:ring-blue-400";
 
 export const EVAL_NIVEL_FIELD_CLASS =
   "h-9 w-full rounded-lg border border-zinc-300 bg-white px-2.5 text-center text-sm font-bold tabular-nums text-[#0066cc] outline-none [appearance:textfield] focus-visible:ring-1 focus-visible:ring-[#0066cc] focus-visible:ring-offset-0 dark:border-zinc-700 dark:bg-zinc-900 dark:text-blue-400 dark:focus-visible:ring-blue-400 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
@@ -59,7 +59,7 @@ export const EVAL_DEPT_COUNT_LABEL =
   "font-semibold normal-case tracking-normal opacity-80";
 
 export const EVAL_PANEL =
-  "overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900/50";
+  "min-w-0 overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900/50";
 
 export const EVAL_TOOLBAR =
   "flex flex-col gap-3 border-b border-zinc-200 p-4 dark:border-zinc-700 sm:flex-row sm:items-center";
@@ -98,6 +98,35 @@ export const EVAL_DETAIL_FIELD_VALUE =
 
 export const EVAL_SECTION_PAD = "px-4 sm:px-5";
 
+export const EVAL_ROL_TABS_WRAP =
+  "relative grid w-full grid-cols-2 gap-2 pt-2 pb-2.5 sm:mx-auto sm:max-w-[15rem]";
+
+export const EVAL_ROL_TAB_BTN =
+  "inline-flex w-full cursor-pointer items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold transition-colors";
+
+export const EVAL_ROL_TAB_INDICATOR =
+  "pointer-events-none absolute bottom-0 z-20 h-1 rounded-sm transition-[left,width,background-color] duration-300 ease-out";
+
+export const EVAL_ROL_TAB_INDICATOR_EMPLEADO =
+  "bg-[#0066cc] dark:bg-blue-400";
+
+export const EVAL_ROL_TAB_INDICATOR_JEFE =
+  "bg-purple-600 dark:bg-purple-400";
+
+export const EVAL_ROL_TAB_EMPLEADO = {
+  activa:
+    "bg-blue-100 text-[#0066cc] dark:bg-blue-950/50 dark:text-blue-400",
+  inactiva:
+    "bg-blue-50 text-[#0066cc]/85 hover:bg-blue-100/90 dark:bg-blue-950/30 dark:text-blue-400/90 dark:hover:bg-blue-950/45",
+} as const;
+
+export const EVAL_ROL_TAB_JEFE = {
+  activa:
+    "bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-300",
+  inactiva:
+    "bg-purple-50 text-purple-700/85 hover:bg-purple-100/90 dark:bg-purple-950/30 dark:text-purple-400/90 dark:hover:bg-purple-950/45",
+} as const;
+
 export const EVAL_SECTION_HEAD =
   "flex items-center justify-between gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-3.5 dark:border-zinc-700 dark:bg-zinc-900/40 sm:px-5";
 
@@ -108,10 +137,10 @@ export const EVAL_SECTION_CARD =
   "overflow-hidden rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800";
 
 export const EVAL_ACCORDION_LIST =
-  "flex flex-col p-4 sm:p-5";
+  "flex flex-col px-0 py-4 sm:p-5";
 
 export const EVAL_ACCORDION_ITEM =
-  "overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800";
+  "overflow-hidden rounded-none border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-800 sm:rounded-xl";
 
 export const EVAL_ACCORDION_TRIGGER =
   "flex w-full cursor-pointer items-center gap-3 bg-zinc-50 px-4 py-3.5 text-left transition-colors duration-200 hover:bg-zinc-100 dark:bg-zinc-900/50 dark:hover:bg-zinc-900/80";
@@ -141,16 +170,18 @@ export const EVAL_ACCORDION_PANEL =
   "flex flex-col gap-0 border-t border-zinc-200 dark:border-zinc-700";
 
 export const EVAL_ASPECT_BODY =
-  "flex flex-col gap-3 bg-white p-4 dark:bg-zinc-800";
+  "flex flex-col gap-3 bg-white px-0 py-3 dark:bg-zinc-800 sm:p-4";
+
+export const EVAL_ASPECT_FIELD_WRAP = "px-4 sm:px-0";
 
 export const EVAL_ASPECT_ACTIONS =
-  "flex h-12 shrink-0 items-stretch gap-0.5 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900/80";
+  "flex min-h-14 shrink-0 items-stretch gap-0.5 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900/80";
 
 export const EVAL_ASPECT_ACTION_BTN =
-  "flex w-11 cursor-pointer items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-zinc-800 dark:hover:text-zinc-200";
+  "flex flex-1 cursor-pointer items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-white hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 sm:flex-none sm:w-11";
 
 export const EVAL_ASPECT_ACTION_DELETE =
-  "flex w-11 cursor-pointer items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40";
+  "flex flex-1 cursor-pointer items-center justify-center rounded-lg text-red-600 transition-colors hover:bg-red-50 dark:hover:bg-red-950/40 sm:flex-none sm:w-11";
 
 export const EVAL_NIVELES_BAND =
   "flex w-full flex-col gap-0 border-t border-blue-100 bg-[#0066cc]/[0.06] dark:border-blue-900/40 dark:bg-blue-950/25";
@@ -167,19 +198,34 @@ export const EVAL_NIVELES_HINT =
   "text-[11px] leading-relaxed text-zinc-500 dark:text-zinc-400";
 
 export const EVAL_NIVELES_HEADER_ROW =
-  "grid grid-cols-[3rem_minmax(0,1fr)_3.5rem_2rem] items-center gap-2 border-y border-blue-100 bg-[#0066cc]/10 px-4 py-2 dark:border-blue-900/40 dark:bg-blue-950/40";
+  "hidden grid-cols-[3rem_minmax(0,1fr)_3.5rem_2rem] items-center gap-2 border-y border-blue-100 bg-[#0066cc]/10 px-4 py-2 dark:border-blue-900/40 dark:bg-blue-950/40 sm:grid";
 
 export const EVAL_NIVELES_HEADER_CELL =
   "text-[10px] font-bold uppercase tracking-wider text-[#0066cc] dark:text-blue-400";
 
 export const EVAL_NIVEL_ROW =
-  "grid grid-cols-[3rem_minmax(0,1fr)_3.5rem_2rem] items-center gap-2 border-b border-blue-100/80 bg-white/70 px-4 py-2 last:border-b-0 dark:border-blue-900/30 dark:bg-zinc-900/40";
+  "flex flex-col gap-2 border-b border-blue-100/80 bg-white/70 px-0 py-3 last:border-b-0 dark:border-blue-900/30 dark:bg-zinc-900/40 sm:grid sm:grid-cols-[3rem_minmax(0,1fr)_3.5rem_2rem] sm:items-center sm:gap-2 sm:px-4 sm:py-2";
+
+export const EVAL_NIVEL_ROW_TOOLS =
+  "flex items-center gap-2 px-4 sm:contents sm:px-0";
+
+export const EVAL_NIVEL_CELL_LETTER =
+  "flex w-14 shrink-0 flex-col items-center justify-center sm:w-auto sm:col-start-1";
+
+export const EVAL_NIVEL_CELL_PTS =
+  "flex w-16 shrink-0 flex-col items-center justify-center sm:w-auto sm:col-start-3";
+
+export const EVAL_NIVEL_CELL_DELETE =
+  "ml-auto flex w-9 shrink-0 flex-col items-center justify-center sm:ml-0 sm:w-auto sm:col-start-4";
+
+export const EVAL_NIVEL_CELL_DESC =
+  "min-w-0 px-4 sm:col-start-2 sm:row-start-1 sm:px-0";
 
 export const EVAL_NIVEL_CELL_CENTER =
-  "flex items-center self-center justify-center";
+  "flex flex-col items-center justify-center";
 
 export const EVAL_NIVEL_DELETE_BTN =
-  "flex h-9 w-full cursor-pointer items-center justify-center rounded-md text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-950/40";
+  "flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-red-950/40 sm:w-full";
 
 export const EVAL_ADD_NIVEL_WRAP =
   "flex justify-center border-t border-blue-100 px-4 py-2.5 dark:border-blue-900/40";
@@ -190,9 +236,10 @@ export const EVAL_ADD_NIVEL_BTN =
 export const EVAL_ACCORDION_ANIM =
   "grid transition-[grid-template-rows] duration-300 ease-out";
 
-export const EVAL_TABLE_WRAP = "overflow-x-auto px-4 pb-4";
+export const EVAL_TABLE_WRAP =
+  "min-w-0 max-w-full overflow-x-auto overscroll-x-contain px-4 pb-4";
 
-export const EVAL_TABLE = "w-full table-fixed text-left text-sm";
+export const EVAL_TABLE = "w-full min-w-[56rem] text-left text-sm";
 
 export const EVAL_TH =
   "whitespace-nowrap px-3 py-3 text-left text-[11px] font-bold uppercase tracking-wider text-[#0066cc] dark:text-blue-400";
@@ -211,7 +258,7 @@ export const EVAL_TD_NUM =
   "w-12 px-3 py-3 text-center align-middle text-sm font-semibold tabular-nums text-[#0066cc] dark:text-blue-400";
 
 export const EVAL_TD_NAME =
-  "px-3 py-3 align-middle text-[15px] font-semibold leading-snug tracking-tight text-zinc-900 line-clamp-3 break-words dark:text-white";
+  "whitespace-nowrap px-3 py-3 align-middle text-[15px] font-semibold leading-snug tracking-tight text-zinc-900 dark:text-white";
 
 export const EVAL_TD_TIPO =
   "px-3 py-3 align-middle text-xs font-medium tracking-wide text-zinc-500 dark:text-zinc-400";

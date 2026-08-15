@@ -593,9 +593,9 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
   const meta = TITULOS[tipoVista];
 
   return (
-    <div className="mx-auto flex w-full max-w-screen-2xl flex-col px-3 pt-2 md:px-6">
+    <div className="mx-auto flex w-full max-w-screen-2xl flex-col px-0 pt-2 md:px-6">
       {enDetalle ? (
-        <div className={enVistaFoco ? anchoContenedorFoco : undefined}>
+        <div className={`${enVistaFoco ? anchoContenedorFoco : ""} px-3 md:px-0`}>
           <button
             type="button"
             onClick={enEvaluacionRrhh ? irAtrasEvaluacion : irALista}
@@ -607,11 +607,11 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
         </div>
       ) : null}
       <div
-        className={`${EVAL_CARD_CLASS} px-5 pt-6 sm:px-8 sm:pt-8${enVistaFoco ? ` ${anchoContenedorFoco} pb-4 sm:pb-5` : " py-6 sm:py-8"}`}
+        className={`${EVAL_CARD_CLASS} px-0 pt-6 sm:px-8 sm:pt-8${enVistaFoco ? ` ${anchoContenedorFoco} pb-4 sm:pb-5` : " py-6 sm:py-8"}`}
       >
         {!enVistaFoco ? (
           enEvaluacionRrhh && evaluacionEditar ? (
-            <div className="mb-6 text-center">
+            <div className="mb-6 px-4 text-center sm:px-0">
               <h1 className="text-xl font-bold tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-2xl">
                 {evaluacionEditar.nombre}
               </h1>
@@ -620,7 +620,7 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
               </div>
             </div>
           ) : (
-            <div className="mb-6 text-center">
+            <div className="mb-6 px-4 text-center sm:px-0">
               <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
                 {meta.sub}
               </p>
@@ -696,9 +696,9 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
         ) : (slug || editarLegacy) && loadingEditar ? (
           <Cargando texto="Cargando evaluación..." />
         ) : slug || editarLegacy ? (
-          <p className={EVAL_EMPTY}>No se encontró la evaluación.</p>
+          <p className={`${EVAL_EMPTY} px-4 sm:px-0`}>No se encontró la evaluación.</p>
         ) : (
-          <>
+          <div className="px-4 sm:px-0">
             {!datosListos ? (
               <Cargando texto="Cargando evaluaciones..." />
             ) : pestanas.length === 0 &&
@@ -912,15 +912,6 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
                       ) : (
                         <div className={EVAL_TABLE_WRAP}>
                           <table className={EVAL_TABLE}>
-                            <colgroup>
-                              <col className="w-12" />
-                              <col className="w-[36%]" />
-                              <col className="w-[12%]" />
-                              <col className="w-[12%]" />
-                              <col className="w-[12%]" />
-                              <col className="w-[9%]" />
-                              <col className="w-[14%]" />
-                            </colgroup>
                             <thead>
                               <tr className={EVAL_THEAD_ROW}>
                                 <th className={EVAL_TH}>No.</th>
@@ -1003,7 +994,7 @@ export function EvaluacionesDesempeno({ tipoVista }: Props) {
                 </div>
               </>
             )}
-          </>
+          </div>
         )}
       </div>
 

@@ -20,7 +20,7 @@ export type ResetPasswordResultado =
   | { ok: false; code: CodigoResetPassword; message: string };
 
 export type ValidarTokenResultado =
-  | { ok: true; expiresAt: string }
+  | { ok: true; expiresAt: string; nombre: string }
   | { ok: false; code: CodigoResetPassword; message: string };
 
 export type GenerarLinkResultado =
@@ -52,12 +52,13 @@ function origenPublico(h: Headers) {
   return `${proto}://${host}`.replace(/\/$/, "");
 }
 
-function mensajeLink(url: string) {
+function mensajeLink(url: string, nombre: string) {
+  const saludo = nombre.trim() ? `Hola, *${nombre.trim()}* 👋` : "Hola 👋";
   return [
     "🔐 *SIGEM-CLM*",
     "Municipalidad de Concepción Las Minas",
     "",
-    "Hola 👋",
+    saludo,
     "",
     "Le enviamos un enlace para restablecer su contraseña:",
     "",
@@ -154,6 +155,14 @@ export async function generarLinkRestablecer(
     };
   }
 
+  const { data: perfil } = await supabaseAdmin
+    .from("info_usuario")
+    .select("nombre")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const nombreUsuario = perfil?.nombre?.trim() || "";
+
   const url = `${origen}/restablecer-contrasena?token=${encodeURIComponent(token)}`;
   const { fecha } = obtenerFechaYFormatoGT();
   await registrarLogServer({
@@ -167,7 +176,7 @@ export async function generarLinkRestablecer(
   return {
     ok: true,
     url,
-    mensaje: mensajeLink(url),
+    mensaje: mensajeLink(url, nombreUsuario),
     expiraEnMs: TTL_MS,
     expiresAt,
   };
@@ -317,7 +326,7 @@ export async function validarTokenRestablecer(
 
   const { data } = await supabaseAdmin
     .from("password_reset_tokens")
-    .select("id, expires_at, used_at")
+    .select("id, user_id, expires_at, used_at")
     .eq("token_hash", hashToken(parsed.data.token))
     .maybeSingle();
 
@@ -333,7 +342,17 @@ export async function validarTokenRestablecer(
     };
   }
 
-  return { ok: true, expiresAt: data.expires_at };
+  const { data: perfil } = await supabaseAdmin
+    .from("info_usuario")
+    .select("nombre")
+    .eq("user_id", data.user_id)
+    .maybeSingle();
+
+  return {
+    ok: true,
+    expiresAt: data.expires_at,
+    nombre: perfil?.nombre?.trim() || "",
+  };
 }
 
 export async function restablecerContrasenaConToken(

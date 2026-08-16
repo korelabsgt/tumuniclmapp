@@ -51,6 +51,7 @@ export default function RestablecerContrasena() {
   });
 
   const expiresAt = validez?.ok ? validez.expiresAt : null;
+  const nombreUsuario = validez?.ok ? validez.nombre : "";
   const restanteMs = expiresAt
     ? Math.max(0, new Date(expiresAt).getTime() - ahora)
     : 0;
@@ -143,6 +144,15 @@ export default function RestablecerContrasena() {
             </div>
           ) : (
             <form className="flex flex-col gap-5" onSubmit={onSubmit}>
+              {nombreUsuario ? (
+                <p className="text-center text-sm leading-snug text-zinc-700 dark:text-zinc-200">
+                  Hola,{" "}
+                  <span className="font-semibold text-[#0066cc] dark:text-blue-400">
+                    {nombreUsuario}
+                  </span>
+                  . Cree su nueva contraseña.
+                </p>
+              ) : null}
               <div className="flex items-center justify-between rounded-xl border border-[#0066cc]/25 bg-white px-4 py-2.5 dark:border-blue-400/30 dark:bg-zinc-900">
                 <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   Tiempo restante

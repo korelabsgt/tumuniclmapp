@@ -277,137 +277,157 @@ export default function AuthButton({
             exit={{ x: "100%" }}
             transition={{ type: "tween", duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="shrink-0 flex items-center justify-between gap-3 px-4 pt-2 pb-3">
-              <button
-                type="button"
-                onClick={() => {
-                  cerrarMenu();
-                  void handleSignOut();
-                }}
-                className="inline-flex items-center gap-2 text-base font-semibold text-red-500 hover:text-red-600 cursor-pointer transition-colors"
-              >
-                <LogOut className="h-5 w-5 rotate-180" />
-                Cerrar Sesión
-              </button>
-              <div className="flex items-center gap-0.5">
-                {mostrarDifusion ? (
-                  <button
-                    type="button"
-                    aria-label="Difusión"
-                    onClick={() => irA("/protected/dev")}
-                    className="inline-flex h-10 w-10 cursor-pointer items-center justify-center text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
-                  >
-                    <Megaphone className="h-8 w-8" strokeWidth={2.25} />
-                  </button>
-                ) : null}
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-                  <SubscribeButton userId={userId} variant="plain" reserveSlot />
-                </div>
-              </div>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-              <div className="pb-3 pt-1">
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900/40">
-                  <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-                        Usuario
-                      </p>
-                      <p className="truncate text-sm font-semibold text-[#0066cc] dark:text-blue-400">
-                        {usuario}
-                      </p>
-                    </div>
-                  <div className="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                      Nombre
-                    </p>
-                    <p className="text-sm font-bold leading-snug text-foreground">
-                      {nombre || "Usuario"}
-                    </p>
-                    {cargo ? (
-                      <p className="mt-2 text-xs font-semibold leading-snug text-[#0066cc] dark:text-blue-400">
-                        {cargo}
-                      </p>
-                    ) : null}
-                    {oficina ? (
-                      <p className="mt-1 text-xs leading-snug text-muted-foreground">
-                        {oficina}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-
+            <AnimatePresence mode="wait" initial={false}>
               {vistaContrasena ? (
-                <div className="flex flex-col">
-                  <button
-                    type="button"
-                    onClick={() => setVistaContrasena(false)}
-                    className="mb-2 inline-flex cursor-pointer items-center gap-1.5 self-start text-sm font-semibold text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
-                  >
-                    <ChevronsLeft className="h-4 w-4 shrink-0" strokeWidth={2.5} />
-                    Volver
-                  </button>
-                  <CambiarContrasenaForm
-                    variant="menu"
-                    onSuccess={() => setVistaContrasena(false)}
-                  />
-                </div>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setVistaContrasena(true)}
-                    className="mb-4 flex w-full cursor-pointer items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:bg-zinc-100 dark:border-neutral-700 dark:bg-neutral-900/40 dark:hover:bg-zinc-800/80"
-                  >
-                    <span className="text-sm font-semibold text-[#0066cc] dark:text-blue-400">
-                      Cambiar contraseña
-                    </span>
-                    <ChevronsRight
-                      className="h-4 w-4 shrink-0 text-[#0066cc] dark:text-blue-400"
-                      strokeWidth={2.5}
+                <motion.div
+                  key="vista-contrasena"
+                  className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                  initial={{ opacity: 0, x: 24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 24 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="shrink-0 px-4 pt-2 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => setVistaContrasena(false)}
+                      className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
+                    >
+                      <ChevronsLeft className="h-4 w-4 shrink-0" strokeWidth={2.5} />
+                      Volver
+                    </button>
+                  </div>
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                    <CambiarContrasenaForm
+                      variant="menu"
+                      onSuccess={() => setVistaContrasena(false)}
                     />
-                  </button>
-
-                  <MenuSectionHeader
-                    titulo="Registros"
-                    colorClass="text-[#0066cc] dark:text-blue-400"
-                    dotClass="bg-[#0066cc] dark:bg-blue-400"
-                  />
-
-                  <div className="flex flex-col gap-2">
-                    {menuItemsPrincipales.map((item) => (
-                      <MenuItemCard
-                        key={item.id}
-                        item={item}
-                        activo={hovered === item.id}
-                        onHover={() => setHovered(item.id)}
-                        onLeave={() => setHovered(null)}
-                      />
-                    ))}
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="vista-menu"
+                  className="flex min-h-0 flex-1 flex-col overflow-hidden"
+                  initial={{ opacity: 0, x: -24 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -24 }}
+                  transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className="shrink-0 flex items-center justify-between gap-3 px-4 pt-2 pb-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        cerrarMenu();
+                        void handleSignOut();
+                      }}
+                      className="inline-flex items-center gap-2 text-base font-semibold text-red-500 hover:text-red-600 cursor-pointer transition-colors"
+                    >
+                      <LogOut className="h-5 w-5 rotate-180" />
+                      Cerrar Sesión
+                    </button>
+                    <div className="flex items-center gap-0.5">
+                      {mostrarDifusion ? (
+                        <button
+                          type="button"
+                          aria-label="Difusión"
+                          onClick={() => irA("/protected/dev")}
+                          className="inline-flex h-10 w-10 cursor-pointer items-center justify-center text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
+                        >
+                          <Megaphone className="h-8 w-8" strokeWidth={2.25} />
+                        </button>
+                      ) : null}
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+                        <SubscribeButton userId={userId} variant="plain" reserveSlot />
+                      </div>
+                    </div>
                   </div>
 
-                  <MenuSectionHeader
-                    titulo="Mi Cuenta"
-                    colorClass="text-violet-500"
-                    dotClass="bg-violet-500"
-                    className="mt-4"
-                  />
+                  <div className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                    <div className="pb-3 pt-1">
+                      <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 dark:border-neutral-700 dark:bg-neutral-900/40">
+                        <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                            Usuario
+                          </p>
+                          <p className="truncate text-sm font-semibold text-[#0066cc] dark:text-blue-400">
+                            {usuario}
+                          </p>
+                        </div>
+                        <div className="mt-2 border-t border-neutral-200 pt-2 dark:border-neutral-700">
+                          <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                            Nombre
+                          </p>
+                          <p className="text-sm font-bold leading-snug text-foreground">
+                            {nombre || "Usuario"}
+                          </p>
+                          {cargo ? (
+                            <p className="mt-2 text-xs font-semibold leading-snug text-[#0066cc] dark:text-blue-400">
+                              {cargo}
+                            </p>
+                          ) : null}
+                          {oficina ? (
+                            <p className="mt-1 text-xs leading-snug text-muted-foreground">
+                              {oficina}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="flex flex-col gap-2">
-                    {menuItemsSecundarios.map((item) => (
-                      <MenuItemCard
-                        key={item.id}
-                        item={item}
-                        activo={hovered === item.id}
-                        onHover={() => setHovered(item.id)}
-                        onLeave={() => setHovered(null)}
+                    <button
+                      type="button"
+                      onClick={() => setVistaContrasena(true)}
+                      className="mb-4 flex w-full cursor-pointer items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-left transition-colors hover:bg-zinc-100 dark:border-neutral-700 dark:bg-neutral-900/40 dark:hover:bg-zinc-800/80"
+                    >
+                      <span className="text-sm font-semibold text-[#0066cc] dark:text-blue-400">
+                        Cambiar contraseña
+                      </span>
+                      <ChevronsRight
+                        className="h-4 w-4 shrink-0 text-[#0066cc] dark:text-blue-400"
+                        strokeWidth={2.5}
                       />
-                    ))}
+                    </button>
+
+                    <MenuSectionHeader
+                      titulo="Registros"
+                      colorClass="text-[#0066cc] dark:text-blue-400"
+                      dotClass="bg-[#0066cc] dark:bg-blue-400"
+                    />
+
+                    <div className="flex flex-col gap-2">
+                      {menuItemsPrincipales.map((item) => (
+                        <MenuItemCard
+                          key={item.id}
+                          item={item}
+                          activo={hovered === item.id}
+                          onHover={() => setHovered(item.id)}
+                          onLeave={() => setHovered(null)}
+                        />
+                      ))}
+                    </div>
+
+                    <MenuSectionHeader
+                      titulo="Mi Cuenta"
+                      colorClass="text-violet-500"
+                      dotClass="bg-violet-500"
+                      className="mt-4"
+                    />
+
+                    <div className="flex flex-col gap-2">
+                      {menuItemsSecundarios.map((item) => (
+                        <MenuItemCard
+                          key={item.id}
+                          item={item}
+                          activo={hovered === item.id}
+                          onHover={() => setHovered(item.id)}
+                          onLeave={() => setHovered(null)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </>
+                </motion.div>
               )}
-            </div>
+            </AnimatePresence>
           </motion.aside>
         </>
       )}

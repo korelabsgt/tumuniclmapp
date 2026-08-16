@@ -90,40 +90,40 @@ export default function CambiarContrasenaForm({ variant, onSuccess }: Props) {
           : CAMBIO_PASSWORD_CARD_CLASS
       }
     >
-      <h2 className={CAMBIO_PASSWORD_TITLE_CLASS}>
+      <h2
+        className={
+          variant === "menu"
+            ? "mb-4 text-left text-lg font-bold text-[#0066cc] dark:text-blue-400"
+            : CAMBIO_PASSWORD_TITLE_CLASS
+        }
+      >
         {variant === "bloqueo"
           ? "Actualizar contraseña"
           : "Cambiar contraseña"}
       </h2>
 
-      <div
-        className={
-          variant === "menu"
-            ? "-mx-3 mb-4 flex justify-center"
-            : "-mx-5 mb-4 flex justify-center sm:-mx-6"
-        }
-      >
-        <Image
-          src="/images/logo-muni.png"
-          alt="Logo Municipalidad de Concepción Las Minas"
-          height={220}
-          width={400}
-          priority={variant === "bloqueo"}
-          className="h-auto w-full max-w-none object-contain"
-        />
-      </div>
-
-      <CintilloInstitucional className="mb-6 rounded-full" />
-
       {variant === "bloqueo" ? (
-        <p className="mb-4 text-center text-sm leading-snug text-muted-foreground">
-          Por seguridad debe actualizarla ahora.
-          <br />
-          Se pedirá cada 90 días.
-        </p>
+        <>
+          <div className="-mx-5 mb-4 flex justify-center sm:-mx-6">
+            <Image
+              src="/images/logo-muni.png"
+              alt="Logo Municipalidad de Concepción Las Minas"
+              height={220}
+              width={400}
+              priority
+              className="h-auto w-full max-w-none object-contain"
+            />
+          </div>
+          <CintilloInstitucional className="mb-6 rounded-full" />
+          <p className="mb-4 text-center text-sm leading-snug text-muted-foreground">
+            Por seguridad debe actualizarla ahora.
+            <br />
+            Se pedirá cada 90 días.
+          </p>
+        </>
       ) : null}
 
-      <p className="mb-5 text-center">
+      <p className={variant === "menu" ? "mb-5" : "mb-5 text-center"}>
         <span className="block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
           Último cambio
         </span>

@@ -5,19 +5,23 @@ import { createClient } from '@/utils/supabase/client';
 import { ArchivoAdjunto } from './types';
 import { useTareaMutations } from './hooks';
 import { FileText, Link as LinkIcon, Trash2, Loader2, Upload, ExternalLink } from 'lucide-react';
+import VisorPDFInline from '@/components/files/VisorPDFInline';
 
 interface Props {
   tareaId: string;
   archivosIniciales: ArchivoAdjunto[] | null;
   esLectura?: boolean;
+  onVerPdf?: (archivo: ArchivoAdjunto) => void;
+  expandido?: boolean;
 }
 
-export default function GestorArchivos({ tareaId, archivosIniciales, esLectura }: Props) {
+export default function GestorArchivos({ tareaId, archivosIniciales, esLectura, onVerPdf, expandido }: Props) {
   const [archivos, setArchivos] = useState<ArchivoAdjunto[]>(archivosIniciales || []);
   const [isUploading, setIsUploading] = useState(false);
   const [mostrarLinkInput, setMostrarLinkInput] = useState(false);
   const [nuevoLink, setNuevoLink] = useState('');
   const [nuevoLinkNombre, setNuevoLinkNombre] = useState('');
+  const [pdfViendo, setPdfViendo] = useState<ArchivoAdjunto | null>(null);
   
   const { actualizarArchivos } = useTareaMutations();
   const supabase = createClient();
@@ -113,25 +117,38 @@ export default function GestorArchivos({ tareaId, archivosIniciales, esLectura }
     actualizarArchivos.mutate({ id: tareaId, archivos: nuevos });
   };
 
-  const handleOpenArchivo = async (e: React.MouseEvent, archivo: ArchivoAdjunto) => {
-    if (archivo.tipo === 'enlace') {
-      return; // El href normal se encarga de abrirlo
+  const abrirPdf = (archivo: ArchivoAdjunto) => {
+    if (onVerPdf) {
+      onVerPdf(archivo);
+      return;
     }
-    
+    setPdfViendo(archivo);
+  };
+
+  const handleOpenArchivo = (e: React.MouseEvent, archivo: ArchivoAdjunto) => {
+    if (archivo.tipo === 'enlace') {
+      window.open(archivo.url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
     e.preventDefault();
     if (archivo.tipo === 'pdf' && archivo.ruta_storage) {
-      const { data, error } = await supabase.storage
-        .from('archivos_actividades')
-        .createSignedUrl(archivo.ruta_storage, 60 * 60); // 1 hora de validez
-        
-      if (error || !data) {
-        console.error('Error al generar enlace firmado:', error);
-        alert('No se pudo generar el enlace para abrir el archivo.');
-        return;
-      }
-      window.open(data.signedUrl, '_blank');
+      abrirPdf(archivo);
     }
   };
+
+  if (pdfViendo?.ruta_storage) {
+    return (
+      <VisorPDFInline
+        bucketName="archivos_actividades"
+        filePath={pdfViendo.ruta_storage}
+        fileName={pdfViendo.nombre}
+        onBack={() => setPdfViendo(null)}
+        expandido={expandido}
+        className={expandido ? 'min-h-[min(75dvh,720px)]' : undefined}
+      />
+    );
+  }
 
   return (
     <div className="w-full">
@@ -204,12 +221,10 @@ export default function GestorArchivos({ tareaId, archivosIniciales, esLectura }
               key={archivo.id}
               className="flex items-center justify-between p-3 bg-white dark:bg-neutral-800/80 border border-slate-200 dark:border-neutral-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 hover:border-slate-300 dark:hover:border-neutral-600"
             >
-              <a
-                href={archivo.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 onClick={(e) => handleOpenArchivo(e, archivo)}
-                className="flex items-center gap-3 overflow-hidden group w-full"
+                className="flex w-full cursor-pointer items-center gap-3 overflow-hidden group text-left"
               >
                 <div className={`shrink-0 w-9 h-9 rounded-md flex items-center justify-center transition-colors ${archivo.tipo === 'pdf' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 group-hover:bg-red-100 dark:group-hover:bg-red-900/40' : 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/40'}`}>
                   {archivo.tipo === 'pdf' ? <FileText size={18} /> : <LinkIcon size={18} />}
@@ -220,10 +235,10 @@ export default function GestorArchivos({ tareaId, archivosIniciales, esLectura }
                   </span>
                   <span className="text-[11px] text-slate-400 dark:text-gray-500 truncate flex items-center gap-1 font-medium mt-0.5">
                     {archivo.tipo === 'pdf' ? 'Documento PDF' : 'Enlace externo'}
-                    <ExternalLink size={10} className="opacity-70" />
+                    {archivo.tipo === 'enlace' ? <ExternalLink size={10} className="opacity-70" /> : null}
                   </span>
                 </div>
-              </a>
+              </button>
               
               {!esLectura && (
                 <button

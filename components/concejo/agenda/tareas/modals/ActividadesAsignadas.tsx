@@ -27,6 +27,8 @@ import {
   eliminarActividadConcejo,
 } from '../lib/actividades';
 import GestorArchivos from '@/components/tareas/GestorArchivos';
+import type { ArchivoAdjunto } from '@/components/tareas/types';
+import VisorPDFInline from '@/components/files/VisorPDFInline';
 
 interface ActividadesAsignadasProps {
   isOpen: boolean;
@@ -91,10 +93,12 @@ function DetalleActividadPanel({
   actividad,
   indice,
   acciones,
+  onVerPdf,
 }: {
   actividad: ActividadConcejo;
   indice?: number;
   acciones?: ReactNode;
+  onVerPdf?: (archivo: ArchivoAdjunto) => void;
 }) {
   const { items: checklist, total, completados, porcentaje } = progresoChecklist(actividad.checklist);
   const badge = estadoBadge(actividad);
@@ -182,6 +186,7 @@ function DetalleActividadPanel({
           tareaId={actividad.id}
           archivosIniciales={actividad.archivos ?? null}
           esLectura
+          onVerPdf={onVerPdf}
         />
       </div>
     </article>
@@ -219,6 +224,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
   const [showDropdown, setShowDropdown] = useState(false);
   const [checklistInput, setChecklistInput] = useState('');
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [pdfViendo, setPdfViendo] = useState<ArchivoAdjunto | null>(null);
 
   const cargarDatos = async () => {
     setCargando(true);
@@ -241,6 +247,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
     if (isOpen) {
       cargarDatos();
       setVista('lista');
+      setPdfViendo(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, tarea.id]);
@@ -432,6 +439,17 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                   <div className="flex items-center justify-center py-12">
                     <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                   </div>
+                ) : pdfViendo?.ruta_storage ? (
+                  <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
+                    <VisorPDFInline
+                      bucketName="archivos_actividades"
+                      filePath={pdfViendo.ruta_storage}
+                      fileName={pdfViendo.nombre}
+                      onBack={() => setPdfViendo(null)}
+                      expandido
+                      className="min-h-[min(75dvh,720px)] flex-1"
+                    />
+                  </div>
                 ) : vista === 'lista' ? (
                   <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
                     {puedeEditar && (
@@ -454,6 +472,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                             <DetalleActividadPanel
                               actividad={actividad}
                               indice={index + 1}
+                              onVerPdf={setPdfViendo}
                               acciones={
                                 puedeEditar ? (
                                   <>

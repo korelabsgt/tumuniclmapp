@@ -38,6 +38,7 @@ import {
 // --- 1. IMPORTAMOS EL COMPONENTE DEL INFORME ---
 import InformeEmpleados from "./reportes/InformeEmpleados";
 import { ModalShell } from "@/components/ui/general-modal";
+import { AccordionToggleButton } from "@/components/ui/accordion-toggle";
 
 type UsuarioConJerarquia = Usuario & {
   puesto_nombre: string | null;
@@ -308,12 +309,31 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
     }));
   };
 
+  const todosAbiertos = useMemo(
+    () =>
+      usuariosAgrupados.length > 0 &&
+      usuariosAgrupados.every((g) => oficinasAbiertas[g.oficina_nombre]),
+    [usuariosAgrupados, oficinasAbiertas],
+  );
+
+  const toggleTodosAcordeon = () => {
+    if (todosAbiertos) {
+      setOficinasAbiertas({});
+      return;
+    }
+    const next: Record<string, boolean> = {};
+    usuariosAgrupados.forEach((g) => {
+      next[g.oficina_nombre] = true;
+    });
+    setOficinasAbiertas(next);
+  };
+
   return (
     <>
       <div className="w-full xl:w-4/5 mx-auto md:px-4">
         <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md border border-gray-100 dark:border-neutral-800 space-y-4 w-full transition-colors duration-200">
-          <div className="flex flex-col xl:flex-row gap-2 w-full items-center p-2 bg-slate-50 dark:bg-neutral-900 rounded-lg">
-            <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto shrink-0">
+          <div className="flex flex-col gap-2 w-full items-stretch p-2 bg-slate-50 dark:bg-neutral-900 rounded-lg sm:flex-row sm:items-center">
+            <div className="flex shrink-0 flex-col gap-2 w-full sm:w-auto sm:flex-row">
               {cargandoDependencias ? (
                 <Cargando texto="Cargando..." />
               ) : (
@@ -490,7 +510,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
               )}
             </div>
 
-            <div className="relative w-full flex-1">
+            <div className="relative min-w-0 w-full flex-1">
               <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <Input
                 type="text"
@@ -502,14 +522,14 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
             </div>
 
             <div
-              className="flex gap-2 shrink-0 w-full xl:w-auto relative"
+              className="relative flex w-full shrink-0 gap-2 sm:w-auto"
               ref={menuRef}
             >
               {hasCreatePermission && (
-                <div className="relative w-full xl:w-auto">
+                <div className="relative w-full sm:w-auto">
                   <button
                     onClick={() => setMenuAbierto(!menuAbierto)}
-                    className={`w-full xl:w-auto px-4 py-2 text-white bg-slate-800 dark:bg-slate-700 rounded-lg font-semibold hover:bg-slate-700 dark:hover:bg-slate-600 transition-all duration-200 text-xs flex items-center justify-center gap-2 h-9 shadow-sm ${menuAbierto ? "ring-2 ring-blue-500/50" : ""}`}
+                    className={`flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-xs font-semibold text-white shadow-sm transition-all duration-200 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 sm:w-auto ${menuAbierto ? "ring-2 ring-blue-500/50" : ""}`}
                   >
                     <Settings2 className="h-3.5 w-3.5" />
                     <span>Administrar</span>
@@ -629,7 +649,13 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                           Usuario
                         </th>
                         <th className="py-3 px-2 text-[10px] xl:text-xs w-[30%] font-semibold text-slate-600 dark:text-slate-400 pl-4">
-                          Puesto
+                          <div className="flex items-center justify-between gap-2">
+                            <span>Puesto</span>
+                            <AccordionToggleButton
+                              expanded={todosAbiertos}
+                              onToggle={toggleTodosAcordeon}
+                            />
+                          </div>
                         </th>
                       </tr>
                     </thead>

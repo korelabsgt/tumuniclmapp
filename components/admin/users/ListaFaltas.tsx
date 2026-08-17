@@ -14,6 +14,7 @@ import {
   Transition,
   TransitionChild,
 } from '@headlessui/react';
+import { AccordionToggleButton } from '@/components/ui/accordion-toggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseISO } from 'date-fns';
 import {
@@ -346,6 +347,35 @@ export default function ListaFaltas({ usuarios, rolActual }: Props) {
     setEmpleadosAbiertos((prev) => ({ ...prev, [userId]: !prev[userId] }));
   };
 
+  const todosAbiertos = useMemo(
+    () =>
+      faltasAgrupadas.length > 0 &&
+      faltasAgrupadas.every(
+        (g) =>
+          oficinasAbiertas[g.key] &&
+          g.subgrupos.every((s) => empleadosAbiertos[s.key]),
+      ),
+    [faltasAgrupadas, oficinasAbiertas, empleadosAbiertos],
+  );
+
+  const toggleTodosAcordeon = () => {
+    if (todosAbiertos) {
+      setOficinasAbiertas({});
+      setEmpleadosAbiertos({});
+      return;
+    }
+    const ofNext: Record<string, boolean> = {};
+    const empNext: Record<string, boolean> = {};
+    faltasAgrupadas.forEach((g) => {
+      ofNext[g.key] = true;
+      g.subgrupos.forEach((s) => {
+        empNext[s.key] = true;
+      });
+    });
+    setOficinasAbiertas(ofNext);
+    setEmpleadosAbiertos(empNext);
+  };
+
   const handleCerrarModal = () => {
     setFaltaModal(null);
     invalidate();
@@ -390,7 +420,8 @@ export default function ListaFaltas({ usuarios, rolActual }: Props) {
               <Cargando texto="Cargando faltas..." />
             ) : (
               <div className="w-full">
-                <div className="flex items-center gap-0.5 mb-3 border-b border-gray-200 dark:border-neutral-800 pb-1 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="mb-3 flex items-center gap-2 border-b border-gray-200 pb-1 dark:border-neutral-800">
+                  <div className="flex flex-1 items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {TIPO_ORDEN.map((tab) => {
                     const styles = TIPO_TAB_STYLES[tab];
                     const isActive = filtroTipo === tab;
@@ -416,6 +447,13 @@ export default function ListaFaltas({ usuarios, rolActual }: Props) {
                       </button>
                     );
                   })}
+                  </div>
+                  {listaVisual.length > 0 && (
+                    <AccordionToggleButton
+                      expanded={todosAbiertos}
+                      onToggle={toggleTodosAcordeon}
+                    />
+                  )}
                 </div>
 
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-neutral-800">

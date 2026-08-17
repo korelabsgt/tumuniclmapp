@@ -441,7 +441,8 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
                 <GestorArchivos 
                     tareaId={tarea.id} 
                     archivosIniciales={tarea.archivos} 
-                    esLectura={isReadOnly} 
+                    esLectura={isReadOnly}
+                    expandido
                 />
             </div>
 

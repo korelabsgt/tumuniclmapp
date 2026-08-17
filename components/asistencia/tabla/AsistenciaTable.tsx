@@ -23,6 +23,7 @@ import { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComi
 import VerComision from '@/components/comisiones/VerComision';
 import { esOficinaSinMarcajeAsistencia } from '@/components/asistencia/lib/oficinas-sin-marcaje';
 import { esEntradaTardeMarcaje, esTipoMarcajeLibre } from '@/components/asistencia/lib/estado-marcaje';
+import { AccordionToggleButton } from '@/components/ui/accordion-toggle';
 
 type UsuarioConDependencia = {
   id?: string;
@@ -666,6 +667,25 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
     setOficinasAbiertas(prev => ({ ...prev, [nombreOficina]: !prev[nombreOficina] }));
   };
 
+  const todosAbiertos = useMemo(
+    () =>
+      oficinasOrdenadas.length > 0 &&
+      oficinasOrdenadas.every((nombre) => oficinasAbiertas[nombre]),
+    [oficinasOrdenadas, oficinasAbiertas],
+  );
+
+  const toggleTodosAcordeon = () => {
+    if (todosAbiertos) {
+      setOficinasAbiertas({});
+      return;
+    }
+    const next: Record<string, boolean> = {};
+    oficinasOrdenadas.forEach((nombre) => {
+      next[nombre] = true;
+    });
+    setOficinasAbiertas(next);
+  };
+
   useEffect(() => {
     if (oficinasOrdenadas.length === 1) {
       setOficinasAbiertas({ [oficinasOrdenadas[0]]: true });
@@ -754,6 +774,14 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
                     <AlertTriangle className="w-3 h-3 mr-1.5" />
                     Sin salida: {estadisticas.salidasSinMarcaje}
                   </Button>
+
+                  {oficinasOrdenadas.length > 0 && (
+                    <AccordionToggleButton
+                      className="ml-auto"
+                      expanded={todosAbiertos}
+                      onToggle={toggleTodosAcordeon}
+                    />
+                  )}
                 </div>
 
                 <div className="w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-neutral-800">

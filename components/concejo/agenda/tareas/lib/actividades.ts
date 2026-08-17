@@ -67,7 +67,7 @@ export async function obtenerActividadesDeAgenda(
 
   const { data: tasks, error: errorTasks } = await supabase
     .from('tasks')
-    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist')
+    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist, archivos')
     .in('id', taskIds);
 
   if (errorTasks || !tasks) return {};
@@ -102,6 +102,8 @@ export async function obtenerActividadesDeAgenda(
         confirmed_at: t.confirmed_at,
         assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
         checklist: t.checklist as ActividadConcejo['checklist'],
+        archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
+        created_at: t.created_at,
       };
 
       if (!resultado[tareaConcejoId]) resultado[tareaConcejoId] = [];
@@ -125,7 +127,7 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
 
   const { data: tasks, error: errorTasks } = await supabase
     .from('tasks')
-    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist')
+    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist, archivos')
     .in('id', taskIds);
 
   if (errorTasks || !tasks) return [];
@@ -179,6 +181,8 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
       confirmed_at: t.confirmed_at,
       assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
       checklist: t.checklist as ActividadConcejo['checklist'],
+      archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
+      created_at: t.created_at,
       punto_id: enlace.tarea_concejo_id,
       punto_titulo: punto?.titulo_item || 'Punto desconocido',
       agenda_id: punto?.agenda_concejo_id || '',
@@ -212,7 +216,7 @@ export async function obtenerActividadesDePunto(
 
   const { data: tasks, error: errorTasks } = await supabase
     .from('tasks')
-    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist')
+    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist, archivos')
     .in('id', taskIds)
     .order('created_at', { ascending: true });
 
@@ -238,6 +242,8 @@ export async function obtenerActividadesDePunto(
     confirmed_at: t.confirmed_at,
     assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
     checklist: t.checklist as ActividadConcejo['checklist'],
+    archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
+    created_at: t.created_at,
   }));
 }
 

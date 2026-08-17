@@ -355,6 +355,33 @@ export const fetchTareasDeAgenda = async (
   return data as Tarea[];
 };
 
+export const fetchConteoDocumentosDeAgenda = async (
+  agendaId: string,
+): Promise<Record<string, number>> => {
+  const { data: tareas, error: errorTareas } = await supabase
+    .from("tareas_concejo")
+    .select("id")
+    .eq("agenda_concejo_id", agendaId);
+
+  if (errorTareas || !tareas?.length) return {};
+
+  const tareaIds = tareas.map((t) => t.id);
+
+  const { data: archivos, error } = await supabase
+    .from("archivos_tareas")
+    .select("tarea_id")
+    .in("tarea_id", tareaIds);
+
+  if (error || !archivos) return {};
+
+  const conteos: Record<string, number> = {};
+  for (const archivo of archivos) {
+    const tareaId = archivo.tarea_id as string;
+    conteos[tareaId] = (conteos[tareaId] || 0) + 1;
+  }
+  return conteos;
+};
+
 export const getTodayDate = () => {
   const today = new Date();
   const year = today.getFullYear();

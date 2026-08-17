@@ -90,13 +90,13 @@ export default function UploadPDF({
     <div className="w-full">
       {!file ? (
         <div className="flex items-center justify-center w-full">
-          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-gray-50 dark:bg-neutral-900 border-gray-300 dark:border-neutral-700 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors">
+          <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer bg-white border-zinc-300 hover:bg-zinc-50 transition-colors dark:bg-zinc-900 dark:border-zinc-700 dark:hover:bg-zinc-800">
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
-              <UploadCloud className="w-8 h-8 mb-2 text-gray-500 dark:text-gray-400" />
-              <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
+              <UploadCloud className="w-8 h-8 mb-2 text-zinc-500 dark:text-zinc-400" />
+              <p className="mb-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <span className="font-semibold">Click para subir PDF</span>
               </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500">
+              <p className="text-xs text-zinc-500 dark:text-zinc-500">
                 (MAX. 10MB)
               </p>
             </div>
@@ -109,18 +109,18 @@ export default function UploadPDF({
           </label>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 p-4 border rounded-lg bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-800 shadow-sm w-full relative overflow-hidden">
+        <div className="flex flex-col gap-3 p-4 border rounded-xl bg-white border-zinc-200 shadow-sm w-full relative overflow-hidden dark:bg-zinc-900 dark:border-zinc-700">
           
           {/* Vista Normal del Archivo Seleccionado */}
           <div className={`transition-opacity duration-200 ${showConfirm ? 'opacity-20 blur-sm pointer-events-none' : 'opacity-100'}`}>
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm font-medium truncate text-gray-700 dark:text-gray-200">
+              <span className="text-sm font-medium truncate text-zinc-800 dark:text-zinc-200">
                 {file.name}
               </span>
               <button
                 onClick={() => setFile(null)}
                 disabled={isUploading}
-                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                className="text-zinc-400 hover:text-red-500 dark:hover:text-red-400"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -129,17 +129,17 @@ export default function UploadPDF({
             <button
               onClick={() => setShowConfirm(true)} // Activar modo confirmación
               disabled={isUploading}
-              className="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-white bg-black dark:bg-white dark:text-black rounded-md hover:bg-gray-800 dark:hover:bg-gray-200 disabled:opacity-50 transition-colors"
+              className="flex items-center justify-center w-full px-4 py-2 text-sm font-semibold text-white bg-zinc-800 rounded-xl hover:bg-zinc-700 disabled:opacity-50 transition-colors dark:bg-zinc-200 dark:text-zinc-900 dark:hover:bg-zinc-300"
             >
               Confirmar Subida
             </button>
           </div>
 
           {showConfirm && (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 dark:bg-neutral-900/95 p-4 animate-in fade-in duration-200">
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95 p-4 animate-in fade-in duration-200 dark:bg-zinc-900/95">
               <div className="text-center mb-3">
-                <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">¿Estás seguro?</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Se subirá el archivo seleccionado.</p>
+                <p className="text-sm font-bold text-zinc-900 dark:text-white mb-1">¿Estás seguro?</p>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">Se subirá el archivo seleccionado.</p>
               </div>
               <div className="flex gap-2 w-full">
                  <button
@@ -152,7 +152,7 @@ export default function UploadPDF({
                 <button
                   onClick={handleUpload}
                   disabled={isUploading}
-                  className="flex-1 px-3 py-2 text-xs font-bold text-white bg-[#000] dark:bg-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 rounded-md transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 px-3 py-2 text-xs font-bold text-white bg-zinc-800 hover:bg-zinc-700 rounded-xl transition-colors flex items-center justify-center gap-2 dark:bg-zinc-200 dark:text-zinc-900 dark:hover:bg-zinc-300"
                 >
                   {isUploading && <Loader2 className="w-3 h-3 animate-spin" />}
                   {isUploading ? 'Subiendo...' : 'Sí, subir'}

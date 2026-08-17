@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ArchivoAdjunto } from '@/components/tareas/types';
 
 export interface AgendaConcejo {
   id: string;
@@ -44,6 +45,8 @@ export interface ActividadConcejo {
   confirmed_at: string | null;
   assignee_nombre: string;
   checklist?: { title: string; is_completed: boolean }[] | null;
+  archivos?: ArchivoAdjunto[] | null;
+  created_at?: string;
 }
 
 export interface ActividadConcejoConContexto extends ActividadConcejo {
@@ -68,6 +71,7 @@ export interface Tarea {
   categoria_id?: string;
   categoria?: CategoriaItem;
   actividades?: ActividadConcejo[];
+  total_documentos?: number;
 }
 
 export const sesionSchema = z.object({

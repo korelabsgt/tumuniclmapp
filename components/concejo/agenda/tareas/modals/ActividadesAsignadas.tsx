@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Dialog, DialogPanel, DialogTitle, Transition, TransitionChild } from '@headlessui/react';
 import {
   X,
@@ -14,7 +14,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
-  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-toastify';
@@ -27,6 +26,7 @@ import {
   editarActividadConcejo,
   eliminarActividadConcejo,
 } from '../lib/actividades';
+import GestorArchivos from '@/components/tareas/GestorArchivos';
 
 interface ActividadesAsignadasProps {
   isOpen: boolean;
@@ -40,7 +40,7 @@ interface ChecklistItem {
   is_completed: boolean;
 }
 
-type Vista = 'lista' | 'formulario' | 'detalle';
+type Vista = 'lista' | 'formulario';
 
 const fechaPorDefecto = () => {
   const d = new Date();
@@ -79,6 +79,115 @@ const formatearFechaActividad = (iso: string) => {
 
 const formatearConfirmacion = (iso: string) => `Confirmada el: ${formatearFechaActividad(iso)}`;
 
+const progresoChecklist = (checklist: ActividadConcejo['checklist']) => {
+  const items = checklist || [];
+  const total = items.length;
+  const completados = items.filter((item) => item.is_completed).length;
+  const porcentaje = total === 0 ? 0 : Math.round((completados / total) * 100);
+  return { items, total, completados, porcentaje };
+};
+
+function DetalleActividadPanel({
+  actividad,
+  indice,
+  acciones,
+}: {
+  actividad: ActividadConcejo;
+  indice?: number;
+  acciones?: ReactNode;
+}) {
+  const { items: checklist, total, completados, porcentaje } = progresoChecklist(actividad.checklist);
+  const badge = estadoBadge(actividad);
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
+      <div className="flex items-start justify-between gap-3 border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            {indice !== undefined && (
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400">
+                {indice}
+              </span>
+            )}
+            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-100">{actividad.title}</h3>
+            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.clase}`}>
+              {actividad.confirmed_at || actividad.status === 'Completado' ? <CheckCircle2 size={11} /> : <Clock size={11} />}
+              {badge.label}
+            </span>
+          </div>
+          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
+            <span className="flex items-center gap-1">
+              <User size={12} /> {actividad.assignee_nombre}
+            </span>
+            <span className="flex items-center gap-1">
+              <Calendar size={12} /> {formatearFechaActividad(actividad.due_date)}
+            </span>
+          </div>
+        </div>
+        {acciones ? <div className="flex shrink-0 items-center gap-1">{acciones}</div> : null}
+      </div>
+
+      <div className="space-y-4 p-4">
+        {actividad.description && (
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-800/50">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-zinc-400">Descripción</p>
+            <p className="whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300">{actividad.description}</p>
+          </div>
+        )}
+
+        {total > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-end justify-between gap-2">
+              <p className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
+                <CheckSquare size={14} /> Lista de pendientes
+              </p>
+              <span className={`text-xs font-bold ${porcentaje === 100 ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-600 dark:text-zinc-300'}`}>
+                {completados}/{total} · {porcentaje}%
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${porcentaje === 100 ? 'bg-emerald-500' : 'bg-[#0066cc] dark:bg-blue-400'}`}
+                style={{ width: `${porcentaje}%` }}
+              />
+            </div>
+            <ul className="space-y-1.5">
+              {checklist.map((item, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                  {item.is_completed ? (
+                    <CheckCircle2 size={14} className="shrink-0 text-emerald-500" />
+                  ) : (
+                    <Clock size={14} className="shrink-0 text-zinc-400" />
+                  )}
+                  <span className={item.is_completed ? 'text-zinc-400 line-through' : ''}>{item.title}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {actividad.confirmed_at ? (
+          <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 size={14} />
+            {formatearConfirmacion(actividad.confirmed_at)}
+          </p>
+        ) : (
+          <p className="flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400">
+            <Clock size={14} />
+            Pendiente de confirmación por el asignado
+          </p>
+        )}
+
+        <GestorArchivos
+          tareaId={actividad.id}
+          archivosIniciales={actividad.archivos ?? null}
+          esLectura
+        />
+      </div>
+    </article>
+  );
+}
+
 const estadoBadge = (actividad: ActividadConcejo) => {
   if (actividad.status === 'Completado') {
     return { label: 'Completado', clase: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' };
@@ -110,7 +219,6 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
   const [showDropdown, setShowDropdown] = useState(false);
   const [checklistInput, setChecklistInput] = useState('');
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
-  const [actividadDetalle, setActividadDetalle] = useState<ActividadConcejo | null>(null);
 
   const cargarDatos = async () => {
     setCargando(true);
@@ -133,10 +241,18 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
     if (isOpen) {
       cargarDatos();
       setVista('lista');
-      setActividadDetalle(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, tarea.id]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
 
   const usuariosFiltrados = useMemo(
     () => usuarios.filter((u) => u.nombre.toLowerCase().includes(searchTerm.toLowerCase())),
@@ -157,17 +273,10 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
 
   const abrirNueva = () => {
     limpiarFormulario();
-    setActividadDetalle(null);
     setVista('formulario');
   };
 
-  const abrirDetalle = (actividad: ActividadConcejo) => {
-    setActividadDetalle(actividad);
-    setVista('detalle');
-  };
-
   const abrirEdicion = (actividad: ActividadConcejo) => {
-    setActividadDetalle(null);
     setEditandoId(actividad.id);
     setTitle(actividad.title);
     setDescription(actividad.description || '');
@@ -292,187 +401,87 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
 
   return (
     <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={() => onClose(hasChanged)} className="relative z-50">
+      <Dialog onClose={() => onClose(hasChanged)} className="relative z-[200]">
         <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
-          <div className="fixed inset-0 bg-black/10 backdrop-blur-sm dark:bg-black/60" />
+          <div className="fixed inset-0 bg-zinc-100 dark:bg-zinc-900" />
         </TransitionChild>
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95">
-            <DialogPanel className="bg-white dark:bg-neutral-900 rounded-lg w-full max-w-2xl shadow-xl transition-colors border border-transparent dark:border-neutral-800 flex flex-col max-h-[90vh]">
+        <div className="fixed inset-0 flex flex-col">
+          <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-2" enterTo="opacity-100 translate-y-0" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-2">
+            <DialogPanel className="flex h-[100dvh] w-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-800">
 
-              <div className="flex justify-between items-start p-6 pb-4 border-b border-gray-100 dark:border-neutral-800">
-                <div className="pr-4">
-                  <DialogTitle className="text-lg font-bold text-gray-900 dark:text-gray-100">
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-200 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] dark:border-zinc-700 sm:px-6">
+                <div className="min-w-0 pr-2">
+                  <DialogTitle className="text-xl font-bold tracking-tight text-[#0066cc] dark:text-blue-400">
                     Actividades asignadas
                   </DialogTitle>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">{tarea.titulo_item}</p>
+                  <p className="mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground line-clamp-2">
+                    {tarea.titulo_item}
+                  </p>
                 </div>
                 <button
                   onClick={() => onClose(hasChanged)}
-                  className="p-2 -mr-2 -mt-1 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors"
+                  className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-white"
+                  aria-label="Cerrar"
                 >
                   <X size={22} />
                 </button>
               </div>
 
-              <div className="p-6 overflow-y-auto custom-scrollbar">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 custom-scrollbar sm:px-6">
                 {cargando ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                   </div>
                 ) : vista === 'lista' ? (
-                  <div className="space-y-4">
+                  <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
                     {puedeEditar && (
                       <button
                         onClick={abrirNueva}
-                        className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors"
+                        className="flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-200 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-300 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
                       >
                         <Plus size={18} /> Nueva actividad
                       </button>
                     )}
 
                     {actividades.length === 0 ? (
-                      <p className="text-center text-gray-500 dark:text-gray-400 py-8">
+                      <p className="py-12 text-center text-muted-foreground">
                         No hay actividades asignadas para este punto.
                       </p>
                     ) : (
-                      <ul className="space-y-2">
-                        {actividades.map((actividad, index) => {
-                          const badge = estadoBadge(actividad);
-                          return (
-                            <li
-                              key={actividad.id}
-                              className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-800/40 p-3"
-                            >
-                              <div className="flex items-start gap-3">
-                                <span className="shrink-0 mt-0.5 w-6 h-6 flex items-center justify-center rounded-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 text-xs font-bold text-gray-500 dark:text-gray-400">
-                                  {index + 1}
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 min-w-0">{actividad.title}</p>
-                                    <span className={`shrink-0 flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${badge.clase}`}>
-                                      {actividad.confirmed_at || actividad.status === 'Completado' ? <CheckCircle2 size={11} /> : <Clock size={11} />}
-                                      {badge.label}
-                                    </span>
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-gray-500 dark:text-gray-400">
-                                    <span className="flex items-center gap-1">
-                                      <User size={12} /> {actividad.assignee_nombre}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                      <Calendar size={12} /> {formatearFechaActividad(actividad.due_date)}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center justify-end gap-1 mt-2">
+                      <ul className="flex flex-col gap-4">
+                        {actividades.map((actividad, index) => (
+                          <li key={actividad.id}>
+                            <DetalleActividadPanel
+                              actividad={actividad}
+                              indice={index + 1}
+                              acciones={
+                                puedeEditar ? (
+                                  <>
                                     <button
-                                      onClick={() => abrirDetalle(actividad)}
-                                      title="Ver estado"
-                                      className="p-1.5 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                                      onClick={() => abrirEdicion(actividad)}
+                                      className="cursor-pointer rounded-lg p-2 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-[#0066cc] dark:hover:bg-zinc-800 dark:hover:text-blue-400"
+                                      title="Editar"
                                     >
-                                      <Eye size={15} />
+                                      <Pencil size={16} />
                                     </button>
-                                    {puedeEditar && (
-                                      <>
-                                        <button
-                                          onClick={() => abrirEdicion(actividad)}
-                                          className="p-1.5 rounded-lg text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                                        >
-                                          <Pencil size={15} />
-                                        </button>
-                                        <button
-                                          onClick={() => eliminar(actividad)}
-                                          className="p-1.5 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                                        >
-                                          <Trash2 size={15} />
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                  {actividad.confirmed_at && (
-                                    <p className="mt-2 pt-2 border-t border-gray-200 dark:border-neutral-700 text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                                      <CheckCircle2 size={12} />
-                                      {formatearConfirmacion(actividad.confirmed_at)}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            </li>
-                          );
-                        })}
+                                    <button
+                                      onClick={() => eliminar(actividad)}
+                                      className="cursor-pointer rounded-lg p-2 text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                      title="Eliminar"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  </>
+                                ) : undefined
+                              }
+                            />
+                          </li>
+                        ))}
                       </ul>
                     )}
                   </div>
-                ) : vista === 'detalle' && actividadDetalle ? (
-                  <div className="space-y-4">
-                    <button
-                      onClick={() => { setActividadDetalle(null); setVista('lista'); }}
-                      className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
-                    >
-                      <ArrowLeft size={16} /> Volver a la lista
-                    </button>
-
-                    <div className="rounded-xl border border-gray-200 dark:border-neutral-800 bg-gray-50 dark:bg-neutral-800/40 p-4 space-y-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100">{actividadDetalle.title}</h3>
-                        <span className={`shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${estadoBadge(actividadDetalle).clase}`}>
-                          {actividadDetalle.confirmed_at || actividadDetalle.status === 'Completado' ? <CheckCircle2 size={12} /> : <Clock size={12} />}
-                          {estadoBadge(actividadDetalle).label}
-                        </span>
-                      </div>
-
-                      <div className="space-y-2 text-sm text-gray-600 dark:text-gray-300">
-                        <p className="flex items-center gap-2">
-                          <User size={14} className="text-gray-400 shrink-0" />
-                          <span><span className="text-gray-400">Asignado a:</span> {actividadDetalle.assignee_nombre}</span>
-                        </p>
-                        <p className="flex items-center gap-2">
-                          <Calendar size={14} className="text-gray-400 shrink-0" />
-                          <span><span className="text-gray-400">Fecha límite:</span> {formatearFechaActividad(actividadDetalle.due_date)}</span>
-                        </p>
-                        {actividadDetalle.description && (
-                          <p className="flex items-start gap-2">
-                            <AlignLeft size={14} className="text-gray-400 shrink-0 mt-0.5" />
-                            <span className="whitespace-pre-wrap">{actividadDetalle.description}</span>
-                          </p>
-                        )}
-                      </div>
-
-                      {actividadDetalle.checklist && actividadDetalle.checklist.length > 0 && (
-                        <div className="space-y-2">
-                          <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                            <CheckSquare size={14} /> Pendientes
-                          </p>
-                          <ul className="space-y-1.5">
-                            {actividadDetalle.checklist.map((item, i) => (
-                              <li key={i} className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
-                                {item.is_completed ? (
-                                  <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />
-                                ) : (
-                                  <Clock size={14} className="text-gray-400 shrink-0" />
-                                )}
-                                <span className={item.is_completed ? 'line-through text-gray-400' : ''}>{item.title}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {actividadDetalle.confirmed_at ? (
-                        <p className="pt-3 border-t border-gray-200 dark:border-neutral-700 text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                          <CheckCircle2 size={14} />
-                          {formatearConfirmacion(actividadDetalle.confirmed_at)}
-                        </p>
-                      ) : (
-                        <p className="pt-3 border-t border-gray-200 dark:border-neutral-700 text-sm text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                          <Clock size={14} />
-                          Pendiente de confirmación por el asignado
-                        </p>
-                      )}
-                    </div>
-                  </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="mx-auto w-full max-w-3xl space-y-4">
                     <button
                       onClick={() => { limpiarFormulario(); setVista('lista'); }}
                       className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
@@ -584,12 +593,18 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                       type="button"
                       onClick={guardar}
                       disabled={guardando}
-                      className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl"
+                      className="h-12 w-full cursor-pointer rounded-xl bg-zinc-200 text-sm font-semibold text-zinc-900 hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
                     >
                       {guardando ? 'Guardando...' : editandoId ? 'Guardar cambios' : 'Asignar actividad'}
                     </Button>
                   </div>
                 )}
+              </div>
+
+              <div className="shrink-0 border-t border-zinc-200 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-zinc-700 sm:px-6">
+                <p className="text-center text-xs text-muted-foreground">
+                  {actividades.length} actividad{actividades.length === 1 ? '' : 'es'} en este punto
+                </p>
               </div>
             </DialogPanel>
           </TransitionChild>

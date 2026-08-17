@@ -3,7 +3,7 @@
 import { useParams } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import useUserData from '@/hooks/sesion/useUserData';
-import { fetchTareasDeAgenda, fetchAgendaConcejoPorId, actualizarEstadoAgenda, obtenerPuestoUsuario } from '@/components/concejo/agenda/lib/acciones';
+import { fetchTareasDeAgenda, fetchAgendaConcejoPorId, actualizarEstadoAgenda, obtenerPuestoUsuario, fetchConteoDocumentosDeAgenda } from '@/components/concejo/agenda/lib/acciones';
 import { Tarea, AgendaConcejo } from '@/components/concejo/agenda/lib/esquemas';
 import TareaForm from './forms/tareas/Tarea';
 import NotaSeguimiento from './forms/NotaSeguimiento';
@@ -67,15 +67,21 @@ export default function VerTareas() {
     actividadesPorTarea: Record<string, Tarea['actividades']>
   ): Tarea[] => listaTareas.map((t) => ({ ...t, actividades: actividadesPorTarea[t.id] || [] }));
 
+  const adjuntarConteoDocumentos = (
+    listaTareas: Tarea[],
+    conteos: Record<string, number>
+  ): Tarea[] => listaTareas.map((t) => ({ ...t, total_documentos: conteos[t.id] || 0 }));
+
   const fetchDatos = async () => {
     if (!agendaId) return;
     try {
-      const [dataTareas, dataAgenda, dataActividades] = await Promise.all([
+      const [dataTareas, dataAgenda, dataActividades, conteoDocumentos] = await Promise.all([
         fetchTareasDeAgenda(agendaId),
         fetchAgendaConcejoPorId(agendaId),
-        obtenerActividadesDeAgenda(agendaId)
+        obtenerActividadesDeAgenda(agendaId),
+        fetchConteoDocumentosDeAgenda(agendaId),
       ]);
-      setTareas(adjuntarActividades(dataTareas, dataActividades));
+      setTareas(adjuntarConteoDocumentos(adjuntarActividades(dataTareas, dataActividades), conteoDocumentos));
       setAgenda(dataAgenda);
     } catch (e: any) {
       setError('Ocurrió un error al cargar los datos.');
@@ -86,11 +92,12 @@ export default function VerTareas() {
 
   const refreshTareasOnly = async () => {
      try {
-        const [dataTareas, dataActividades] = await Promise.all([
+        const [dataTareas, dataActividades, conteoDocumentos] = await Promise.all([
           fetchTareasDeAgenda(agendaId),
-          obtenerActividadesDeAgenda(agendaId)
+          obtenerActividadesDeAgenda(agendaId),
+          fetchConteoDocumentosDeAgenda(agendaId),
         ]);
-        setTareas(adjuntarActividades(dataTareas, dataActividades));
+        setTareas(adjuntarConteoDocumentos(adjuntarActividades(dataTareas, dataActividades), conteoDocumentos));
      } catch (e) {
         console.error("Error actualizando tareas en tiempo real", e);
      }
@@ -294,9 +301,15 @@ export default function VerTareas() {
     setIsDocumentosModalOpen(true);
   };
 
-  const handleCloseDocumentosModal = () => {
+  const handleCloseDocumentosModal = async () => {
     setIsDocumentosModalOpen(false);
     setTareaParaDocumentos(null);
+    try {
+      const conteoDocumentos = await fetchConteoDocumentosDeAgenda(agendaId);
+      setTareas((prev) => adjuntarConteoDocumentos(prev, conteoDocumentos));
+    } catch (e) {
+      console.error('Error actualizando conteo de documentos', e);
+    }
   };
 
   const handleOpenNotasModal = (tarea: Tarea) => {

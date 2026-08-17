@@ -326,9 +326,9 @@ export default function Ver() {
   if (error) return <div className="text-center py-10 text-red-500 dark:text-red-400"><p>{error}</p></div>;
 
   return (
-    <div className="container px-2 md:mx-auto">
+    <div className="container min-w-0 max-w-full px-2 md:mx-auto">
 
-      <header className="w-full flex flex-col gap-4 mt-2 md:mb-6">
+      <header className="w-full min-w-0 flex flex-col gap-4 mt-2 md:mb-6">
         
         <div className="w-full flex flex-col gap-3 xl:flex-row xl:items-center">
             
@@ -374,27 +374,27 @@ export default function Ver() {
             </div>
         </div>
 
-        <div className="w-full flex justify-center xl:justify-start border-t border-gray-100 dark:border-neutral-800 pt-2 xl:border-none xl:pt-0">
-            <div className="flex items-center space-x-1 sm:space-x-4">
+        <div className="w-full min-w-0 border-t border-gray-100 dark:border-neutral-800 pt-2 xl:border-none xl:pt-0">
+            <div className="flex items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 xl:overflow-x-visible">
                 {(counts.hoy > 0 || vista === 'hoy') && (
-                    <button onClick={() => setVista('hoy')} className={cn("relative flex items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'hoy' ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
+                    <button onClick={() => setVista('hoy')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'hoy' ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
                         <CalendarClock className="h-4 w-4" /> <span>Hoy ({counts.hoy})</span>
                         {vista === 'hoy' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600 dark:bg-blue-400" />}
                     </button>
                 )}
                 {(counts.proximas > 0 || vista === 'proximas') && (
-                    <button onClick={() => setVista('proximas')} className={cn("relative flex items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'proximas' ? "text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
+                    <button onClick={() => setVista('proximas')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'proximas' ? "text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
                         <CalendarDays className="h-4 w-4" /> <span>Próximas ({counts.proximas})</span>
                         {vista === 'proximas' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-indigo-600 dark:bg-indigo-400" />}
                     </button>
                 )}
                 {(counts.terminadas > 0 || vista === 'terminadas') && (
-                    <button onClick={() => setVista('terminadas')} className={cn("relative flex items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'terminadas' ? "text-red-600 dark:text-red-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
+                    <button onClick={() => setVista('terminadas')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'terminadas' ? "text-red-600 dark:text-red-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
                         <CalendarCheck className="h-4 w-4" /> <span>Terminadas ({counts.terminadas})</span>
                         {vista === 'terminadas' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 dark:bg-red-400" />}
                     </button>
                 )}
-                <button onClick={() => setVista('actividades')} className={cn("relative flex items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'actividades' ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
+                <button onClick={() => setVista('actividades')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'actividades' ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
                     <ClipboardList className="h-4 w-4" /> <span>Actividades Asignadas</span>
                     {vista === 'actividades' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-purple-600 dark:bg-purple-400" />}
                 </button>

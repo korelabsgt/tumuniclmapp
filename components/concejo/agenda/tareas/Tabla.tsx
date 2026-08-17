@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type MouseEvent } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -10,6 +10,55 @@ import {
 import { ChevronDown, ChevronUp, Edit, FileText, ClipboardList, Paperclip, User } from 'lucide-react';
 import { Tarea } from '../lib/esquemas';
 import { Button } from '@/components/ui/button';
+
+function BadgeConteoDocumentos({ count }: { count: number }) {
+  if (count <= 0) return null;
+
+  return (
+    <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#0066cc] px-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-white dark:bg-blue-400 dark:text-zinc-900 dark:ring-zinc-900">
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
+function BotonDocumentos({
+  count,
+  onClick,
+  variant = 'icon',
+}: {
+  count: number;
+  onClick: (e: MouseEvent) => void;
+  variant?: 'icon' | 'text';
+}) {
+  if (variant === 'text') {
+    return (
+      <Button
+        onClick={onClick}
+        variant="outline"
+        size="sm"
+        className="relative bg-white hover:bg-gray-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-xs h-8 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+      >
+        <span className="relative mr-1.5 inline-flex">
+          <Paperclip size={14} />
+          <BadgeConteoDocumentos count={count} />
+        </span>
+        Ver Documentos
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={onClick}
+      className="relative h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
+    >
+      <Paperclip className="h-4 w-4" />
+      <BadgeConteoDocumentos count={count} />
+    </Button>
+  );
+}
 
 const statusStyles: Record<string, string> = {
   'Aprobado': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
@@ -22,10 +71,23 @@ const statusStyles: Record<string, string> = {
 };
 
 const votacionStyles: Record<string, string> = {
-  'P1': 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
-  'Unanimidad': 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
-  'Ver Notas': 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400',
-  'Realizado': 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400',
+  'P1': 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800',
+  'Unanimidad': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800',
+  'Ver Notas': 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800',
+  'Realizado': 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-400 dark:border-indigo-800',
+};
+
+const celdaBadgeClass =
+  'inline-flex max-w-full items-center justify-center whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-semibold leading-tight';
+
+const getEstadoBadgeClasses = (status: string | null) => {
+  if (!status) return 'border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400';
+  return statusStyles[status] || 'border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400';
+};
+
+const getVotacionBadgeClasses = (votacion: string | null) => {
+  if (!votacion) return 'border-zinc-200 bg-zinc-100 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-500';
+  return votacionStyles[votacion] || 'border-zinc-200 bg-zinc-100 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-400';
 };
 
 const getStatusClasses = (status: string | null) => {
@@ -36,17 +98,6 @@ const getStatusClasses = (status: string | null) => {
 const getVotacionClasses = (votacion: string | null) => {
   if (!votacion) return 'bg-transparent';
   return votacionStyles[votacion] || 'bg-transparent';
-};
-
-const getStatusTextClasses = (status: string) => {
-  if (status === 'Aprobado') return 'text-green-800 dark:text-green-400';
-  if (status === 'No aprobado') return 'text-red-800 dark:text-red-400';
-  if (status === 'En progreso') return 'text-blue-800 dark:text-blue-400';
-  if (status === 'En comisión') return 'text-gray-800 dark:text-gray-300';
-  if (status === 'En espera') return 'text-yellow-800 dark:text-yellow-400';
-  if (status === 'No iniciado') return 'text-gray-800 dark:text-gray-300';
-  if (status === 'Realizado') return 'text-indigo-800 dark:text-indigo-400';
-  return 'text-gray-800 dark:text-gray-300';
 };
 
 interface TablaProps {
@@ -82,17 +133,13 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
         size: 50,
         cell: info => (
           <div className="flex justify-center items-center h-full">
-            <Button
-              variant="ghost"
-              size="sm"
+            <BotonDocumentos
+              count={info.row.original.total_documentos ?? 0}
               onClick={(e) => {
                 e.stopPropagation();
                 handleOpenDocumentosModal(info.row.original);
               }}
-              className="h-8 w-8 p-0 text-gray-500 hover:text-blue-600 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/30"
-            >
-              <Paperclip className="h-4 w-4" />
-            </Button>
+            />
           </div>
         ),
       },
@@ -105,10 +152,10 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
       {
         accessorKey: 'estado',
         header: 'Estado',
-        size: 80,
+        size: 108,
         cell: info => (
-          <div className="flex justify-center items-center h-full">
-            <span className={`text-sm leading-5 font-semibold px-2 py-1 rounded-full ${getStatusTextClasses(info.getValue() as string)}`}>
+          <div className="flex justify-center items-center h-full px-0.5">
+            <span className={`${celdaBadgeClass} ${getEstadoBadgeClasses(info.getValue() as string)}`}>
               {info.getValue() as string}
             </span>
           </div>
@@ -117,11 +164,11 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
       {
         accessorKey: 'votacion',
         header: 'Votación',
-        size: 90,
+        size: 108,
         cell: info => (
-          <div className="flex justify-center items-center h-full">
-            <span className={`text-sm leading-5 font-semibold px-2 py-1 rounded-md ${getVotacionClasses(info.getValue() as string)}`}>
-              {info.getValue() as string || '-'}
+          <div className="flex justify-center items-center h-full px-0.5">
+            <span className={`${celdaBadgeClass} ${getVotacionBadgeClasses(info.getValue() as string | null)}`}>
+              {(info.getValue() as string) || '-'}
             </span>
           </div>
         ),
@@ -240,8 +287,6 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
                   <td
                     key={cell.id}
                     className={`p-2 text-sm border-r border-gray-100 dark:border-neutral-800 last:border-r-0 
-                      ${cell.column.id === 'estado' ? getStatusClasses(row.original.estado) : ''} 
-                      ${cell.column.id === 'votacion' ? getVotacionClasses(row.original.votacion || null) : ''}
                       ${puedeEditar && cell.column.id !== 'documentos' ? 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5' : 'cursor-default'}
                     `}
                     style={{ width: `${cell.column.getSize()}px` }}
@@ -312,14 +357,11 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
                 <div className="px-4 pb-4 pt-0 border-t border-gray-100 dark:border-neutral-800 bg-gray-50/50 dark:bg-neutral-950/50">
                   
                   <div className="mt-3 flex justify-end">
-                      <Button
+                      <BotonDocumentos
+                        count={tarea.total_documentos ?? 0}
+                        variant="text"
                         onClick={() => handleOpenDocumentosModal(tarea)}
-                        variant="outline"
-                        size="sm"
-                        className="bg-white hover:bg-gray-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-xs h-8 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                      >
-                        <Paperclip size={14} className="mr-1.5" /> Ver Documentos
-                      </Button>
+                      />
                   </div>
 
                   <div className="mt-3 grid grid-cols-2 gap-4 text-sm">

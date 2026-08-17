@@ -283,7 +283,7 @@ export const SolitMobiliarioItem: React.FC<Props> = ({
                         <div className="lg:col-span-5 flex flex-col gap-2.5 sm:gap-3">
 
                             {/* Información Principal */}
-                            <div className="relative z-20 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-2 sm:p-4 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="relative z-20 bg-white dark:bg-neutral-900 rounded-xl p-2 sm:p-4 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm hover:shadow-md transition-shadow">
                                 <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400"></div>
                                 <h4 className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-[0.15em] mb-3 flex items-center gap-2">
                                     <div className="w-5 h-5 rounded-md bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -352,7 +352,7 @@ export const SolitMobiliarioItem: React.FC<Props> = ({
                             </div>
 
                             {/* Operario Asignado */}
-                            <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-2 sm:p-4 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm hover:shadow-md transition-shadow">
+                            <div className="relative bg-white dark:bg-neutral-900 rounded-xl p-2 sm:p-4 border border-slate-200/70 dark:border-neutral-700/50 shadow-sm hover:shadow-md transition-shadow">
                                 <div className={`absolute top-0 left-0 right-0 h-[2px] rounded-t-xl ${sol.asignado_a_uid ? 'bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400' : 'bg-gradient-to-r from-slate-300 to-slate-200 dark:from-neutral-700 dark:to-neutral-600'}`}></div>
                                 <h4 className="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-bold tracking-[0.15em] mb-3 flex items-center gap-2">
                                     <div className={`w-5 h-5 rounded-md flex items-center justify-center ${sol.asignado_a_uid ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-slate-100 dark:bg-neutral-800'}`}>
@@ -372,7 +372,7 @@ export const SolitMobiliarioItem: React.FC<Props> = ({
 
                             {/* Motivo del Rechazo o Revisión */}
                             {(sol.estado as string) === 'rechazado' && (
-                                <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm rounded-xl p-3 sm:p-4 border border-red-200/70 dark:border-red-900/40 shadow-sm">
+                                <div className="relative bg-white dark:bg-neutral-900 rounded-xl p-3 sm:p-4 border border-red-200/70 dark:border-red-900/40 shadow-sm">
                                     <div className="absolute top-0 left-0 right-0 h-[2px] rounded-t-xl bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400"></div>
                                     <h4 className="text-[10px] text-red-500 dark:text-red-400 uppercase font-bold tracking-[0.15em] mb-2 flex items-center gap-2">
                                         <div className="w-5 h-5 rounded-md bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -418,7 +418,7 @@ export const SolitMobiliarioItem: React.FC<Props> = ({
                             {/* Timeline */}
                             <div className="relative">
                                 {/* Solicitud (única tarjeta) */}
-                                <div className="relative bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm border border-slate-200/70 dark:border-neutral-700/50 rounded-xl p-2 sm:p-4 hover:shadow-lg transition-all duration-200 group">
+                                <div className="relative bg-white dark:bg-neutral-900 border border-slate-200/70 dark:border-neutral-700/50 rounded-xl p-2 sm:p-4 hover:shadow-lg transition-all duration-200 group">
                                     {/* Encabezado con punto azul */}
                                     <div className="flex items-center gap-2 mb-3">
                                         <div className="relative z-10 w-[10px] h-[10px] shrink-0 rounded-full bg-blue-500 ring-[3px] ring-blue-100 dark:ring-blue-900/40 shadow-sm shadow-blue-500/30"></div>

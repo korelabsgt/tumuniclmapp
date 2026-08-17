@@ -164,6 +164,7 @@ export type Publicacion = {
   imagenes: string[] | null;
   documentos: DocumentoItem[] | null;
   grafica_data: GraficaFila[] | null;
+  fecha: string | null;
   created_at: string;
   updated_at: string;
   politicas?: { nombre: string } | null;

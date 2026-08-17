@@ -2,7 +2,7 @@
 
 import React, { useState, useTransition, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import { Plus, Trash2, Pencil, Loader2, BookOpen, Tag, FileText, Image as ImageIcon, BarChart2, Sparkles, ChevronDown, ArrowUp, ArrowDown, ChevronsUp, ChevronsDown } from 'lucide-react';
+import { Plus, Trash2, Pencil, Loader2, BookOpen, Tag, FileText, Image as ImageIcon, BarChart2, Sparkles, ChevronDown, ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, Calendar, Filter, X } from 'lucide-react';
 import {
   getPoliticas, eliminarPolitica, crearPolitica, eliminarPublicacion, getPublicaciones, actualizarPublicacion,
   type Publicacion, type Politica,
@@ -16,6 +16,7 @@ interface Props {
 }
 
 type Tab = 'publicaciones' | 'politicas';
+const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sept', 'Oct', 'Nov', 'Dic'];
 
 export function GestorPublicacionesView({ publicacionesIniciales, politicasIniciales }: Props) {
   const [tab, setTab] = useState<Tab>('publicaciones');
@@ -32,12 +33,10 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
   const [editorOpen, setEditorOpen] = useState(false);
   const [publicacionEdit, setPublicacionEdit] = useState<Publicacion | null>(null);
 
-  const añosVistos = Array.from(new Set(publicaciones.map(p => p.año))).sort((a, b) => b - a);
-  const multipleAños = añosVistos.length > 1;
-  const [añoAbierto, setAñoAbierto] = useState<number | null>(() => {
-    const años = Array.from(new Set(publicacionesIniciales.map(p => p.año))).sort((a, b) => b - a);
-    return años.length > 1 ? años[0] : null;
-  });
+  const [filtroMes, setFiltroMes] = useState<number | null>(null);
+  const [filtroAño, setFiltroAño] = useState<number | null>(null);
+  const [filtroMenuOpen, setFiltroMenuOpen] = useState(false);
+  const [añoSelectorOpen, setAñoSelectorOpen] = useState(false);
 
   const [nuevaPolitica, setNuevaPolitica] = useState('');
   const [agregandoPolitica, setAgregandoPolitica] = useState(false);
@@ -154,6 +153,18 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
 
   const estaOcupado = isPending || agregandoPolitica;
 
+  const publicacionesFiltradas = publicaciones.filter(pub => {
+    if (filtroMes === null || filtroAño === null) return true;
+    let m = 1; // Enero por defecto si no tiene fecha
+    let y = pub.año;
+    if (pub.fecha) {
+      const date = new Date(pub.fecha);
+      m = date.getUTCMonth() + 1; // 1-12
+      y = date.getUTCFullYear();
+    }
+    return m === filtroMes && y === filtroAño;
+  });
+
   return (
     <div className="flex flex-col h-full">
 
@@ -169,7 +180,7 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
               onClick={() => setTab(key)}
               className={`flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-xl transition-all duration-200 ${
                 tab === key
-                  ? 'bg-gradient-to-br from-[#02245b] to-blue-700 text-white shadow-md shadow-blue-900/30'
+                  ? 'bg-blue-600 dark:bg-blue-400 text-white shadow-md shadow-blue-900/30'
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-neutral-700/50'
               }`}
             >
@@ -195,13 +206,128 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
                   <span className="text-sm font-normal text-gray-400 dark:text-gray-500 ml-2">publicación(es)</span>
                 </p>
               </div>
-              <button
-                onClick={() => { setPublicacionEdit(null); setEditorOpen(true); }}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-br from-[#02245b] to-blue-700 hover:from-[#031e4f] hover:to-blue-800 text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:-translate-y-0.5 active:translate-y-0"
-              >
-                <Plus className="w-4 h-4" />
-                Nueva Publicación
-              </button>
+              <div className="flex items-center gap-3">
+                {/* Filtro de Fechas */}
+                <div className="relative">
+                  <button
+                    onClick={() => setFiltroMenuOpen(!filtroMenuOpen)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border transition-all text-sm font-semibold shadow-sm
+                      ${(filtroMes !== null || filtroAño !== null) 
+                        ? 'bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-900/30 dark:border-blue-800 dark:text-blue-400' 
+                        : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 dark:bg-neutral-800 dark:border-neutral-700 dark:text-gray-300 dark:hover:bg-neutral-700'
+                      }`}
+                  >
+                    <Filter className="w-4 h-4" />
+                    <span className="hidden sm:inline">
+                      {(filtroMes !== null && filtroAño !== null) 
+                        ? `${MESES[filtroMes - 1]} ${filtroAño}`
+                        : 'Filtrar por fecha'}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform ${filtroMenuOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Popover */}
+                  {filtroMenuOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setFiltroMenuOpen(false)} />
+                      <div className="absolute right-0 top-full mt-2 w-72 bg-white dark:bg-neutral-800 rounded-2xl shadow-xl border border-gray-200 dark:border-neutral-700 p-4 z-50 animate-in fade-in zoom-in-95">
+                        
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                            <Calendar className="w-4 h-4 text-blue-500" />
+                            Seleccionar Fecha
+                          </h3>
+                          {(filtroMes !== null || filtroAño !== null) && (
+                            <button 
+                              onClick={() => {
+                                setFiltroMes(null);
+                                setFiltroAño(null);
+                                setFiltroMenuOpen(false);
+                              }}
+                              className="text-xs text-red-500 hover:text-red-600 font-semibold"
+                            >
+                              Limpiar
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="space-y-4">
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">Año</label>
+                              <div className="flex items-center gap-1">
+                                <button 
+                                  onClick={() => setFiltroAño((filtroAño || new Date().getFullYear()) - 1)}
+                                  className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-md text-gray-500 dark:text-gray-400"
+                                >
+                                  <ChevronDown className="w-4 h-4 rotate-90" />
+                                </button>
+                                <span className="text-sm font-bold w-12 text-center text-gray-900 dark:text-white">
+                                  {filtroAño || new Date().getFullYear()}
+                                </span>
+                                <button 
+                                  onClick={() => setFiltroAño((filtroAño || new Date().getFullYear()) + 1)}
+                                  className="p-1 hover:bg-gray-100 dark:hover:bg-neutral-700 rounded-md text-gray-500 dark:text-gray-400"
+                                >
+                                  <ChevronDown className="w-4 h-4 -rotate-90" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2 block">Mes</label>
+                            <div className="grid grid-cols-4 gap-2">
+                              {MESES.map((mes, index) => {
+                                const mesNum = index + 1;
+                                const isSelected = filtroMes === mesNum;
+                                return (
+                                  <button
+                                    key={mes}
+                                    onClick={() => {
+                                      setFiltroMes(mesNum);
+                                      if (!filtroAño) setFiltroAño(new Date().getFullYear());
+                                    }}
+                                    className={`py-1.5 rounded-lg text-xs font-medium transition-all ${
+                                      isSelected 
+                                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                                        : 'bg-gray-50 dark:bg-neutral-900 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-700'
+                                    }`}
+                                  >
+                                    {mes}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t border-gray-100 dark:border-neutral-700">
+                          <button
+                            onClick={() => {
+                              const d = new Date();
+                              setFiltroMes(d.getUTCMonth() + 1);
+                              setFiltroAño(d.getUTCFullYear());
+                              setFiltroMenuOpen(false);
+                            }}
+                            className="w-full py-2 bg-gray-50 dark:bg-neutral-900 hover:bg-gray-100 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-300 rounded-xl text-sm font-semibold transition-colors"
+                          >
+                            Ir al mes actual
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => { setPublicacionEdit(null); setEditorOpen(true); }}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 dark:bg-blue-400 dark:hover:bg-blue-500 text-white text-sm font-semibold rounded-xl transition-all shadow-md shadow-blue-900/30 hover:shadow-lg hover:shadow-blue-900/40 hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <Plus className="w-4 h-4" />
+                  Nueva Publicación
+                </button>
+              </div>
             </div>
 
             {publicaciones.length === 0 ? (
@@ -213,150 +339,13 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">¡Crea la primera para comenzar!</p>
               </div>
             ) : (
-              multipleAños ? (
-                <div className="space-y-4">
-                  {añosVistos.map(año => (
-                    <div key={año} className="bg-white dark:bg-neutral-800 rounded-2xl border border-gray-200 dark:border-neutral-700 overflow-hidden">
-                      <button
-                        onClick={() => setAñoAbierto(añoAbierto === año ? null : año)}
-                        className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-bold text-gray-900 dark:text-white">Año {año}</span>
-                          <span className="text-xs font-medium text-gray-500 bg-gray-200 dark:bg-neutral-700 px-2 py-0.5 rounded-full">
-                            {publicaciones.filter(p => p.año === año).length} publicación(es)
-                          </span>
-                        </div>
-                        <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform duration-1000 ${añoAbierto === año ? 'rotate-180' : ''}`} />
-                      </button>
-                      <div 
-                        className={`grid transition-[grid-template-rows,opacity] duration-1000 ease-in-out ${
-                          añoAbierto === año ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-                        }`}
-                      >
-                        <div className="overflow-hidden">
-                          <div className="p-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50/50 dark:bg-neutral-900/20">
-                            <div className="space-y-2">
-                              {publicaciones.filter(p => p.año === año).map((pub) => {
-                                const imgCount = pub.imagenes?.filter(i => i !== '__HIDDEN__').length ?? 0;
-                                const docCount = pub.documentos?.filter((d: any) => d.nombre !== '__HIDDEN__').length ?? 0;
-                                const hasGrafica = pub.grafica_data && pub.grafica_data.some((d: any) => d.concepto !== '__HIDDEN__');
-
-                                return (
-                                  <div
-                                    key={pub.id}
-                                    className="group flex items-center justify-between p-4 bg-white dark:bg-neutral-800 rounded-2xl border border-gray-200 dark:border-neutral-700 gap-4 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md hover:shadow-blue-500/5 transition-all duration-200"
-                                  >
-                                    <div className="flex items-center gap-4 min-w-0">
-                                      <div className="relative shrink-0">
-                                        <button 
-                                          onClick={(e) => {
-                                            if (menuOrdenInfo?.id === pub.id) setMenuOrdenInfo(null);
-                                            else setMenuOrdenInfo({ id: pub.id, rect: e.currentTarget.getBoundingClientRect() });
-                                          }}
-                                          className="w-10 h-10 flex items-center justify-center rounded-xl bg-gradient-to-br from-[#02245b] to-blue-700 hover:from-[#031e4f] hover:to-blue-800 text-white text-sm font-bold shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
-                                          title="Cambiar orden"
-                                        >
-                                          {pub.orden}
-                                        </button>
-
-                                        {menuOrdenInfo?.id === pub.id && (
-                                          <>
-                                            <div className="fixed inset-0 z-40" onClick={() => setMenuOrdenInfo(null)} />
-                                            <div 
-                                              className="fixed z-50 w-32 bg-white dark:bg-neutral-800 rounded-xl shadow-lg border border-gray-200 dark:border-neutral-700 py-1.5 animate-in fade-in zoom-in-95 duration-200"
-                                              style={{
-                                                top: menuOrdenInfo.rect.bottom + 8,
-                                                left: menuOrdenInfo.rect.left
-                                              }}
-                                            >
-                                              <button 
-                                                onClick={() => { handleMoverOrden(pub, 'top'); setMenuOrdenInfo(null); }}
-                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-                                              >
-                                                <ChevronsUp className="w-4 h-4 text-emerald-600" /> Inicio
-                                              </button>
-                                              <button 
-                                                onClick={() => { handleMoverOrden(pub, 'up'); setMenuOrdenInfo(null); }}
-                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-                                              >
-                                                <ArrowUp className="w-4 h-4 text-emerald-500" /> Subir
-                                              </button>
-                                              <button 
-                                                onClick={() => { handleMoverOrden(pub, 'down'); setMenuOrdenInfo(null); }}
-                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-                                              >
-                                                <ArrowDown className="w-4 h-4 text-red-500" /> Bajar
-                                              </button>
-                                              <button 
-                                                onClick={() => { handleMoverOrden(pub, 'bottom'); setMenuOrdenInfo(null); }}
-                                                className="w-full flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors"
-                                              >
-                                                <ChevronsDown className="w-4 h-4 text-red-600" /> Final
-                                              </button>
-                                            </div>
-                                          </>
-                                        )}
-                                      </div>
-                                      <div className="min-w-0">
-                                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-[#02245b] dark:group-hover:text-blue-300 transition-colors">{pub.nombre}</p>
-                                        <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
-                                          <span className="text-[11px] font-medium bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 rounded-md px-2 py-0.5">{pub.año}</span>
-                                          {pub.politicas?.nombre && (
-                                            <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-md border border-blue-100 dark:border-blue-800">
-                                              {pub.politicas.nombre}
-                                            </span>
-                                          )}
-                                          {imgCount > 0 && (
-                                            <span className="flex items-center gap-1 text-[11px] font-medium bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 rounded-md px-2 py-0.5 border border-purple-100 dark:border-purple-800">
-                                              <ImageIcon className="w-3 h-3" />{imgCount}
-                                            </span>
-                                          )}
-                                          {docCount > 0 && (
-                                            <span className="flex items-center gap-1 text-[11px] font-medium bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 rounded-md px-2 py-0.5 border border-amber-100 dark:border-amber-800">
-                                              <FileText className="w-3 h-3" />{docCount}
-                                            </span>
-                                          )}
-                                          {hasGrafica && (
-                                            <span className="flex items-center gap-1 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md px-2 py-0.5 border border-emerald-100 dark:border-emerald-800">
-                                              <BarChart2 className="w-3 h-3" />Gráfica
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-                                    <div className="flex items-center gap-2 shrink-0">
-                                      <button
-                                        onClick={() => { setPublicacionEdit(pub); setEditorOpen(true); }}
-                                        className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-lg bg-transparent text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-700 dark:hover:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all text-xs font-semibold shadow-none"
-                                        title="Editar"
-                                      >
-                                        <Pencil className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                                        <span className="hidden sm:inline">Editar</span>
-                                      </button>
-                                      <button
-                                        onClick={() => handleEliminarPublicacion(pub)}
-                                        disabled={estaOcupado}
-                                        className="flex items-center gap-1.5 p-2 sm:px-3 sm:py-1.5 rounded-lg bg-transparent text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-700 dark:hover:text-red-300 border border-red-200 dark:border-red-800/50 transition-all text-xs font-semibold shadow-none disabled:opacity-50"
-                                        title="Eliminar"
-                                      >
-                                        <Trash2 className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
-                                        <span className="hidden sm:inline">Eliminar</span>
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {publicaciones.map((pub) => {
+              <div className="space-y-2">
+                {publicacionesFiltradas.length === 0 ? (
+                  <div className="text-center py-10 bg-white/50 dark:bg-neutral-800/50 rounded-2xl border border-dashed border-gray-200 dark:border-neutral-700">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No hay publicaciones para esta fecha.</p>
+                  </div>
+                ) : (
+                  publicacionesFiltradas.map((pub) => {
                     const imgCount = pub.imagenes?.filter(i => i !== '__HIDDEN__').length ?? 0;
                     const docCount = pub.documentos?.filter((d: any) => d.nombre !== '__HIDDEN__').length ?? 0;
                     const hasGrafica = pub.grafica_data && pub.grafica_data.some((d: any) => d.concepto !== '__HIDDEN__');
@@ -420,7 +409,13 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
                           <div className="min-w-0">
                             <p className="text-sm font-bold text-gray-900 dark:text-white truncate group-hover:text-[#02245b] dark:group-hover:text-blue-300 transition-colors">{pub.nombre}</p>
                             <div className="flex items-center flex-wrap gap-1.5 mt-1.5">
-                              <span className="text-[11px] font-medium bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 rounded-md px-2 py-0.5">{pub.año}</span>
+                              <span className="text-[11px] font-medium bg-gray-100 dark:bg-neutral-700 text-gray-500 dark:text-gray-400 rounded-md px-2 py-0.5" title="Año del contenido">{pub.año}</span>
+                              {pub.fecha && (
+                                <span className="flex items-center gap-1 text-[11px] font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-md px-2 py-0.5 border border-indigo-100 dark:border-indigo-800" title="Fecha de Publicación">
+                                  <Calendar className="w-3 h-3" />
+                                  {`${MESES[new Date(pub.fecha).getUTCMonth()]} ${new Date(pub.fecha).getUTCFullYear()}`}
+                                </span>
+                              )}
                               {pub.politicas?.nombre && (
                                 <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-md border border-blue-100 dark:border-blue-800">
                                   {pub.politicas.nombre}
@@ -465,9 +460,9 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
                         </div>
                       </div>
                     );
-                  })}
-                </div>
-              )
+                  })
+                )}
+              </div>
             )}
           </div>
         )}

@@ -11,10 +11,12 @@ interface Props {
   politicas: Politica[];
 }
 
-const AÑO_ACTUAL = new Date().getFullYear();
-const AÑOS = Array.from({ length: 6 }, (_, i) => AÑO_ACTUAL - i);
-
 export function ListPublicaciones({ publicacionesIniciales, politicas }: Props) {
+  const añosDisponibles = React.useMemo(() => {
+    const años = new Set(publicacionesIniciales.map(p => p.año));
+    return Array.from(años).sort((a, b) => b - a);
+  }, [publicacionesIniciales]);
+
   const [publicaciones, setPublicaciones] = useState<Publicacion[]>(publicacionesIniciales);
   const [añoFiltro, setAñoFiltro] = useState<number | undefined>(undefined);
   const [politicaFiltro, setPoliticaFiltro] = useState<string | undefined>(undefined);
@@ -49,7 +51,7 @@ export function ListPublicaciones({ publicacionesIniciales, politicas }: Props) 
             className="appearance-none pl-4 pr-8 py-2 rounded-full border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
           >
             <option value="">Todos los años</option>
-            {AÑOS.map(a => <option key={a} value={a}>{a}</option>)}
+            {añosDisponibles.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
           <ChevronDown className="w-3.5 h-3.5 absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
         </div>

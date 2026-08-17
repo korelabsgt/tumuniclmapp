@@ -96,6 +96,11 @@ export const publicacionSchema = z.object({
     .optional()
     .nullable(),
 
+  fecha: z
+    .string()
+    .optional()
+    .nullable(),
+
   imagenes: z.any().optional().nullable(),
   documentos: z.any().optional().nullable(),
   grafica_data: z.any().optional().nullable(),

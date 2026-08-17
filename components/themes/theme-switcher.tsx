@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 import { cn } from "@/lib/utils";
 
-const ThemeSwitcher = () => {
+const ThemeSwitcher = ({ className }: { className?: string }) => {
   const [mounted, setMounted] = useState(false);
   const { resolvedTheme, setTheme } = useTheme();
 
@@ -26,7 +26,8 @@ const ThemeSwitcher = () => {
       className={cn(
         "h-12 w-12 flex items-center justify-center rounded-md transition-all duration-200 cursor-pointer hover:scale-110",
         "[&_svg]:size-6",
-        isDark ? "[&_svg]:text-blue-400" : "[&_svg]:text-yellow-500"
+        isDark ? "[&_svg]:text-blue-400" : "[&_svg]:text-yellow-500",
+        className
       )}
     />
   );

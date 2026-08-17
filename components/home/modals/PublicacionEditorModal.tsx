@@ -50,6 +50,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [año, setAño] = useState(AÑO_ACTUAL);
+  const [fecha, setFecha] = useState('');
   const [orden, setOrden] = useState<number | ''>(0);
   const [politicaId, setPoliticaId] = useState<string>('');
   const [publicationCode, setPublicationCode] = useState<string>('');
@@ -78,6 +79,8 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
       setNombre(publicacion?.nombre ?? '');
       setDescripcion(publicacion?.descripcion ?? '');
       setAño(publicacion?.año ?? AÑO_ACTUAL);
+      const hoy = new Date().toISOString().split('T')[0];
+      setFecha(publicacion?.fecha ? publicacion.fecha.substring(0, 10) : hoy);
       setOrden(publicacion?.orden ?? 0);
       setPoliticaId(publicacion?.politica_id ?? '');
       setPublicationCode(publicacion?.id ?? crypto.randomUUID());
@@ -259,6 +262,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
         nombre: nombre.trim(),
         descripcion: descripcion.trim(),
         año,
+        fecha: fecha ? `${fecha}T12:00:00Z` : null,
         orden: ordenNum,
         politica_id: politicaId || null,
         imagenes: imagenes.length > 0 ? (secciones.has('imagenes') ? imagenes : [...imagenes, '__HIDDEN__']) : null,
@@ -341,10 +345,10 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
               />
             </div>
 
-            {/* Año, Orden y Política en grid */}
-            <div className="grid grid-cols-3 gap-4">
+              {/* Año, Fecha Pub, Orden y Política en grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Año *</label>
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Año al que corresponde la información (Ej. Informe Fiscal 2025)">Año (Contenido) *</label>
                 <div className="relative">
                   <select
                     value={año}
@@ -356,6 +360,17 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
                   </select>
                   <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Día, Mes y Año en que se publica oficialmente">F. Publicación</label>
+                <input
+                  type="date"
+                  value={fecha}
+                  onChange={e => setFecha(e.target.value)}
+                  disabled={estaOcupado}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
               </div>
 
               <div className="space-y-1">

@@ -6,12 +6,13 @@ import { createClient } from '@/utils/supabase/server';
 export default async function GestorSolitLamparas() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) return null;
 
   // 1. Identificar si es del departamento de Atención al Vecino (Administrativos/Recepción)
   const atencionVecino = await getUsuariosAtencionVecino();
   let isAtencionVecino = atencionVecino.some(e => e.user_id === user.id);
+
 
   // También verificamos si el usuario tiene explícitamente el rol de RECEPCION
   if (!isAtencionVecino) {
@@ -30,14 +31,14 @@ export default async function GestorSolitLamparas() {
   // - Si es Electricista -> Carga solo sus asignadas pendientes
   // - Por defecto (Admin General u otros) -> Carga todo
   const solicitudes = (isElectricista && !isAtencionVecino)
-    ? await getSolicitudesElectricista() 
+    ? await getSolicitudesElectricista()
     : await getSolicitudesLamparas();
 
   return (
     <div className="w-full flex flex-col gap-6">
       <div className="w-full">
-        <ListSolitLampara 
-          initialData={solicitudes} 
+        <ListSolitLampara
+          initialData={solicitudes}
           userServerSide={{
             userId: user.id,
             isElectricista: isElectricista && !isAtencionVecino // Solo aplicamos restricciones si NO es de atención al vecino

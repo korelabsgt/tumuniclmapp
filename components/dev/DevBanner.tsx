@@ -7,7 +7,7 @@ import { MensajeFormateado } from './mensajeFormato';
 import { useMensajesActivosDev } from './lib/hooks';
 
 function esDashboardInicio(pathname: string) {
-  return pathname === '/protected/admin' || pathname === '/protected/user';
+  return pathname === '/sigem/admin' || pathname === '/sigem/user';
 }
 
 export default function DevBanner() {

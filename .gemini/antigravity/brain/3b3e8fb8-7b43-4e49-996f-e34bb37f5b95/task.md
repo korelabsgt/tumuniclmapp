@@ -1,0 +1,4 @@
+- `[x]` Resolver conflicto de merge en `components/dev/actions/mensajes.ts`
+- `[x]` Actualizar todos los links `/protected` a `/sigem` en la carpeta `components/`
+- `[/]` Verificar con `tsc --noEmit` que no haya errores
+- `[ ]` Escribir el `walkthrough.md`

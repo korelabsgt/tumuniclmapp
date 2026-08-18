@@ -48,7 +48,6 @@ function IconSunSolid({ className }: { className?: string }) {
     </svg>
   );
 }
-
 const ThemeSwitcher = ({ className }: { className?: string }) => {
   const [mounted, setMounted] = useState(false);
   const [hovered, setHovered] = useState(false);

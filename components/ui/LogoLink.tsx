@@ -46,7 +46,7 @@ const whooshVariant: Variants = {
   },
 };
 
-export default function LogoLink() {
+export default function LogoLink({ iconOnly = false }: { iconOnly?: boolean }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   return (

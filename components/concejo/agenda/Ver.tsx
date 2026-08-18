@@ -293,7 +293,7 @@ export default function Ver() {
 
   const handleGoToAgenda = (id: string) => {
     setLoadingAgendaId(id);
-    setTimeout(() => { router.push(`/protected/concejo/agenda/${id}`); }, 1000);
+    setTimeout(() => { router.push(`/sigem/concejo/agenda/${id}`); }, 1000);
   };
 
   const handleDeleteAgenda = async (id: string) => {
@@ -333,7 +333,7 @@ export default function Ver() {
         <div className="w-full flex flex-col gap-3 xl:flex-row xl:items-center">
             
             <div className="flex w-full xl:w-auto items-center gap-3">
-                <BotonVolver ruta="/protected/" />
+                <BotonVolver ruta="/sigem/" />
                 
                 <div className="flex items-center gap-2 flex-1 justify-end xl:flex-none">
                     <select

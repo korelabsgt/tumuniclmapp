@@ -47,7 +47,7 @@ export default function BloqueoActividad() {
   const [confirming, setConfirming] = useState(false);
 
   useEffect(() => {
-    if (pathname === '/protected/actividades') {
+    if (pathname === '/sigem/actividades') {
       void refetch();
     }
   }, [pathname, refetch]);

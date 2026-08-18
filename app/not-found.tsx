@@ -35,7 +35,7 @@ export default function NotFound() {
 
           <div className="flex justify-center w-full">
             <Button
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/sigem')}
               className="w-full h-10 px-6 text-sm font-bold text-white transition-colors bg-blue-600 rounded-lg sm:w-auto hover:bg-blue-700"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />

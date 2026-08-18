@@ -4,6 +4,7 @@ import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
+import Script from "next/script";
 import NotificationListener from "@/components/push/Listener";
 import { ThemeProvider } from "@/components/themes/theme-provider";
 import QueryProvider from "@/components/providers/QueryProvider";
@@ -57,10 +58,8 @@ export default async function RootLayout({
     pathname === "/" ||
     pathname.startsWith("/albergues") ||
     pathname.startsWith("/restablecer-contrasena");
-
   return (
     <html lang="es" className={geistSans.className} suppressHydrationWarning>
-
       <body className="bg-background text-foreground" suppressHydrationWarning>
         <QueryProvider>
           <ThemeProvider
@@ -90,10 +89,10 @@ export default async function RootLayout({
                   autoClose={3000}
                   theme="colored"
                 />
-                <script
+                <Script
                   src="https://cdn.lordicon.com/lordicon.js"
-                  async
-                ></script>
+                  strategy="lazyOnload"
+                />
               </div>
             </SystemGuard>
           </ThemeProvider>

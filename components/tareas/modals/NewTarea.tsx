@@ -84,7 +84,7 @@ export default function NewTarea({ isOpen, onClose, usuarios, usuarioActual, esJ
         body: JSON.stringify({
           title: titulo,
           message: mensaje,
-          url: '/protected/actividades',
+          url: '/sigem/actividades',
           targetIds: userIds,
         }),
       });

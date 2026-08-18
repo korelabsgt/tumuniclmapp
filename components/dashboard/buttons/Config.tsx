@@ -49,9 +49,9 @@ export default function Config({ onShowHorario }: ConfigProps) {
           animate={{ opacity: 1, scale: 1 }} 
           transition={{ duration: 0.2 }}
         >
-          <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => router.push('/protected/admin/configs/roles')}> <Users size={20} /> Roles </Button>
-          <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => router.push('/protected/admin/configs/modulos')}> <Settings size={20} /> Módulos </Button>
-          <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => router.push('/protected/admin/logs')}> <FileText size={20} /> Logs </Button>
+          <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => router.push('/sigem/admin/configs/roles')}> <Users size={20} /> Roles </Button>
+          <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => router.push('/sigem/admin/configs/modulos')}> <Settings size={20} /> Módulos </Button>
+          <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => router.push('/sigem/admin/logs')}> <FileText size={20} /> Logs </Button>
           <Button variant="ghost" className="w-full justify-center gap-2 text-base" onClick={() => { onShowHorario(); setMostrarOpciones(false); }}> <Clock size={20} /> Horario Sistema </Button>
         </motion.div>
       )}

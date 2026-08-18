@@ -110,7 +110,7 @@ export default function ListSolicitud({ initialData }: Props) {
 
   const handleSeleccionReporte = (tipo: TipoReporte) => {
     if (tipo === 'consumos') {
-      router.push('/protected/combustible/reporte');
+      router.push('/sigem/combustible/reporte');
       return;
     }
     if (tipo === 'liquidaciones') {
@@ -118,7 +118,7 @@ export default function ListSolicitud({ initialData }: Props) {
       return;
     }
     if (tipo === 'vehiculos') {
-      router.push('/protected/combustible/reporte/vehiculos');
+      router.push('/sigem/combustible/reporte/vehiculos');
       return;
     }
     handlePrevisualizarReporte();

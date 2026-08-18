@@ -215,7 +215,7 @@ export default function AuthButton({
       descripcion: "Consultar registros de asistencia.",
       iconKey: "sgtmgpft",
       iconBg: "bg-green-100 dark:bg-green-900/40",
-      onClick: () => irA("/protected/mis-asistencias"),
+      onClick: () => irA("/sigem/mis-asistencias"),
     },
     {
       id: "comisiones",
@@ -223,7 +223,7 @@ export default function AuthButton({
       descripcion: "Ver comisiones asignadas.",
       iconKey: "vqkaxtlm",
       iconBg: "bg-purple-100 dark:bg-purple-900/40",
-      onClick: () => irA("/protected/mis-comisiones"),
+      onClick: () => irA("/sigem/mis-comisiones"),
     },
   ];
 
@@ -330,7 +330,7 @@ export default function AuthButton({
                         <button
                           type="button"
                           aria-label="Difusión"
-                          onClick={() => irA("/protected/dev")}
+                          onClick={() => irA("/sigem/dev")}
                           className="inline-flex h-10 w-10 cursor-pointer items-center justify-center text-[#0066cc] transition-opacity hover:opacity-80 dark:text-blue-400"
                         >
                           <Megaphone className="h-8 w-8" strokeWidth={2.25} />

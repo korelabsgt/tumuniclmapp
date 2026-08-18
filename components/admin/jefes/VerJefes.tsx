@@ -28,7 +28,7 @@ export default function VerJefes() {
             <Button 
               variant="ghost" 
               size="icon" 
-              onClick={() => router.push('/protected/admin/users')}
+              onClick={() => router.push('/sigem/admin/users')}
               className="text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 -ml-2"
               title="Volver a usuarios"
             >

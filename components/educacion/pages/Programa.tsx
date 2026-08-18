@@ -60,7 +60,7 @@ export default function Programa() {
     if (data && data.activePayload && data.activePayload[0]) {
       const nivelId = data.activePayload[0].payload.id;
       router.push(
-        `/protected/educacion/programa/${programaId}/nivel/${nivelId}`,
+        `/sigem/educacion/programa/${programaId}/nivel/${nivelId}`,
       );
     }
   };

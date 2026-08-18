@@ -167,11 +167,11 @@ export default function Ver() {
                         programasFiltrados.map(programa => (
                             <div
                                 key={programa.id}
-                                onClick={() => router.push(`/protected/educacion/programa/${programa.id}`)}
+                                onClick={() => router.push(`/sigem/educacion/programa/${programa.id}`)}
                                 className="bg-white dark:bg-neutral-900 p-4 border border-gray-200 dark:border-neutral-800 rounded-lg shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1 cursor-pointer"
                                 role="button"
                                 tabIndex={0}
-                                onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/protected/educacion/programa/${programa.id}`); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter') router.push(`/sigem/educacion/programa/${programa.id}`); }}
                             >
                                 <div className="flex justify-between items-start gap-4">
                                     <div className="flex-grow">

@@ -19,9 +19,9 @@ function puedeEliminarMensajes(rol: string | null): boolean {
 }
 
 function revalidarRutasLecturas() {
-  revalidatePath("/protected/permisos", "layout");
-  revalidatePath("/protected/permisos/acuerdos", "layout");
-  revalidatePath("/protected/permisos/lecturas", "layout");
+  revalidatePath("/sigem/permisos", "layout");
+  revalidatePath("/sigem/permisos/acuerdos", "layout");
+  revalidatePath("/sigem/permisos/lecturas", "layout");
 }
 
 export type TipoVistaLecturas =

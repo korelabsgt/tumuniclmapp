@@ -436,20 +436,20 @@ export default function AuthButton({
 
   return (
     <>
-      <div className="flex items-center gap-0.5 sm:gap-1">
-        <ThemeSwitcher className="w-9 h-9 sm:w-10 sm:h-10" />
+      <div className="flex items-center gap-0 sm:gap-1">
+        <ThemeSwitcher className="h-9 w-9 sm:h-10 sm:w-10" />
 
         <button
           type="button"
           onClick={handleRefresh}
           disabled={isRefreshing}
           aria-label="Actualizar"
-          className="inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 cursor-pointer text-[#0066cc] dark:text-blue-400 hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity focus-visible:outline-none"
+          className="inline-flex h-9 w-9 cursor-pointer items-center justify-center text-[#0066cc] transition-opacity hover:opacity-80 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60 sm:h-10 sm:w-10 dark:text-blue-400"
         >
           <AnimatedIcon
             iconKey="qzorewvq"
             trigger={isRefreshing ? "loop" : "hover"}
-            className="w-6 h-6 sm:w-8 sm:h-8"
+            className="h-6 w-6 sm:h-8 sm:w-8"
           />
         </button>
 
@@ -459,9 +459,9 @@ export default function AuthButton({
             aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
             aria-expanded={menuAbierto}
             onClick={() => alternarMenu()}
-            className="inline-flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 cursor-pointer text-foreground hover:text-[#0066cc] dark:hover:text-blue-400 transition-colors focus-visible:outline-none"
+            className="inline-flex h-9 w-9 cursor-pointer items-center justify-center text-foreground transition-colors hover:text-[#0066cc] focus-visible:outline-none sm:h-10 sm:w-10 dark:hover:text-blue-400"
           >
-            <span className="relative w-7 h-7 sm:w-6 sm:h-6 block">
+            <span className="relative block h-6 w-6">
               <AnimatePresence initial={false}>
                 {menuAbierto ? (
                   <motion.span

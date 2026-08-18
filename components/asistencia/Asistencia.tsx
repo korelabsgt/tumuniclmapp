@@ -74,7 +74,7 @@ import {
   getEstadoMarcajeMeta,
   esEntradaTardeMarcaje,
   esNombreHorarioMultiple,
-  esTipoMarcajeLibre,
+  diaUsaMarcajeLibre,
   resolverMarcajeHoraTextClass,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
@@ -362,7 +362,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     if (!todosLosRegistros) return null;
     return todosLosRegistros.find(
       (r: any) =>
-        isSameDay(parseISO(r.created_at), fechaHoraGt) &&
+        isSameDay(new Date(r.created_at), fechaHoraGt) &&
         r.tipo_registro === "Entrada",
     );
   }, [todosLosRegistros, fechaHoraGt]);
@@ -371,7 +371,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     if (!todosLosRegistros) return null;
     return todosLosRegistros.find(
       (r: any) =>
-        isSameDay(parseISO(r.created_at), fechaHoraGt) &&
+        isSameDay(new Date(r.created_at), fechaHoraGt) &&
         r.tipo_registro === "Salida",
     );
   }, [todosLosRegistros, fechaHoraGt]);
@@ -379,9 +379,16 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
   const registrosHoyMultiple = useMemo(() => {
     if (!todosLosRegistros) return [];
     return todosLosRegistros.filter((r: any) =>
-      isSameDay(parseISO(r.created_at), fechaHoraGt),
+      isSameDay(new Date(r.created_at), fechaHoraGt),
     );
   }, [todosLosRegistros, fechaHoraGt]);
+
+  const mostrarComoMultipleHoy = diaUsaMarcajeLibre({
+    esHorarioMultiple,
+    registros: registrosHoyMultiple,
+    tieneEntrada: !!registroEntradaHoy,
+    tieneSalida: !!registroSalidaHoy,
+  });
 
 
 
@@ -551,12 +558,20 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     const permiso = obtenerJustificacionParaDia(permisosEmpleado, diaString);
 
     setPermisoSeleccionadoParaMapa(permiso);
+    const entradaDia =
+      registrosDeEseDia.find((r) => r.tipo_registro === "Entrada") || null;
+    const salidaDia =
+      registrosDeEseDia.find((r) => r.tipo_registro === "Salida") || null;
+    const usarMultiple = diaUsaMarcajeLibre({
+      esHorarioMultiple,
+      registros: registrosDeEseDia,
+      tieneEntrada: !!entradaDia,
+      tieneSalida: !!salidaDia,
+    });
     setRegistrosSeleccionadosParaMapa({
-      entrada:
-        registrosDeEseDia.find((r) => r.tipo_registro === "Entrada") || null,
-      salida:
-        registrosDeEseDia.find((r) => r.tipo_registro === "Salida") || null,
-      multiple: esHorarioMultiple ? registrosDeEseDia : undefined,
+      entrada: entradaDia,
+      salida: salidaDia,
+      multiple: usarMultiple ? registrosDeEseDia : undefined,
     });
     setModalMapaAbierto(true);
   };
@@ -691,10 +706,9 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
     notasSalida: registroSalidaHoy?.notas,
     marcaEntradaAt: registroEntradaHoy?.created_at,
     horarioEntrada: horarioEntradaHoyStr,
-    cantidadMarcajes:
-      esHorarioMultiple || registrosHoyMultiple.length > 2
-        ? registrosHoyMultiple.length
-        : null,
+    cantidadMarcajes: mostrarComoMultipleHoy
+      ? registrosHoyMultiple.length
+      : null,
   });
 
   const getEntradaTextClass = () =>
@@ -765,11 +779,12 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
 
   const renderEstadoMarcajeHoyBtn = () => {
     const hoyStr = format(fechaHoraGt, "yyyy-MM-dd");
-    const esMarcajeLibre =
-      esHorarioMultiple ||
-      registrosHoyMultiple.some((r: { tipo_registro?: string | null }) =>
-        esTipoMarcajeLibre(r.tipo_registro),
-      );
+    const esMarcajeLibre = diaUsaMarcajeLibre({
+      esHorarioMultiple,
+      registros: registrosHoyMultiple,
+      tieneEntrada: !!registroEntradaHoy,
+      tieneSalida: !!registroSalidaHoy,
+    });
     const estado = resolverEstadoMarcaje({
       fechaStr: hoyStr,
       tieneEntrada: !!registroEntradaHoy,
@@ -896,7 +911,7 @@ export default function Asistencia({ onFinalizar }: AsistenciaProps) {
                             onClick={handleAbrirMapaHoy}
                             className="min-w-0 cursor-pointer"
                           >
-                            {(esHorarioMultiple || registrosHoyMultiple.length > 2) ? (
+                            {mostrarComoMultipleHoy ? (
                               <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex justify-center items-center text-center transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[11px] md:text-sm">
                                 Ver Asistencia ({registrosHoyMultiple.length})
                               </div>

@@ -61,7 +61,6 @@ import {
   esEntradaTardeMarcaje,
   resolverHorarioEntradaDia,
   resolverMarcajeHoraTextClass,
-  esTipoMarcajeLibre,
   MARCaje_FILA_CLASS,
   MARCaje_ETIQUETA_CLASS,
 } from '@/components/asistencia/lib/estado-marcaje';
@@ -204,10 +203,6 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
       grupo.cantidad++;
       if (!grupo.representante) grupo.representante = registro;
 
-      if (esTipoMarcajeLibre(registro.tipo_registro)) {
-          grupo.tieneMultiple = true;
-      }
-
       if (registro.tipo_registro === 'Entrada') {
         if (!grupo.entrada || new Date(registro.created_at) < new Date(grupo.entrada.created_at)) {
           grupo.entrada = registro;
@@ -216,6 +211,8 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
         if (!grupo.salida || new Date(registro.created_at) > new Date(grupo.salida.created_at)) {
           grupo.salida = registro;
         }
+      } else {
+        grupo.tieneMultiple = true;
       }
     });
 
@@ -670,7 +667,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
 
                     {usuariosDelDia.length > 0 ? (
                       usuariosDelDia.map((usuario, index) => {
-                        const sinRegistros = !usuario.entrada && !usuario.salida && !usuario.tieneMultiple;
+                        const sinRegistros = usuario.cantidad === 0;
 
                         return (
                           <tr 
@@ -703,7 +700,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                         ) : null
                                       )
                                     )
-                                  ) : (esHorarioMultiple || usuario.tieneMultiple) ? (
+                                  ) : (esHorarioMultiple || usuario.tieneMultiple || usuario.cantidad > 2) ? (
                                     <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center transition-colors hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
                                       Ver Asistencia ({usuario.cantidad})
                                     </div>
@@ -816,7 +813,7 @@ export default function Calendario({ todosLosRegistros = [], onAbrirMapa, fechaH
                                         justificacionDelDia,
                                       )}
                                       cantidadMarcajes={
-                                        esHorarioMultiple || usuario.tieneMultiple
+                                        esHorarioMultiple || usuario.tieneMultiple || usuario.cantidad > 2
                                           ? usuario.cantidad
                                           : null
                                       }

@@ -50,12 +50,12 @@ export default function AppHeader() {
       id="app-main-nav"
       className={`w-full shrink-0 ${CHROME_BG_CLASS}`}
     >
-      <div className="flex w-full flex-col px-3 py-2 sm:px-5">
-        <div className="flex w-full items-center justify-between gap-3">
-          <div className="min-w-0">
+      <div className="flex w-full flex-col py-2 pl-3 pr-1 sm:px-5">
+        <div className="flex w-full items-center justify-between gap-1 sm:gap-3">
+          <div className="min-w-0 flex-1">
             <LogoLink />
           </div>
-          <div className="shrink-0">
+          <div className="ml-1 shrink-0 sm:ml-0">
             <HeaderAuth
               menuAbierto={menuAbierto}
               onMenuOpenChange={setMenuAbierto}

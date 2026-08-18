@@ -71,7 +71,7 @@ export default function LogoLink() {
           >
             SIGEM -CLM-
           </span>
-          <span className="text-[8px] sm:text-[10px] font-medium uppercase tracking-wide text-[#0066cc] leading-snug sm:max-w-[14rem]">
+          <span className="hidden text-[10px] font-medium uppercase tracking-wide text-[#0066cc] leading-snug sm:block sm:max-w-[14rem]">
             Sistema Integral de Gestión Municipal
           </span>
         </div>

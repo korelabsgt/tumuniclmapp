@@ -10,21 +10,21 @@ import useUserData from "@/hooks/sesion/useUserData";
 import { CHROME_BG_CLASS } from "@/components/layout/chrome";
 
 function esInicioDashboard(pathname: string) {
-  return pathname === "/protected/admin" || pathname === "/protected/user";
+  return pathname === "/sigem/admin" || pathname === "/sigem/user";
 }
 
 function debeMostrarVolver(pathname: string) {
   return (
-    pathname.startsWith("/protected") &&
-    pathname !== "/protected" &&
-    pathname !== "/protected/admin" &&
-    pathname !== "/protected/user"
+    pathname.startsWith("/sigem") &&
+    pathname !== "/sigem" &&
+    pathname !== "/sigem/admin" &&
+    pathname !== "/sigem/user"
   );
 }
 
 function rutaInicio(rol: string) {
   const esAdmin = rol === "SUPER" || rol === "ADMINISTRADOR";
-  return esAdmin ? "/protected/admin" : "/protected/user";
+  return esAdmin ? "/sigem/admin" : "/sigem/user";
 }
 
 const fadeSuave = {

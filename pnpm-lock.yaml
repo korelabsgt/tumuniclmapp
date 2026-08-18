@@ -194,6 +194,12 @@ importers:
       react-icons:
         specifier: ^5.5.0
         version: 5.5.0(react@19.2.3)
+      react-pageflip:
+        specifier: ^2.0.3
+        version: 2.0.3
+      react-parallax:
+        specifier: ^3.5.2
+        version: 3.5.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react-pdf:
         specifier: 9.1.0
         version: 9.1.0(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -206,6 +212,12 @@ importers:
       react-toastify:
         specifier: ^11.0.5
         version: 11.0.5(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+      react-wavify:
+        specifier: ^1.12.0
+        version: 1.12.0(react@19.2.3)
+      react-zoom-pan-pinch:
+        specifier: ^4.0.4
+        version: 4.0.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       recharts:
         specifier: ^2.15.3
         version: 2.15.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -3456,6 +3468,9 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
+  page-flip@2.0.7:
+    resolution: {integrity: sha512-96lQFUUz7r/LZzEUZJ3yBIMEKU9+m8HMFDzTvTdD6P7Ag/wXINjp9n0W7b4wanwnDbQETo4uNUoL3zMqpFxwGA==}
+
   pako@2.1.0:
     resolution: {integrity: sha512-w+eufiZ1WuJYgPXbV/PO3NCMEc3xqylkKHzp8bxp1uW4qaSNQUkwmLLEc3kKsfz8lpV1F8Ht3U1Cm+9Srog2ug==}
 
@@ -3719,6 +3734,15 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
+  react-pageflip@2.0.3:
+    resolution: {integrity: sha512-k81mHhRvUM52y8jyzTCh5t4O0lepkLhp+XGSUzq2C3uD+iW99Cv0jfRlqFCjZbD5N3jKkIFr7/3giucoXKDP3Q==}
+
+  react-parallax@3.5.2:
+    resolution: {integrity: sha512-8dwJXp/QK0fCNb5oYfxP0fbRjsrR2ysQyoRI6l7CxVJkVhO7Z2wFRal7bLosyjW5TxljhHU33AtG15QR8ak4Ng==}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+      react-dom: ^17 || ^18 ||^19
+
   react-pdf@9.1.0:
     resolution: {integrity: sha512-KhPDQE3QshkLdS3b48S5Bldv0N5flob6qwvsiADWdZOS5TMDaIrkRtEs+Dyl6ubRf2jTf9jWmFb6RjWu46lSSg==}
     peerDependencies:
@@ -3801,6 +3825,18 @@ packages:
     peerDependencies:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
+
+  react-wavify@1.12.0:
+    resolution: {integrity: sha512-o8ksvP3lYbclXUn/vLCVIuZEkPlDgF0uZ+Ck482T6Wxh4vVwQstAPrGib5Tkb/mdHiHitacz81qYTM3d1aZF9g==}
+    peerDependencies:
+      react: ^0.13.0 || ^0.14.0 || >=15
+
+  react-zoom-pan-pinch@4.0.4:
+    resolution: {integrity: sha512-P0D7lfNHyJCNuUozoVdt0WNWcQ34ZbbD71B8pb+UtF7Th8MKBnxYiPApDfPZZmr+Gk0l0WmGTXL8R36JirHcQQ==}
+    engines: {node: '>=8', npm: '>=5'}
+    peerDependencies:
+      react: '*'
+      react-dom: '*'
 
   react@19.2.3:
     resolution: {integrity: sha512-Ku/hhYbVjOQnXDZFv2+RibmLFGwFdeeKHFcOTlrt7xplBnya5OGn/hIRDsqDiSUcfORsDC7MPxwork8jBwsIWA==}
@@ -7993,6 +8029,8 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
+  page-flip@2.0.7: {}
+
   pako@2.1.0: {}
 
   parent-module@1.0.1:
@@ -8280,6 +8318,15 @@ snapshots:
 
   react-is@18.3.1: {}
 
+  react-pageflip@2.0.3:
+    dependencies:
+      page-flip: 2.0.7
+
+  react-parallax@3.5.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+
   react-pdf@9.1.0(@types/react@19.2.7)(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
     dependencies:
       clsx: 2.1.1
@@ -8364,6 +8411,15 @@ snapshots:
       dom-helpers: 5.2.1
       loose-envify: 1.4.0
       prop-types: 15.8.1
+      react: 19.2.3
+      react-dom: 19.2.3(react@19.2.3)
+
+  react-wavify@1.12.0(react@19.2.3):
+    dependencies:
+      react: 19.2.3
+
+  react-zoom-pan-pinch@4.0.4(react-dom@19.2.3(react@19.2.3))(react@19.2.3):
+    dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 

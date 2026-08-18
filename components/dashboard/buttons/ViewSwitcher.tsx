@@ -68,7 +68,7 @@ export function AsistenciaQuickNav() {
       textClass="text-green-700 dark:text-green-400"
       onEnter={() => setActivo(true)}
       onLeave={() => setActivo(false)}
-      onClick={() => router.push("/protected/mis-asistencias")}
+      onClick={() => router.push("/sigem/mis-asistencias")}
     />
   );
 }
@@ -87,7 +87,7 @@ export function ComisionesQuickNav() {
       textClass="text-purple-700 dark:text-purple-400"
       onEnter={() => setActivo(true)}
       onLeave={() => setActivo(false)}
-      onClick={() => router.push("/protected/mis-comisiones")}
+      onClick={() => router.push("/sigem/mis-comisiones")}
     />
   );
 }

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 const esRutaDelSistema = (path: string) =>
-  path.startsWith('/protected') ||
+  path.startsWith('/sigem') ||
   path.startsWith('/login') ||
   path.startsWith('/unauthorized') ||
   path.startsWith('/auth');

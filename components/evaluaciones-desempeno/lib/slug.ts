@@ -44,9 +44,9 @@ export function itemPorSlug<T extends { id: string; nombre: string }>(
 }
 
 export function rutaBaseEvaluaciones(tipoVista: TipoVistaEvaluaciones): string {
-  if (tipoVista === "rrhh") return "/protected/evaluaciones-desempeno/rrhh";
-  if (tipoVista === "jefe") return "/protected/evaluaciones-desempeno/jefe";
-  return "/protected/evaluaciones-desempeno";
+  if (tipoVista === "rrhh") return "/sigem/evaluaciones-desempeno/rrhh";
+  if (tipoVista === "jefe") return "/sigem/evaluaciones-desempeno/jefe";
+  return "/sigem/evaluaciones-desempeno";
 }
 
 export function rutaEvaluacionDesdePath(

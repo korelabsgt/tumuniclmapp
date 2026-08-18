@@ -202,8 +202,8 @@ export async function gestionarPermiso(
       console.error("Error notificando gestión permiso:", e);
     }
 
-    revalidatePath("/protected/permisos");
-    revalidatePath("/protected/permisos/acuerdos");
+    revalidatePath("/sigem/permisos");
+    revalidatePath("/sigem/permisos/acuerdos");
     return true;
   }
 
@@ -407,8 +407,8 @@ export async function guardarPermiso(formData: FormData, id?: string) {
     }
   }
 
-  revalidatePath("/protected/permisos");
-  revalidatePath("/protected/permisos/acuerdos");
+  revalidatePath("/sigem/permisos");
+  revalidatePath("/sigem/permisos/acuerdos");
   return permisoId;
 }
 
@@ -443,8 +443,8 @@ export async function eliminarPermiso(id: string) {
     }
   }
 
-  revalidatePath("/protected/permisos");
-  revalidatePath("/protected/permisos/acuerdos");
+  revalidatePath("/sigem/permisos");
+  revalidatePath("/sigem/permisos/acuerdos");
 }
 
 export async function actualizarComprobantePermiso(
@@ -468,8 +468,8 @@ export async function actualizarComprobantePermiso(
     throw new Error(`Error al actualizar el comprobante: ${error.message}`);
   }
 
-  revalidatePath("/protected/permisos");
-  revalidatePath("/protected/permisos/acuerdos");
+  revalidatePath("/sigem/permisos");
+  revalidatePath("/sigem/permisos/acuerdos");
   return { path };
 }
 
@@ -596,6 +596,6 @@ export async function actualizarDiasSemanaAcuerdo(
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/protected/permisos/acuerdos");
+  revalidatePath("/sigem/permisos/acuerdos");
   return diasActualizados;
 }

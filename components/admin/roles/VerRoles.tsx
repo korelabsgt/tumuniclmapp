@@ -39,7 +39,7 @@ const handleRolActualizado = async (_rol: Rol) => {
       <div className="flex justify-between items-center">
                 <Button
           variant="ghost"
-          onClick={() => router.push('/protected/admin')}
+          onClick={() => router.push('/sigem/admin')}
           className="text-blue-600 text-base underline"
         >
           Volver

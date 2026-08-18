@@ -156,7 +156,7 @@ return (
     <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
       <Button
         variant="ghost"
-        onClick={() => router.push("/protected")}
+        onClick={() => router.push("/sigem")}
         className="text-blue-600 text-base underline w-full md:w-auto"
       >
         Volver

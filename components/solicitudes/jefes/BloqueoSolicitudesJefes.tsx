@@ -24,7 +24,7 @@ export default function BloqueoSolicitudesJefes() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    if (pathname === '/protected/solicitudes/jefes') {
+    if (pathname === '/sigem/solicitudes/jefes') {
       void refetch();
     }
   }, [pathname, refetch]);
@@ -65,7 +65,7 @@ export default function BloqueoSolicitudesJefes() {
 
             <div className="w-full bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-100 dark:border-emerald-900/50 p-5 mb-8 text-left">
               <div className="flex flex-col gap-3">
-                
+
                 <div>
                   <h3 className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider mb-1">
                     <MapPin className="w-3.5 h-3.5" /> Asunto / Título
@@ -115,7 +115,7 @@ export default function BloqueoSolicitudesJefes() {
         </div>
       </div>
 
-      <CambioEstadoJefesModal 
+      <CambioEstadoJefesModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
         onSuccess={handleModalSuccess}

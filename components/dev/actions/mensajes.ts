@@ -96,7 +96,7 @@ export async function crearMensajeDev(
     return { ok: false, error: error.message };
   }
 
-  revalidatePath('/protected/dev');
+  revalidatePath('/sigem/dev');
   revalidatePath('/', 'layout');
   return { ok: true };
 }
@@ -131,7 +131,7 @@ export async function editarMensajeDev(
     return { ok: false, error: error.message };
   }
 
-  revalidatePath('/protected/dev');
+  revalidatePath('/sigem/dev');
   revalidatePath('/', 'layout');
   return { ok: true };
 }
@@ -149,7 +149,7 @@ export async function eliminarMensajeDev(
     return { ok: false, error: error.message };
   }
 
-  revalidatePath('/protected/dev');
+  revalidatePath('/sigem/dev');
   revalidatePath('/', 'layout');
   return { ok: true };
 }

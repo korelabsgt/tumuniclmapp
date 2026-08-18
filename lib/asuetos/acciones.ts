@@ -131,8 +131,8 @@ export async function crearAsueto(
 
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/protected/permisos/rrhh");
-  revalidatePath("/protected/mis-asistencias");
+  revalidatePath("/sigem/permisos/rrhh");
+  revalidatePath("/sigem/mis-asistencias");
   return { ok: true };
 }
 
@@ -174,8 +174,8 @@ export async function actualizarAsueto(
 
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/protected/permisos/rrhh");
-  revalidatePath("/protected/mis-asistencias");
+  revalidatePath("/sigem/permisos/rrhh");
+  revalidatePath("/sigem/mis-asistencias");
   return { ok: true };
 }
 
@@ -194,7 +194,7 @@ export async function eliminarAsueto(
   const { error } = await supabase.from("asuetos").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/protected/permisos/rrhh");
-  revalidatePath("/protected/mis-asistencias");
+  revalidatePath("/sigem/permisos/rrhh");
+  revalidatePath("/sigem/mis-asistencias");
   return { ok: true };
 }

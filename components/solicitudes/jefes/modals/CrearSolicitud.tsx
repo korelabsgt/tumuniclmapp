@@ -93,7 +93,7 @@ export default function CrearSolicitud({ isOpen, onClose, onSuccess, editData }:
         body: JSON.stringify({
           title: titulo,
           message: mensaje,
-          url: '/protected/solicitudes/jefes',
+          url: '/sigem/solicitudes/jefes',
           targetIds: userIds,
         }),
       });

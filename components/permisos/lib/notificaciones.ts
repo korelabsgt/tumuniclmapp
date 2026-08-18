@@ -78,7 +78,7 @@ function clasificarActor(
 }
 
 function urlPermiso(esAcuerdo: boolean, vista: "empleado" | "jefe" | "rrhh") {
-  const base = esAcuerdo ? "/protected/permisos/acuerdos" : "/protected/permisos";
+  const base = esAcuerdo ? "/sigem/permisos/acuerdos" : "/sigem/permisos";
   if (vista === "jefe") return `${base}/jefe`;
   if (vista === "rrhh") return `${base}/rrhh`;
   return base;

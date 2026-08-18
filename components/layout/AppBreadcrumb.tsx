@@ -79,18 +79,18 @@ function crumbsDesdeRuta(pathname: string, homeHref: string): Crumb[] {
   const crumbs: Crumb[] = [{ href: homeHref, label: "Inicio" }];
 
   const partes = pathname.split("/").filter(Boolean);
-  if (partes[0] !== "protected") return crumbs;
+  if (partes[0] !== "sigem") return crumbs;
 
   const resto = [...partes.slice(1)];
   if (resto[0] === "admin" || resto[0] === "user") {
     resto.shift();
   }
 
-  let href = pathname.startsWith("/protected/admin")
-    ? "/protected/admin"
-    : pathname.startsWith("/protected/user")
-      ? "/protected/user"
-      : "/protected";
+  let href = pathname.startsWith("/sigem/admin")
+    ? "/sigem/admin"
+    : pathname.startsWith("/sigem/user")
+      ? "/sigem/user"
+      : "/sigem";
 
   for (const segmento of resto) {
     href += `/${segmento}`;
@@ -199,16 +199,16 @@ function MenuOcultos({ crumbs }: { crumbs: Crumb[] }) {
       {abierto ? (
         <ul className="absolute left-0 top-full z-[230] mt-1 min-w-[12rem] rounded-2xl border border-zinc-200 bg-zinc-50 p-1 shadow-xl dark:border-zinc-700 dark:bg-zinc-800">
           {crumbs.map((crumb) => (
-              <li key={`${crumb.href}-${crumb.label}`}>
-                <Link
-                  href={crumb.href}
-                  onClick={() => setAbierto(false)}
-                  className="flex cursor-pointer items-center rounded-xl px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 sm:text-sm"
-                >
-                  {crumb.label}
-                </Link>
-              </li>
-            ))}
+            <li key={`${crumb.href}-${crumb.label}`}>
+              <Link
+                href={crumb.href}
+                onClick={() => setAbierto(false)}
+                className="flex cursor-pointer items-center rounded-xl px-3 py-2 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700 sm:text-sm"
+              >
+                {crumb.label}
+              </Link>
+            </li>
+          ))}
         </ul>
       ) : null}
     </li>

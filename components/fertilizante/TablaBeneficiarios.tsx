@@ -172,7 +172,7 @@ export function TablaBeneficiarios({
   }, [data]);
 
   const irAEditar = (id: string) => {
-    router.push(`/protected/fertilizante/beneficiarios/editar?id=${id}` as Route);
+    router.push(`/sigem/fertilizante/beneficiarios/editar?id=${id}` as Route);
   };
 
   const mostrar = (valor: string | number | null | undefined) =>

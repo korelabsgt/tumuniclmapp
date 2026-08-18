@@ -178,7 +178,7 @@ export default function Horarios() {
       <div className="flex flex-col gap-4 w-full mx-auto pb-6 md:flex-row md:justify-between md:items-center md:px-4">
         <Button
           variant="ghost"
-          onClick={() => router.push('/protected/admin/users')}
+          onClick={() => router.push('/sigem/admin/users')}
           className="text-blue-600 dark:text-blue-400 text-base underline w-full md:w-auto flex-shrink-0 justify-start"
         >
           Volver

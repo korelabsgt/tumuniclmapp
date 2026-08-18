@@ -88,7 +88,7 @@ export async function createContrato(data: NuevoContratoMultiplexDTO) {
       throw new Error(`Error BD Detalles: ${detallesError.message}`)
     }
 
-    revalidatePath('/protected/combustible')
+    revalidatePath('/sigem/combustible')
     return { success: true }
 
   } catch (error: any) {
@@ -129,7 +129,7 @@ export async function registrarConsumo(idDetalle: string, cantidadConsumida: num
     return { success: false, error: error.message }
   }
 
-  revalidatePath('/protected/combustible')
+  revalidatePath('/sigem/combustible')
   return { success: true }
 }
 
@@ -180,7 +180,7 @@ export async function updateContrato(id: string, data: NuevoContratoMultiplexDTO
 
     if (insertError) throw new Error(insertError.message)
 
-    revalidatePath('/protected/combustible')
+    revalidatePath('/sigem/combustible')
     return { success: true }
 
   } catch (error: any) {
@@ -201,7 +201,7 @@ export async function deleteContrato(id: string) {
     return { success: false, error: error.message }
   }
 
-  revalidatePath('/protected/combustible')
+  revalidatePath('/sigem/combustible')
   return { success: true }
 }
 

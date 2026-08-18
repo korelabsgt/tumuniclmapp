@@ -60,7 +60,7 @@ export async function asignarJefeDirecto(depId: string, nuevoJefeId: string) {
     }
   }
 
-  revalidatePath('/protected/jefes');
+  revalidatePath('/sigem/jefes');
 }
 
 export async function removerJefe(depId: string) {
@@ -95,5 +95,5 @@ export async function removerJefe(depId: string) {
       .eq('user_id', jefeAnteriorId);
   }
 
-  revalidatePath('/protected/jefes');
+  revalidatePath('/sigem/jefes');
 }

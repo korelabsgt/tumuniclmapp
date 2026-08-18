@@ -31,7 +31,7 @@ export async function marcarAsistenciaComision(
       throw error;
     }
 
-    revalidatePath('/protected/dashboard'); // O la ruta donde se encuentre el componente
+    revalidatePath('/sigem/dashboard'); // O la ruta donde se encuentre el componente
     return data;
   } catch (error) {
     console.error('Error al marcar asistencia de comisión:', error);

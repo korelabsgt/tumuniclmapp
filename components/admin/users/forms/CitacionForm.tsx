@@ -47,7 +47,7 @@ export default function CitacionForm({
         body: JSON.stringify({
           title: titulo,
           message: mensaje,
-          url: '/protected/admin/citaciones',
+          url: '/sigem/admin/citaciones',
           targetIds: [targetId]
         }),
       });

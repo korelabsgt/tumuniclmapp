@@ -1,14 +1,8 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { Loader2, X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Columns, Smartphone, ExternalLink } from 'lucide-react'
-import { Document, Page, pdfjs } from 'react-pdf'
-
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
-import 'react-pdf/dist/esm/Page/TextLayer.css'
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs`
+import { Loader2, X, ExternalLink } from 'lucide-react'
 
 interface VerPDFProps {
   filePath: string
@@ -19,285 +13,120 @@ interface VerPDFProps {
 }
 
 export default function VerPDF({ filePath, fileName, bucketName, isOpen, onClose }: VerPDFProps) {
-  const [url, setUrl] = useState<string | null>(null)
-  const [loadingUrl, setLoadingUrl] = useState(true)
-  const [numPages, setNumPages] = useState<number>(0)
-  const [pageNumber, setPageNumber] = useState<number>(1)
-  
-  const [scale, setScale] = useState<number>(1.0)
-  const [isDualView, setIsDualView] = useState<boolean>(false)
-  const [canDualView, setCanDualView] = useState<boolean>(false)
-  
-  const [containerWidth, setContainerWidth] = useState<number>(0)
-  
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [blobUrl, setBlobUrl] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!isOpen || !filePath) {
+      setError(false)
+      setLoading(false)
+      setBlobUrl((prev) => {
+        if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
+        return null
+      })
+      return
+    }
 
-    const updateDimensions = () => {
-      if (containerRef.current) {
-        const width = containerRef.current.clientWidth
-        setContainerWidth(width)
+    let cancelled = false
+    let objectUrl: string | null = null
 
-        const isBigScreen = width >= 768
-        setCanDualView(isBigScreen)
+    const load = async () => {
+      try {
+        setLoading(true)
+        setError(false)
 
-        if (!isBigScreen) {
-          setIsDualView(false)
-        } else {
-          if (scale === 1.0 && !isDualView) setIsDualView(true) 
+        const { data, error: downloadError } = await supabase.storage
+          .from(bucketName)
+          .download(filePath)
+
+        if (!downloadError && data) {
+          if (cancelled) return
+          objectUrl = URL.createObjectURL(data)
+          setBlobUrl(objectUrl)
+          return
         }
+
+        const { data: signed } = await supabase.storage
+          .from(bucketName)
+          .createSignedUrl(filePath, 3600)
+
+        if (cancelled) return
+        if (signed?.signedUrl) {
+          setBlobUrl(signed.signedUrl)
+          return
+        }
+
+        throw downloadError ?? new Error('Sin archivo')
+      } catch (err) {
+        console.error(err)
+        if (!cancelled) {
+          setBlobUrl(null)
+          setError(true)
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
       }
     }
 
-    updateDimensions()
-    const observer = new ResizeObserver(updateDimensions)
-    observer.observe(containerRef.current)
+    void load()
 
-    return () => observer.disconnect()
-  }, [])
-
-  useEffect(() => {
-    if (isOpen && filePath) {
-      const fetchUrl = async () => {
-        try {
-          setLoadingUrl(true)
-          const { data, error } = await supabase.storage
-            .from(bucketName)
-            .createSignedUrl(filePath, 3600)
-
-          if (error) throw error
-          if (data?.signedUrl) setUrl(data.signedUrl)
-        } catch (error) {
-          console.error(error)
-        } finally {
-          setLoadingUrl(false)
-        }
-      }
-      fetchUrl()
-    } else {
-      setUrl(null)
-      setPageNumber(1)
-      setScale(1.0)
-      setNumPages(0)
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
     }
   }, [isOpen, filePath, bucketName])
-
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const handleWheel = (e: WheelEvent) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault()
-        e.stopPropagation()
-
-        const direction = e.deltaY < 0 ? 1 : -1
-        const step = 0.1
-
-        setScale(prev => {
-          let next = prev + (direction * step)
-          next = Math.round(next * 10) / 10
-          return Math.min(Math.max(0.2, next), 5.0)
-        })
-      }
-    }
-
-    container.addEventListener('wheel', handleWheel, { passive: false })
-    return () => container.removeEventListener('wheel', handleWheel)
-  }, [])
-
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages)
-    setPageNumber(1)
-  }
-
-  const changePage = (offset: number) => {
-    setPageNumber(prev => {
-      const step = isDualView ? 2 : 1
-      const newPage = prev + (offset * step)
-      if (newPage < 1) return 1
-      if (newPage > numPages) return prev
-      return newPage
-    })
-  }
-
-  const toggleViewMode = () => {
-    if (!canDualView) return
-    
-    setIsDualView(prev => {
-      const nuevoModo = !prev
-      if (nuevoModo && pageNumber % 2 === 0 && pageNumber > 1) {
-        setPageNumber(pageNumber - 1)
-      }
-      return nuevoModo
-    })
-  }
-
-  const getPageWidth = () => {
-    if (!containerWidth) return undefined
-    const gap = 48 
-    const available = containerWidth - gap
-
-    if (isDualView) {
-      return (available / 2) * scale
-    } else {
-      return available * scale
-    }
-  }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 dark:bg-black/80 p-0 md:p-4 backdrop-blur-sm transition-all">
-      <div className="relative w-full h-full md:h-[95vh] md:max-w-[95vw] bg-gray-100 dark:bg-gray-900 md:rounded-lg shadow-2xl flex flex-col overflow-hidden transition-colors">
-        
-        {/* HEADER */}
-        <div className="flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white shrink-0 z-10 relative shadow-md transition-colors">
-          <div className="flex items-center gap-4 overflow-hidden">
-             <h3 className="text-sm font-semibold truncate max-w-[150px] md:max-w-md" title={fileName}>
-              {fileName}
-            </h3>
-          </div>
-          
-          <div className="flex items-center gap-2 md:gap-4">
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg px-1 py-1 transition-colors">
-              <button 
-                onClick={() => setScale(s => Math.max(0.2, Number((s - 0.1).toFixed(1))))} 
-                className="p-1.5 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                <ZoomOut className="w-4 h-4" />
-              </button>
-              <span className="text-xs font-mono w-10 text-center hidden sm:block">
-                {Math.round(scale * 100)}%
-              </span>
-              <button 
-                onClick={() => setScale(s => Math.min(5.0, Number((s + 0.1).toFixed(1))))} 
-                className="p-1.5 hover:text-blue-600 dark:hover:text-blue-400 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
-              >
-                <ZoomIn className="w-4 h-4" />
-              </button>
-            </div>
+    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 p-0 backdrop-blur-sm dark:bg-black/80 md:p-4">
+      <div className="relative flex h-full w-full flex-col overflow-hidden bg-gray-100 dark:bg-gray-900 md:h-[95vh] md:max-w-[95vw] md:rounded-lg md:shadow-2xl">
+        <div className="relative z-10 flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3 text-gray-900 shadow-md dark:border-gray-700 dark:bg-gray-800 dark:text-white">
+          <h3 className="max-w-[150px] truncate text-sm font-semibold md:max-w-md" title={fileName}>
+            {fileName}
+          </h3>
 
-            {canDualView && (
-              <button 
-                onClick={toggleViewMode}
-                className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded text-xs text-gray-700 dark:text-gray-200 transition-colors"
-                title={isDualView ? "Cambiar a vista simple" : "Cambiar a vista libro"}
-              >
-                {isDualView ? <Smartphone size={16} /> : <Columns size={16} />}
-                <span>{isDualView ? 'Libro' : 'Simple'}</span>
-              </button>
-            )}
-
-             {url && (
-              <a 
-                href={url} 
-                target="_blank" 
+          <div className="flex items-center gap-2">
+            {blobUrl && (
+              <a
+                href={blobUrl}
+                target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-full transition-colors hidden sm:flex"
+                className="hidden rounded-full p-2 text-gray-500 hover:bg-blue-50 hover:text-blue-600 dark:text-gray-400 dark:hover:bg-blue-500/10 dark:hover:text-blue-400 sm:flex"
                 title="Abrir nativo"
               >
-                <ExternalLink className="w-5 h-5" />
+                <ExternalLink className="h-5 w-5" />
               </a>
             )}
-
-            <button onClick={onClose} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-red-50 dark:hover:bg-red-600/20 rounded-full transition-colors">
-              <X className="w-6 h-6" />
+            <button
+              onClick={onClose}
+              className="rounded-full p-2 text-gray-500 hover:bg-red-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-red-600/20 dark:hover:text-white"
+            >
+              <X className="h-6 w-6" />
             </button>
           </div>
         </div>
 
-        {/* CONTENIDO */}
-        <div 
-          ref={containerRef}
-          className="flex-1 bg-gray-200/50 dark:bg-gray-900/50 overflow-auto relative flex items-start justify-center p-4 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent"
-        >
-          {loadingUrl ? (
-            <div className="self-center flex flex-col items-center gap-2">
-               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
-               <span className="text-gray-500 dark:text-gray-400 text-sm">Cargando...</span>
+        <div className="relative flex flex-1 items-center justify-center overflow-hidden bg-gray-200/50 dark:bg-gray-900/50">
+          {loading ? (
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+              <span className="text-sm text-gray-500 dark:text-gray-400">Cargando...</span>
             </div>
-          ) : url ? (
-            <Document
-              file={url}
-              onLoadSuccess={onDocumentLoadSuccess}
-              loading={<div className="self-center flex flex-col items-center gap-2"><Loader2 className="w-8 h-8 text-blue-500 animate-spin" /><span className="text-gray-400 text-sm">Procesando...</span></div>}
-              error={<div className="text-red-500 dark:text-red-400 self-center font-medium bg-red-100 dark:bg-red-900/20 px-4 py-2 rounded-md">Error al cargar PDF</div>}
-              className="flex justify-center"
-              externalLinkTarget="_blank"
-            >
-              <div 
-                className="grid gap-6 transition-all duration-300 ease-in-out"
-                style={{
-                  gridTemplateColumns: isDualView ? '1fr 1fr' : '1fr'
-                }}
-              >
-                <div className="relative shadow-xl dark:shadow-black/50 bg-white">
-                  <Page 
-                    pageNumber={pageNumber} 
-                    width={getPageWidth()}
-                    className="bg-white"
-                    renderTextLayer={false}
-                    renderAnnotationLayer={false}
-                    loading={<div style={{ height: 600 }} className="bg-gray-100 dark:bg-white/10 animate-pulse w-full" />}
-                  />
-                  <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-                    {pageNumber}
-                  </span>
-                </div>
-                
-                {isDualView && pageNumber + 1 <= numPages && (
-                   <div className="relative shadow-xl dark:shadow-black/50 bg-white">
-                    <Page 
-                      pageNumber={pageNumber + 1} 
-                      width={getPageWidth()}
-                      className="bg-white"
-                      renderTextLayer={false}
-                      renderAnnotationLayer={false}
-                      loading={<div style={{ height: 600 }} className="bg-gray-100 dark:bg-white/10 animate-pulse w-full" />}
-                    />
-                    <span className="absolute bottom-2 right-2 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm pointer-events-none">
-                      {pageNumber + 1}
-                    </span>
-                   </div>
-                )}
-              </div>
-            </Document>
+          ) : blobUrl ? (
+            <iframe
+              src={blobUrl}
+              title={fileName}
+              className="h-full w-full border-0 bg-white"
+            />
           ) : (
-            <span className="text-gray-500 dark:text-gray-400 self-center bg-gray-200 dark:bg-gray-800 px-4 py-2 rounded-md">No disponible</span>
+            <span className="rounded-md bg-gray-200 px-4 py-2 text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+              {error ? 'No se pudo abrir el PDF' : 'No disponible'}
+            </span>
           )}
         </div>
-
-        {/* FOOTER CONTROLS */}
-        {numPages > 0 && (
-          <div className="bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 p-3 md:p-4 flex items-center justify-center gap-6 text-gray-900 dark:text-white shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.2)] transition-colors">
-             <button
-              onClick={() => changePage(-1)}
-              disabled={pageNumber <= 1}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            
-            <span className="text-sm font-medium tabular-nums bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-full">
-              {isDualView && pageNumber + 1 <= numPages
-                ? `${pageNumber} - ${pageNumber + 1} de ${numPages}` 
-                : `${pageNumber} de ${numPages}`
-              }
-            </span>
-
-            <button
-              onClick={() => changePage(1)}
-              disabled={isDualView ? (pageNumber + 1 >= numPages) : (pageNumber >= numPages)}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
-        )}
       </div>
     </div>
   )

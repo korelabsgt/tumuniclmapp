@@ -321,7 +321,14 @@ export async function cambiarEstado(taskId: string, nuevoEstado: string) {
       if (lista.some(item => !item.is_completed)) throw new Error("Faltan items por completar.");
     }
   }
-  const { error } = await supabase.from('tasks').update({ status: nuevoEstado }).eq('id', taskId);
+  const { error } = await supabase
+    .from('tasks')
+    .update(
+      nuevoEstado === 'Completado'
+        ? { status: nuevoEstado, updated_at: new Date().toISOString() }
+        : { status: nuevoEstado, updated_at: null },
+    )
+    .eq('id', taskId);
   if (error) throw new Error(error.message);
   revalidatePath('/protected/actividades', 'layout');
 }

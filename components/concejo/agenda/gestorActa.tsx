@@ -6,11 +6,10 @@ import { useRouter } from 'next/navigation'
 import { Loader2, UploadCloud, FileText, Trash2, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-react'
 import { toast } from 'react-toastify'
 import Swal from 'sweetalert2'
-import { Document, Page, pdfjs } from 'react-pdf'
+import '@/components/files/pdf-config'
+import { Document, Page } from 'react-pdf'
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css'
 import 'react-pdf/dist/esm/Page/TextLayer.css'
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@4.4.168/build/pdf.worker.min.mjs`
 
 interface GestorActaProps {
   agendaId: string

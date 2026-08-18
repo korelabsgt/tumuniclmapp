@@ -60,7 +60,10 @@ export default function EditarTarea({ isOpen, onClose, tarea, esJefe }: Props) {
       };
 
       if (fechaCambio && (estabaCompletada || estabaVencida)) {
-         datosActualizados.status = 'Asignado';
+        datosActualizados.status = 'Asignado';
+        if (estabaCompletada) {
+          datosActualizados.updated_at = null;
+        }
       }
 
       await actualizar.mutateAsync({ id: tarea.id, updates: datosActualizados });

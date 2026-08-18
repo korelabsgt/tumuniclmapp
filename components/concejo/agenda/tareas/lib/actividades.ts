@@ -67,7 +67,7 @@ export async function obtenerActividadesDeAgenda(
 
   const { data: tasks, error: errorTasks } = await supabase
     .from('tasks')
-    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist, archivos')
+    .select('*')
     .in('id', taskIds);
 
   if (errorTasks || !tasks) return {};
@@ -100,6 +100,7 @@ export async function obtenerActividadesDeAgenda(
         status: t.status,
         assigned_to: t.assigned_to,
         confirmed_at: t.confirmed_at,
+        updated_at: t.updated_at ?? null,
         assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
         checklist: t.checklist as ActividadConcejo['checklist'],
         archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
@@ -127,7 +128,7 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
 
   const { data: tasks, error: errorTasks } = await supabase
     .from('tasks')
-    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist, archivos')
+    .select('*')
     .in('id', taskIds);
 
   if (errorTasks || !tasks) return [];
@@ -146,9 +147,9 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
   const { data: agendas } = agendaIds.length
     ? await supabase
         .from('agenda_concejo')
-        .select('id, titulo, fecha_reunion, estado')
+        .select('id, titulo, fecha_reunion, estado, descripcion')
         .in('id', agendaIds)
-    : { data: [] as { id: string; titulo: string; fecha_reunion: string; estado: string }[] };
+    : { data: [] as { id: string; titulo: string; fecha_reunion: string; estado: string; descripcion: string }[] };
 
   const agendaMap = new Map((agendas || []).map((a) => [a.id, a]));
 
@@ -179,6 +180,7 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
       status: t.status,
       assigned_to: t.assigned_to,
       confirmed_at: t.confirmed_at,
+      updated_at: t.updated_at ?? null,
       assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
       checklist: t.checklist as ActividadConcejo['checklist'],
       archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
@@ -189,6 +191,7 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
       agenda_titulo: agenda?.titulo || 'Sesión desconocida',
       agenda_fecha: agenda?.fecha_reunion || '',
       agenda_estado: agenda?.estado || '',
+      agenda_descripcion: agenda?.descripcion || '',
     });
   });
 
@@ -216,7 +219,7 @@ export async function obtenerActividadesDePunto(
 
   const { data: tasks, error: errorTasks } = await supabase
     .from('tasks')
-    .select('id, title, description, due_date, status, assigned_to, confirmed_at, created_at, checklist, archivos')
+    .select('*')
     .in('id', taskIds)
     .order('created_at', { ascending: true });
 
@@ -240,6 +243,7 @@ export async function obtenerActividadesDePunto(
     status: t.status,
     assigned_to: t.assigned_to,
     confirmed_at: t.confirmed_at,
+    updated_at: t.updated_at ?? null,
     assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
     checklist: t.checklist as ActividadConcejo['checklist'],
     archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
@@ -315,8 +319,12 @@ export async function editarActividadConcejo(
     if (cambioAsignado) {
       updates.confirmed_at = null;
       updates.status = 'Asignado';
+      updates.updated_at = null;
     } else if (cambioFecha && (estabaCompletada || estabaVencida)) {
       updates.status = 'Asignado';
+      if (estabaCompletada) {
+        updates.updated_at = null;
+      }
     }
   }
 

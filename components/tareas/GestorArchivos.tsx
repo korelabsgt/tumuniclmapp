@@ -5,17 +5,16 @@ import { createClient } from '@/utils/supabase/client';
 import { ArchivoAdjunto } from './types';
 import { useTareaMutations } from './hooks';
 import { FileText, Link as LinkIcon, Trash2, Loader2, Upload, ExternalLink } from 'lucide-react';
-import VisorPDFInline from '@/components/files/VisorPDFInline';
+import VerPDF from '@/components/files/verPDF';
 
 interface Props {
   tareaId: string;
   archivosIniciales: ArchivoAdjunto[] | null;
   esLectura?: boolean;
   onVerPdf?: (archivo: ArchivoAdjunto) => void;
-  expandido?: boolean;
 }
 
-export default function GestorArchivos({ tareaId, archivosIniciales, esLectura, onVerPdf, expandido }: Props) {
+export default function GestorArchivos({ tareaId, archivosIniciales, esLectura, onVerPdf }: Props) {
   const [archivos, setArchivos] = useState<ArchivoAdjunto[]>(archivosIniciales || []);
   const [isUploading, setIsUploading] = useState(false);
   const [mostrarLinkInput, setMostrarLinkInput] = useState(false);
@@ -137,19 +136,6 @@ export default function GestorArchivos({ tareaId, archivosIniciales, esLectura, 
     }
   };
 
-  if (pdfViendo?.ruta_storage) {
-    return (
-      <VisorPDFInline
-        bucketName="archivos_actividades"
-        filePath={pdfViendo.ruta_storage}
-        fileName={pdfViendo.nombre}
-        onBack={() => setPdfViendo(null)}
-        expandido={expandido}
-        className={expandido ? 'min-h-[min(75dvh,720px)]' : undefined}
-      />
-    );
-  }
-
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-3">
@@ -253,6 +239,13 @@ export default function GestorArchivos({ tareaId, archivosIniciales, esLectura, 
           ))}
         </div>
       )}
+      <VerPDF
+        isOpen={!!pdfViendo?.ruta_storage}
+        onClose={() => setPdfViendo(null)}
+        filePath={pdfViendo?.ruta_storage || ''}
+        fileName={pdfViendo?.nombre || ''}
+        bucketName="archivos_actividades"
+      />
     </div>
   );
 }

@@ -10,7 +10,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { createPortal } from "react-dom";
-import { X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const MODAL_FIELD_CLASS =
@@ -35,6 +35,13 @@ type ModalShellProps = {
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
+  compactHeader?: boolean;
+  fillBody?: boolean;
+  panelClassName?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
+  onBack?: () => void;
+  backLabel?: string;
 };
 
 export function ModalShell({
@@ -44,6 +51,13 @@ export function ModalShell({
   subtitle,
   children,
   footer,
+  compactHeader = false,
+  fillBody = false,
+  panelClassName,
+  bodyClassName,
+  footerClassName,
+  onBack,
+  backLabel = "Volver",
 }: ModalShellProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -70,20 +84,52 @@ export function ModalShell({
         aria-hidden
       />
       <div
-        className="relative z-10 flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-800 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border sm:border-zinc-200 sm:shadow-xl dark:sm:border-zinc-700 dark:sm:shadow-black/50"
+        className={cn(
+          "relative z-10 flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-800 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border sm:border-zinc-200 sm:shadow-xl dark:sm:border-zinc-700 dark:sm:shadow-black/50",
+          fillBody && "sm:max-h-[92vh]",
+          panelClassName,
+        )}
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="shrink-0 px-6 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-6">
+        <header
+          className={cn(
+            "shrink-0 px-6 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-6",
+            compactHeader && "px-4 pb-1.5 pt-3 sm:pt-4",
+            compactHeader && onBack && "px-3 pb-1 pt-2 sm:pt-3",
+          )}
+        >
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="text-xl font-bold tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-2xl">
-                {title}
-              </h2>
-              {subtitle ? (
-                <p className="mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-                  {subtitle}
-                </p>
+            <div className="flex min-w-0 flex-1 items-start gap-2">
+              {onBack ? (
+                <button
+                  type="button"
+                  onClick={onBack}
+                  className="mt-0.5 flex shrink-0 cursor-pointer items-center gap-0.5 rounded-lg px-1 py-1 text-xs font-semibold text-zinc-600 transition-colors hover:bg-zinc-200 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white sm:text-sm"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  {backLabel}
+                </button>
               ) : null}
+              <div className="min-w-0">
+                <h2
+                  className={cn(
+                    "text-xl font-bold tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-2xl",
+                    compactHeader && "text-sm font-semibold leading-snug line-clamp-2 sm:text-base",
+                  )}
+                >
+                  {title}
+                </h2>
+                {subtitle ? (
+                  <p
+                    className={cn(
+                      "mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground",
+                      compactHeader && "mt-0.5 text-[9px] normal-case tracking-normal",
+                    )}
+                  >
+                    {subtitle}
+                  </p>
+                ) : null}
+              </div>
             </div>
             <button
               type="button"
@@ -95,9 +141,22 @@ export function ModalShell({
             </button>
           </div>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto px-6 py-4",
+            fillBody && "flex flex-col overflow-hidden px-0 py-0",
+            bodyClassName,
+          )}
+        >
+          {children}
+        </div>
         {footer ? (
-          <div className="shrink-0 border-t border-zinc-200 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-zinc-700 sm:pb-5">
+          <div
+            className={cn(
+              "shrink-0 border-t border-zinc-200 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] dark:border-zinc-700 sm:pb-5",
+              footerClassName,
+            )}
+          >
             {footer}
           </div>
         ) : null}

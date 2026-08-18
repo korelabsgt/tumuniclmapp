@@ -48,7 +48,7 @@ export interface Tarea {
   assigned_to: string | null;
   created_by: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string | null;
   confirmed_at: string | null;
   archivos: ArchivoAdjunto[] | null;
   

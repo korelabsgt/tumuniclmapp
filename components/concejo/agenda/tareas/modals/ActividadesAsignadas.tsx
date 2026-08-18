@@ -26,9 +26,10 @@ import {
   editarActividadConcejo,
   eliminarActividadConcejo,
 } from '../lib/actividades';
+import { componerBitacoraActividad, formatearFechaBitacora } from '../lib/bitacora';
 import GestorArchivos from '@/components/tareas/GestorArchivos';
 import type { ArchivoAdjunto } from '@/components/tareas/types';
-import VisorPDFInline from '@/components/files/VisorPDFInline';
+import VerPDF from '@/components/files/verPDF';
 
 interface ActividadesAsignadasProps {
   isOpen: boolean;
@@ -218,6 +219,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [descripcionAnterior, setDescripcionAnterior] = useState('');
   const [dueDate, setDueDate] = useState(fechaPorDefecto);
   const [assignedTo, setAssignedTo] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -270,6 +272,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
     setEditandoId(null);
     setTitle('');
     setDescription('');
+    setDescripcionAnterior('');
     setDueDate(fechaPorDefecto());
     setAssignedTo('');
     setSearchTerm('');
@@ -286,7 +289,8 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
   const abrirEdicion = (actividad: ActividadConcejo) => {
     setEditandoId(actividad.id);
     setTitle(actividad.title);
-    setDescription(actividad.description || '');
+    setDescription('');
+    setDescripcionAnterior(actividad.description || '');
     setDueDate(formatearFechaInput(actividad.due_date));
     setAssignedTo(actividad.assigned_to || '');
     setSearchTerm(actividad.assignee_nombre || '');
@@ -342,15 +346,42 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
     setGuardando(true);
     try {
       const dueIso = new Date(dueDate).toISOString();
+      const nombreAsignado = usuarios.find((u) => u.user_id === assignedTo)?.nombre || 'el usuario';
 
       if (editandoId) {
+        const actual = actividades.find((a) => a.id === editandoId);
+        const cambios: string[] = [];
+        if (actual) {
+          if (formatearFechaInput(actual.due_date) !== dueDate) {
+            if (new Date(dueDate) < new Date()) {
+              toast.warn('La fecha límite no puede quedar en el pasado.');
+              setGuardando(false);
+              return;
+            }
+            cambios.push(
+              `Fecha límite: ${formatearFechaBitacora(actual.due_date)} → ${formatearFechaBitacora(dueIso)}`,
+            );
+          }
+        }
+
         await editarActividadConcejo(editandoId, {
           title: title.trim(),
-          description,
+          description: componerBitacoraActividad({
+            nota: description,
+            anterior: descripcionAnterior,
+            cambios,
+          }),
           due_date: dueIso,
-          assigned_to: assignedTo,
+          assigned_to: actual?.assigned_to || assignedTo,
         });
-        toast.success('Actividad actualizada.');
+        if (actual?.assigned_to) {
+          enviarPush(
+            '📋 Actividad actualizada',
+            `Se actualizó la actividad del Concejo: "${title.trim()}".`,
+            actual.assigned_to,
+          );
+        }
+        toast.success(`Actividad actualizada. Se notificó a ${nombreAsignado}.`);
       } else {
         await crearActividadConcejo({
           tareaConcejoId: tarea.id,
@@ -360,7 +391,6 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
           assigned_to: assignedTo,
           checklist,
         });
-        const nombreAsignado = usuarios.find((u) => u.user_id === assignedTo)?.nombre || 'el usuario';
         enviarPush(
           '📋 Nueva Actividad Asignada',
           `Se te asignó una actividad del Concejo: "${title.trim()}".`,
@@ -439,17 +469,6 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                   <div className="flex items-center justify-center py-12">
                     <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                   </div>
-                ) : pdfViendo?.ruta_storage ? (
-                  <div className="mx-auto flex h-full w-full max-w-3xl flex-col">
-                    <VisorPDFInline
-                      bucketName="archivos_actividades"
-                      filePath={pdfViendo.ruta_storage}
-                      fileName={pdfViendo.nombre}
-                      onBack={() => setPdfViendo(null)}
-                      expandido
-                      className="min-h-[min(75dvh,720px)] flex-1"
-                    />
-                  </div>
                 ) : vista === 'lista' ? (
                   <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
                     {puedeEditar && (
@@ -526,47 +545,70 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                       <input
                         type="datetime-local"
                         value={dueDate}
-                        onChange={(e) => setDueDate(e.target.value)}
+                        onChange={(e) => {
+                          const valor = e.target.value;
+                          if (editandoId) {
+                            const actual = actividades.find((a) => a.id === editandoId);
+                            const original = actual ? formatearFechaInput(actual.due_date) : '';
+                            if (valor !== original && new Date(valor) < new Date()) {
+                              toast.warn('La fecha límite no puede quedar en el pasado.');
+                              return;
+                            }
+                          }
+                          setDueDate(valor);
+                        }}
                         className="w-full p-3 bg-gray-50 dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base text-gray-700 dark:text-gray-100 dark:[color-scheme:dark]"
                       />
                     </div>
 
                     <div className="space-y-2 relative">
                       <label className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        <User size={14} /> Asignar a
+                        <User size={14} /> {editandoId ? 'Asignado a' : 'Asignar a'}
                       </label>
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => { setSearchTerm(e.target.value); setShowDropdown(true); if (!e.target.value.trim()) setAssignedTo(''); }}
-                        onFocus={() => setShowDropdown(true)}
-                        onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-                        placeholder="Escribe un nombre..."
-                        className="w-full p-3 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base text-gray-700 dark:text-gray-100"
-                      />
-                      {showDropdown && (
-                        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 rounded-xl shadow-xl max-h-48 overflow-y-auto">
-                          {usuariosFiltrados.length > 0 ? (
-                            usuariosFiltrados.map((u) => (
-                              <button
-                                key={u.user_id}
-                                type="button"
-                                onClick={() => seleccionarUsuario(u.user_id, u.nombre)}
-                                className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 text-sm transition-colors border-b border-gray-50 dark:border-neutral-700/50 last:border-0"
-                              >
-                                {u.nombre}
-                              </button>
-                            ))
-                          ) : (
-                            <div className="p-3 text-center text-gray-400 text-xs italic">No se encontraron usuarios</div>
+                      {editandoId ? (
+                        <input
+                          type="text"
+                          value={searchTerm}
+                          readOnly
+                          disabled
+                          className="w-full cursor-not-allowed p-3 bg-gray-50 dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 rounded-xl text-base text-gray-500 dark:text-gray-400 opacity-70"
+                        />
+                      ) : (
+                        <>
+                          <input
+                            type="text"
+                            value={searchTerm}
+                            onChange={(e) => { setSearchTerm(e.target.value); setShowDropdown(true); if (!e.target.value.trim()) setAssignedTo(''); }}
+                            onFocus={() => setShowDropdown(true)}
+                            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                            placeholder="Escribe un nombre..."
+                            className="w-full p-3 bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base text-gray-700 dark:text-gray-100"
+                          />
+                          {showDropdown && (
+                            <div className="absolute z-50 w-full mt-1 bg-white dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 rounded-xl shadow-xl max-h-48 overflow-y-auto">
+                              {usuariosFiltrados.length > 0 ? (
+                                usuariosFiltrados.map((u) => (
+                                  <button
+                                    key={u.user_id}
+                                    type="button"
+                                    onClick={() => seleccionarUsuario(u.user_id, u.nombre)}
+                                    className="w-full text-left px-4 py-3 hover:bg-gray-50 dark:hover:bg-neutral-700 text-gray-700 dark:text-gray-200 text-sm transition-colors border-b border-gray-50 dark:border-neutral-700/50 last:border-0"
+                                  >
+                                    {u.nombre}
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="p-3 text-center text-gray-400 text-xs italic">No se encontraron usuarios</div>
+                              )}
+                            </div>
                           )}
-                        </div>
+                        </>
                       )}
                     </div>
 
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        <AlignLeft size={14} /> Descripción
+                        <AlignLeft size={14} /> {editandoId ? 'Nueva nota' : 'Descripción'}
                       </label>
                       <textarea
                         value={description}
@@ -574,6 +616,23 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                         rows={3}
                         className="w-full p-3 bg-gray-50 dark:bg-neutral-800 border border-gray-100 dark:border-neutral-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-base text-gray-700 dark:text-gray-100 resize-none"
                       />
+                      {editandoId ? (
+                        <>
+                          <p className="text-[11px] text-muted-foreground">
+                            Al guardar se agrega sola la fecha y hora actual, como bitácora.
+                          </p>
+                          {descripcionAnterior.trim() ? (
+                            <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900/70">
+                              <p className="mb-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                                Bitácora
+                              </p>
+                              <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">
+                                {descripcionAnterior}
+                              </p>
+                            </div>
+                          ) : null}
+                        </>
+                      ) : null}
                     </div>
 
                     {!editandoId && (
@@ -629,6 +688,13 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
           </TransitionChild>
         </div>
       </Dialog>
+      <VerPDF
+        isOpen={!!pdfViendo?.ruta_storage}
+        onClose={() => setPdfViendo(null)}
+        filePath={pdfViendo?.ruta_storage || ''}
+        fileName={pdfViendo?.nombre || ''}
+        bucketName="archivos_actividades"
+      />
     </Transition>
   );
 }

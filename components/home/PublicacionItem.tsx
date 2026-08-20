@@ -115,16 +115,16 @@ function CarruselImagenes({ imagenes }: { imagenes: string[] }) {
 
   return (
     <>
-      <div className="w-full bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm">
+      <div className="w-full bg-white dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl overflow-hidden shadow-sm">
         {/* Título (como en Card de Antd) */}
-        <div className="px-4 py-3 border-b border-gray-100 dark:border-neutral-800 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
+        <div className="px-4 py-3 border-b border-gray-100 dark:border-neutral-700 text-center text-sm font-medium text-gray-700 dark:text-gray-300">
           Desliza para ver más o toca la imagen para ampliar 🤳
         </div>
 
         {/* Contenedor de la imagen */}
-        <div className="relative w-full flex flex-col items-center justify-center bg-white dark:bg-neutral-950 overflow-hidden">
+        <div className="relative w-full flex flex-col items-center justify-center bg-gray-50 dark:bg-transparent overflow-hidden p-2 sm:p-4 md:p-6">
           <div 
-            className="relative w-full h-[400px] md:h-[600px] overflow-hidden bg-white dark:bg-neutral-950"
+            className="relative w-full h-[50vh] min-h-[380px] md:h-[75vh] md:min-h-[550px] md:max-h-[900px] overflow-hidden bg-transparent flex items-center justify-center"
           >
             <AnimatePresence initial={false} custom={direction}>
               <motion.img
@@ -141,20 +141,22 @@ function CarruselImagenes({ imagenes }: { imagenes: string[] }) {
                 }}
                 onClick={() => setVisorSrc(url)}
                 title="Toca para ampliar"
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain cursor-pointer transition-transform duration-300 hover:scale-[1.02]"
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 max-w-full max-h-full object-contain cursor-pointer transition-transform duration-300 hover:scale-[1.01]"
                 loading="lazy"
               />
             </AnimatePresence>
           </div>
           
-          {/* Dots (encima de la imagen, estilo Antd) */}
+          {/* Dots / Puntos indicadores (sin barra de desplazamiento) */}
           {imagenes.length > 1 && (
-            <div className="absolute bottom-6 md:bottom-8 flex gap-1.5 z-10">
+            <div className="absolute bottom-2.5 md:bottom-3.5 flex items-center justify-center gap-1.5 z-10 pointer-events-auto max-w-[85%] overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden py-1">
               {imagenes.map((_, i) => (
                 <button 
                   key={i} 
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); setIsManual(true); setIdx(i); }} 
-                  className={`w-4 h-1 rounded-full transition-all shadow-sm ${i === idx ? 'bg-[#0066cc] dark:bg-blue-500 scale-110' : 'bg-gray-300 dark:bg-neutral-600'}`} 
+                  aria-label={`Ir a imagen ${i + 1}`}
+                  className={`w-3.5 sm:w-4 h-1 shrink-0 rounded-full transition-colors duration-200 ${i === idx ? 'bg-[#0066cc] dark:bg-blue-400' : 'bg-gray-300/80 dark:bg-neutral-600/80 hover:bg-gray-400 dark:hover:bg-neutral-500'}`} 
                 />
               ))}
             </div>
@@ -163,13 +165,16 @@ function CarruselImagenes({ imagenes }: { imagenes: string[] }) {
 
         {/* Controles (solo si hay más de 1 imagen) */}
         {imagenes.length > 1 && (
-          <div className="flex justify-center gap-3 p-4 border-t border-gray-100 dark:border-neutral-800 bg-white dark:bg-neutral-900">
+          <div className="flex items-center justify-center gap-4 p-4 border-t border-gray-100 dark:border-neutral-700 bg-white dark:bg-neutral-800">
             <button 
               onClick={() => prev(true)} 
               className="px-4 py-1.5 bg-[#1677ff] hover:bg-[#0066cc] text-white rounded-md text-sm font-medium transition-colors shadow-sm"
             >
               Anterior
             </button>
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 select-none">
+              {idx + 1} / {imagenes.length}
+            </span>
             <button 
               onClick={() => next(true)} 
               className="px-4 py-1.5 bg-[#1677ff] hover:bg-[#0066cc] text-white rounded-md text-sm font-medium transition-colors shadow-sm"
@@ -527,9 +532,11 @@ export function PublicacionItem({ publicacion }: Props) {
       </p>
 
       {/* Descripción — estilo referencia: texto grande, gris oscuro, centrado, con soporte para hashtags */}
-      <p className="text-[1.1rem] md:text-[1.25rem] text-[#555] dark:text-gray-300 leading-[1.8] text-center whitespace-pre-wrap mb-10 max-w-5xl mx-auto">
-        {renderDescripcion(publicacion.descripcion)}
-      </p>
+      {publicacion.descripcion && publicacion.descripcion.trim() && (
+        <p className="text-[1.1rem] md:text-[1.25rem] text-[#555] dark:text-gray-300 leading-[1.8] text-center whitespace-pre-wrap mb-10 max-w-5xl mx-auto">
+          {renderDescripcion(publicacion.descripcion)}
+        </p>
+      )}
 
       {/* ── Galería de Imágenes ── */}
       {publicacion.imagenes && publicacion.imagenes.length > 0 && !publicacion.imagenes.includes('__HIDDEN__') && (

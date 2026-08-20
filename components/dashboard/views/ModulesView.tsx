@@ -142,6 +142,9 @@ export default function ModulesView({
             esAtencionVecino
           );
         }
+        if (m.subgrupo === "Comunicación Social") {
+          return ["SUPER", "SECRETARIO", "CS"].includes(rol) || modulos.includes(m.permiso);
+        }
         return modulos.includes(m.permiso);
       }),
     [rol, modulos, esjefe, esAtencionVecino, esElectricista, esDirectorSP],
@@ -185,6 +188,10 @@ export default function ModulesView({
       esElectricista ||
       esDirectorSP,
     [rol, esAtencionVecino, esElectricista, esDirectorSP],
+  );
+  const showComunicacionSocialAccordion = useMemo(
+    () => ["SUPER", "SECRETARIO", "CS"].includes(rol) || modulos.includes("CS"),
+    [rol, modulos],
   );
 
   const MODULOS_NAVEGACION_DELAY_MS = 1000;
@@ -266,6 +273,7 @@ export default function ModulesView({
     showRRHHAccordion,
     showRecursosMunicipalesAccordion,
     showRecepcionAccordion,
+    showComunicacionSocialAccordion,
   ]);
 
   const hideCompanionOnMobile = !showStandalone;
@@ -278,204 +286,224 @@ export default function ModulesView({
       >
         {tieneGestion && (
           <LayoutGroup>
-          <NavigationDimShell loading={navegando} active={gestionTieneActivo}>
-          <div
-            className={`flex flex-col overflow-x-hidden ${!tienePoliticas ? "w-full" : ""}`}
-          >
-            <div className={hideCompanionOnMobile ? "max-md:hidden" : undefined}>
-              <DashboardSectionHeader
-                titulo="Gestión Administrativa"
-                colorClass="text-blue-600"
-                dotClass="bg-blue-600"
-                lineClass="bg-blue-600/55 dark:bg-blue-500/60"
-              />
-            </div>
-
-            <div
-              ref={gestionAccordionsRef}
-              className="flex flex-col"
-              style={
-                isAnimating && gestionAccordionsMinHeight > 0
-                  ? { minHeight: gestionAccordionsMinHeight }
-                  : undefined
-              }
-            >
-
-            <AnimatedAccordionSlot motionState={getSlotMotion("gestion-propia")}>
-              <ModuleAccordion
-                id="gestion-propia"
-                isOpen={isAccordionExpanded("gestion-propia")}
-                onToggle={handleAccordionToggle}
-                disabled={isAnimating}
-                titulo="Gestión Propia"
-                descripcion="Gestión de actividades y permisos personales."
-                iconKey="fmdwwfgs"
+            <NavigationDimShell loading={navegando} active={gestionTieneActivo}>
+              <div
+                className={`flex flex-col overflow-x-hidden ${!tienePoliticas ? "w-full" : ""}`}
               >
-                {modulosGestion
-                  .filter(
-                    (m) =>
-                      m.subgrupo === "Gestión Propia" ||
-                      ["ACTIVIDADES", "PERMISOS"].includes(m.id),
-                  )
-                  .map(renderModuleCard)}
-              </ModuleAccordion>
-            </AnimatedAccordionSlot>
-
-            {esjefe && (
-              <AnimatedAccordionSlot motionState={getSlotMotion("gestion-jefe")}>
-                <ModuleAccordion
-                  id="gestion-jefe"
-                  isOpen={isAccordionExpanded("gestion-jefe")}
-                  onToggle={handleAccordionToggle}
-                  disabled={isAnimating}
-                  titulo="Gestión Jefe de Área"
-                  descripcion="Gestión y supervisión de equipos."
-                  iconKey="unfvchvi"
-                >
-                  {modulosGestion
-                    .filter((m) => m.subgrupo === "Gestión Jefe de Área")
-                    .map(renderModuleCard)}
-                </ModuleAccordion>
-              </AnimatedAccordionSlot>
-            )}
-
-            {showConcejoAccordion ? (
-              <AnimatedAccordionSlot motionState={getSlotMotion("concejo")}>
-                <ModuleAccordion
-                  id="concejo"
-                  isOpen={isAccordionExpanded("concejo")}
-                  onToggle={handleAccordionToggle}
-                  disabled={isAnimating}
-                  titulo="Concejo Municipal"
-                  descripcion="Gestión de actas y sesiones."
-                  iconKey="qaeqyqcc"
-                >
-                  {modulosGestion
-                    .filter((m) => m.subgrupo === "Concejo Municipal")
-                    .map(renderModuleCard)}
-                </ModuleAccordion>
-              </AnimatedAccordionSlot>
-            ) : (
-              <AnimatedAccordionSlot
-                motionState={getStandaloneMotion()}
-              >
-                <div className="flex flex-col gap-4">
-                  {modulosGestion
-                    .filter((m) => m.subgrupo === "Concejo Municipal")
-                    .map(renderModuleCard)}
+                <div className={hideCompanionOnMobile ? "max-md:hidden" : undefined}>
+                  <DashboardSectionHeader
+                    titulo="Gestión Administrativa"
+                    colorClass="text-blue-600"
+                    dotClass="bg-blue-600"
+                    lineClass="bg-blue-600/55 dark:bg-blue-500/60"
+                  />
                 </div>
-              </AnimatedAccordionSlot>
-            )}
 
-            {showRRHHAccordion ? (
-              <AnimatedAccordionSlot motionState={getSlotMotion("rrhh")}>
-                <ModuleAccordion
-                  id="rrhh"
-                  isOpen={isAccordionExpanded("rrhh")}
-                  onToggle={handleAccordionToggle}
-                  disabled={isAnimating}
-                  titulo="Recursos Humanos"
-                  descripcion="Administración de personal y permisos."
-                  iconKey="zyuyqigo"
+                <div
+                  ref={gestionAccordionsRef}
+                  className="flex flex-col"
+                  style={
+                    isAnimating && gestionAccordionsMinHeight > 0
+                      ? { minHeight: gestionAccordionsMinHeight }
+                      : undefined
+                  }
                 >
-                  {modulosGestion
-                    .filter((m) => m.subgrupo === "Recursos Humanos")
-                    .map(renderModuleCard)}
-                </ModuleAccordion>
-              </AnimatedAccordionSlot>
-            ) : (
-              <AnimatedAccordionSlot
-                motionState={getStandaloneMotion()}
-              >
-                <div className="flex flex-col gap-4">
-                  {modulosGestion
-                    .filter((m) => m.subgrupo === "Recursos Humanos")
-                    .map(renderModuleCard)}
+
+                  <AnimatedAccordionSlot motionState={getSlotMotion("gestion-propia")}>
+                    <ModuleAccordion
+                      id="gestion-propia"
+                      isOpen={isAccordionExpanded("gestion-propia")}
+                      onToggle={handleAccordionToggle}
+                      disabled={isAnimating}
+                      titulo="Gestión Propia"
+                      descripcion="Gestión de actividades y permisos personales."
+                      iconKey="fmdwwfgs"
+                    >
+                      {modulosGestion
+                        .filter(
+                          (m) =>
+                            m.subgrupo === "Gestión Propia" ||
+                            ["ACTIVIDADES", "PERMISOS"].includes(m.id),
+                        )
+                        .map(renderModuleCard)}
+                    </ModuleAccordion>
+                  </AnimatedAccordionSlot>
+
+                  {esjefe && (
+                    <AnimatedAccordionSlot motionState={getSlotMotion("gestion-jefe")}>
+                      <ModuleAccordion
+                        id="gestion-jefe"
+                        isOpen={isAccordionExpanded("gestion-jefe")}
+                        onToggle={handleAccordionToggle}
+                        disabled={isAnimating}
+                        titulo="Gestión Jefe de Área"
+                        descripcion="Gestión y supervisión de equipos."
+                        iconKey="unfvchvi"
+                      >
+                        {modulosGestion
+                          .filter((m) => m.subgrupo === "Gestión Jefe de Área")
+                          .map(renderModuleCard)}
+                      </ModuleAccordion>
+                    </AnimatedAccordionSlot>
+                  )}
+
+                  {showConcejoAccordion ? (
+                    <AnimatedAccordionSlot motionState={getSlotMotion("concejo")}>
+                      <ModuleAccordion
+                        id="concejo"
+                        isOpen={isAccordionExpanded("concejo")}
+                        onToggle={handleAccordionToggle}
+                        disabled={isAnimating}
+                        titulo="Concejo Municipal"
+                        descripcion="Gestión de actas y sesiones."
+                        iconKey="qaeqyqcc"
+                      >
+                        {modulosGestion
+                          .filter((m) => m.subgrupo === "Concejo Municipal")
+                          .map(renderModuleCard)}
+                      </ModuleAccordion>
+                    </AnimatedAccordionSlot>
+                  ) : (
+                    <AnimatedAccordionSlot
+                      motionState={getStandaloneMotion()}
+                    >
+                      <div className="flex flex-col gap-4">
+                        {modulosGestion
+                          .filter((m) => m.subgrupo === "Concejo Municipal")
+                          .map(renderModuleCard)}
+                      </div>
+                    </AnimatedAccordionSlot>
+                  )}
+
+                  {showRRHHAccordion ? (
+                    <AnimatedAccordionSlot motionState={getSlotMotion("rrhh")}>
+                      <ModuleAccordion
+                        id="rrhh"
+                        isOpen={isAccordionExpanded("rrhh")}
+                        onToggle={handleAccordionToggle}
+                        disabled={isAnimating}
+                        titulo="Recursos Humanos"
+                        descripcion="Administración de personal y permisos."
+                        iconKey="zyuyqigo"
+                      >
+                        {modulosGestion
+                          .filter((m) => m.subgrupo === "Recursos Humanos")
+                          .map(renderModuleCard)}
+                      </ModuleAccordion>
+                    </AnimatedAccordionSlot>
+                  ) : (
+                    <AnimatedAccordionSlot
+                      motionState={getStandaloneMotion()}
+                    >
+                      <div className="flex flex-col gap-4">
+                        {modulosGestion
+                          .filter((m) => m.subgrupo === "Recursos Humanos")
+                          .map(renderModuleCard)}
+                      </div>
+                    </AnimatedAccordionSlot>
+                  )}
+
+                  {showRecursosMunicipalesAccordion && (
+                    <AnimatedAccordionSlot
+                      motionState={getSlotMotion("recursos-municipales")}
+                    >
+                      <ModuleAccordion
+                        id="recursos-municipales"
+                        isOpen={isAccordionExpanded("recursos-municipales")}
+                        onToggle={handleAccordionToggle}
+                        disabled={isAnimating}
+                        titulo="Gestión de Recursos Municipales"
+                        descripcion="Administre los recursos físicos, materiales y contratos municipales"
+                        iconKey="bikvuqcq"
+                      >
+                        {modulosGestion
+                          .filter(
+                            (m) => m.subgrupo === "Gestión de Recursos Municipales",
+                          )
+                          .map(renderModuleCard)}
+                      </ModuleAccordion>
+                    </AnimatedAccordionSlot>
+                  )}
+
+                  {showComunicacionSocialAccordion && (
+                    <AnimatedAccordionSlot
+                      motionState={getSlotMotion("comunicacion-social")}
+                    >
+                      <ModuleAccordion
+                        id="comunicacion-social"
+                        isOpen={isAccordionExpanded("comunicacion-social")}
+                        onToggle={handleAccordionToggle}
+                        disabled={isAnimating}
+                        titulo="Comunicación Social"
+                        descripcion="Gestión del portal web público y publicaciones."
+                        iconKey="rhrmfnhf"
+                      >
+                        {modulosGestion
+                          .filter((m) => m.subgrupo === "Comunicación Social")
+                          .map(renderModuleCard)}
+                      </ModuleAccordion>
+                    </AnimatedAccordionSlot>
+                  )}
+
+                  <AnimatedAccordionSlot
+                    motionState={
+                      showRecepcionAccordion
+                        ? getSlotMotion("recepcion")
+                        : "collapsed"
+                    }
+                  >
+                    <ModuleAccordion
+                      id="recepcion"
+                      isOpen={isAccordionExpanded("recepcion")}
+                      onToggle={handleAccordionToggle}
+                      disabled={isAnimating}
+                      titulo="Recepción"
+                      descripcion="Gestione la recepción y despacho de documentos."
+                      iconKey="dicxqsya"
+                    >
+                      {modulosGestion
+                        .filter(
+                          (m) =>
+                            m.subgrupo === "Recepción" || m.id === "SOLICITUDES_JEFE",
+                        )
+                        .sort(
+                          (a, b) =>
+                            (RECEPCION_MODULE_ORDER[a.id] ?? 99) -
+                            (RECEPCION_MODULE_ORDER[b.id] ?? 99),
+                        )
+                        .map(renderModuleCard)}
+                    </ModuleAccordion>
+                  </AnimatedAccordionSlot>
+
+                  {modulosGestionSueltos.length > 0 ? (
+                    <AnimatedAccordionSlot motionState={getStandaloneMotion()}>
+                      <div className="flex flex-col gap-4 pt-2">
+                        {modulosGestionSueltos.map(renderModuleCard)}
+                      </div>
+                    </AnimatedAccordionSlot>
+                  ) : null}
                 </div>
-              </AnimatedAccordionSlot>
-            )}
-
-            {showRecursosMunicipalesAccordion && (
-              <AnimatedAccordionSlot
-                motionState={getSlotMotion("recursos-municipales")}
-              >
-                <ModuleAccordion
-                  id="recursos-municipales"
-                  isOpen={isAccordionExpanded("recursos-municipales")}
-                  onToggle={handleAccordionToggle}
-                  disabled={isAnimating}
-                  titulo="Gestión de Recursos Municipales"
-                  descripcion="Administre los recursos físicos, materiales y contratos municipales"
-                  iconKey="bikvuqcq"
-                >
-                  {modulosGestion
-                    .filter(
-                      (m) => m.subgrupo === "Gestión de Recursos Municipales",
-                    )
-                    .map(renderModuleCard)}
-                </ModuleAccordion>
-              </AnimatedAccordionSlot>
-            )}
-
-            <AnimatedAccordionSlot
-              motionState={
-                showRecepcionAccordion
-                  ? getSlotMotion("recepcion")
-                  : "collapsed"
-              }
-            >
-              <ModuleAccordion
-                id="recepcion"
-                isOpen={isAccordionExpanded("recepcion")}
-                onToggle={handleAccordionToggle}
-                disabled={isAnimating}
-                titulo="Recepción"
-                descripcion="Gestione la recepción y despacho de documentos."
-                iconKey="dicxqsya"
-              >
-                {modulosGestion
-                  .filter(
-                    (m) =>
-                      m.subgrupo === "Recepción" || m.id === "SOLICITUDES_JEFE",
-                  )
-                  .sort(
-                    (a, b) =>
-                      (RECEPCION_MODULE_ORDER[a.id] ?? 99) -
-                      (RECEPCION_MODULE_ORDER[b.id] ?? 99),
-                  )
-                  .map(renderModuleCard)}
-              </ModuleAccordion>
-            </AnimatedAccordionSlot>
-
-            {modulosGestionSueltos.length > 0 ? (
-              <AnimatedAccordionSlot motionState={getStandaloneMotion()}>
-                <div className="flex flex-col gap-4 pt-2">
-                  {modulosGestionSueltos.map(renderModuleCard)}
-                </div>
-              </AnimatedAccordionSlot>
-            ) : null}
-            </div>
-          </div>
-          </NavigationDimShell>
+              </div>
+            </NavigationDimShell>
           </LayoutGroup>
         )}
 
         {tienePoliticas && (
           <NavigationDimShell loading={navegando} active={politicasTieneActivo}>
-          <div
-            className={`space-y-4 ${!tieneGestion ? "w-full" : ""} ${hideCompanionOnMobile ? "max-md:hidden" : ""}`}
-          >
-            <DashboardSectionHeader
-              titulo="Políticas Públicas"
-              colorClass="text-blue-400"
-              dotClass="bg-blue-400"
-              lineClass="bg-blue-400/60 dark:bg-blue-400/60"
-              className="mb-0"
-            />
-            <div className="space-y-4">
-              {modulosPoliticas.map(renderModuleCard)}
+            <div
+              className={`space-y-4 ${!tieneGestion ? "w-full" : ""} ${hideCompanionOnMobile ? "max-md:hidden" : ""}`}
+            >
+              <DashboardSectionHeader
+                titulo="Políticas Públicas"
+                colorClass="text-blue-400"
+                dotClass="bg-blue-400"
+                lineClass="bg-blue-400/60 dark:bg-blue-400/60"
+                className="mb-0"
+              />
+              <div className="space-y-4">
+                {modulosPoliticas.map(renderModuleCard)}
+              </div>
             </div>
-          </div>
           </NavigationDimShell>
         )}
       </div>

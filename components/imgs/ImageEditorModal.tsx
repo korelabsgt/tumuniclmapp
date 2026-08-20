@@ -21,7 +21,13 @@ export default function ImageEditorModal({
   onApply,
   onCancel,
 }: ImageEditorModalProps) {
-  const [currentAspect, setCurrentAspect] = useState(aspect);
+  const [currentAspect, setCurrentAspect] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`aspect_preference_${aspect}`);
+      if (saved) return Number(saved);
+    } catch (e) {}
+    return aspect;
+  });
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -150,7 +156,13 @@ export default function ImageEditorModal({
             {aspect !== 1 && (
               <button
                 type="button"
-                onClick={() => setCurrentAspect((a) => Math.abs(a - aspect) < 0.01 ? 1 / aspect : aspect)}
+                onClick={() => {
+                  setCurrentAspect((a) => {
+                    const newAspect = Math.abs(a - aspect) < 0.01 ? 1 / aspect : aspect;
+                    try { localStorage.setItem(`aspect_preference_${aspect}`, newAspect.toString()); } catch (e) {}
+                    return newAspect;
+                  });
+                }}
                 className="p-2 rounded-lg bg-gray-100 dark:bg-neutral-800 hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
                 title="Cambiar orientación (Vertical/Horizontal)"
               >

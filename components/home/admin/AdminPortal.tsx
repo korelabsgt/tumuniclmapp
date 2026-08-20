@@ -1,5 +1,4 @@
 import React from 'react';
-import { PublicHeader } from '@/components/home/ui/PublicHeader';
 import { PublicHero } from '@/components/home/ui/PublicHero';
 import { AdminContent } from '@/components/home/admin/AdminContent';
 import { getPoliticas, getPublicaciones, type ConfiguracionPortal } from '@/components/home/lib/actions';
@@ -17,8 +16,7 @@ export default async function AdminPortal({ configuracion }: AdminPortalProps) {
   ]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-neutral-950 font-sans">
-      <PublicHeader configuracion={configuracion} modoAdmin={true} />
+    <div className="-mt-2 sm:-mt-5 min-h-screen bg-gray-50 dark:bg-neutral-950 font-sans w-full">
       <PublicHero configuracion={configuracion} />
       <AdminContent 
         publicacionesIniciales={publicaciones}

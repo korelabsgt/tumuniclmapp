@@ -23,11 +23,11 @@ export function AdminContent({ publicacionesIniciales, politicasIniciales, confi
   ];
 
   return (
-    <section className="relative -mt-[250px] z-30 w-full sm:w-[95%] lg:max-w-5xl mx-auto pb-24">
+    <section className="relative -mt-[250px] z-30 w-full max-w-none px-0 sm:px-4 md:px-8 mx-auto pb-24">
       <div className="rounded-none sm:rounded-3xl shadow-[0_32px_80px_rgba(0,0,0,0.4)] overflow-hidden border-0 sm:border border-white/10">
 
         {/* ── Header ── */}
-        <div className="relative bg-blue-800 dark:bg-slate-900 px-6 md:px-10 py-8 overflow-hidden">
+        <div className="relative bg-blue-800 dark:bg-slate-900 px-4 sm:px-6 md:px-10 py-6 sm:py-8 overflow-hidden">
           {/* Decoración de fondo */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute -top-20 -right-20 w-72 h-72 rounded-full bg-blue-400/10 blur-3xl" />
@@ -88,7 +88,7 @@ export function AdminContent({ publicacionesIniciales, politicasIniciales, confi
         </div>
 
         {/* ── Área de Contenido ── */}
-        <div className="bg-gray-50 dark:bg-neutral-900 flex-1 p-6 md:p-10 min-h-[500px]">
+        <div className="bg-gray-50 dark:bg-neutral-900 flex-1 px-2.5 sm:px-6 md:px-10 py-4 sm:py-6 md:py-10 min-h-[500px]">
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {activeTab === 'gestor' && (
               <GestorPublicacionesView

@@ -166,7 +166,7 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
   });
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
 
       {/* ── Tabs ── */}
       {!editorOpen && (
@@ -433,7 +433,7 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
                               )}
                               {hasGrafica && (
                                 <span className="flex items-center gap-1 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-md px-2 py-0.5 border border-emerald-100 dark:border-emerald-800">
-                                  <BarChart2 className="w-3 h-3" />Gráfica
+                                  <BarChart2 className="w-3 h-3" />Estadísticas
                                 </span>
                               )}
                             </div>
@@ -522,7 +522,7 @@ export function GestorPublicacionesView({ publicacionesIniciales, politicasInici
         )}
 
         {editorOpen && (
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col min-h-0 w-full">
             <PublicacionEditorModal
               open={editorOpen}
               onClose={() => setEditorOpen(false)}

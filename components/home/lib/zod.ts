@@ -76,7 +76,9 @@ export const publicacionSchema = z.object({
 
   descripcion: z
     .string()
-    .min(1, 'La descripción es obligatoria'),
+    .optional()
+    .nullable()
+    .default(''),
 
   año: z
     .number()

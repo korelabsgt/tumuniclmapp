@@ -245,10 +245,21 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
     }
   };
 
+  const moverImagen = (index: number, direccion: 'izq' | 'der') => {
+    setImagenes(prev => {
+      const newImgs = [...prev];
+      if (direccion === 'izq' && index > 0) {
+        [newImgs[index - 1], newImgs[index]] = [newImgs[index], newImgs[index - 1]];
+      } else if (direccion === 'der' && index < newImgs.length - 1) {
+        [newImgs[index + 1], newImgs[index]] = [newImgs[index], newImgs[index + 1]];
+      }
+      return newImgs;
+    });
+  };
+
   // ─── Guardar publicación ────────────────────────────────────────────────────
   function handleGuardar() {
     if (!nombre.trim()) { toast.error('El título es obligatorio'); return; }
-    if (!descripcion.trim()) { toast.error('La descripción es obligatoria'); return; }
 
     const ordenNum = Number(orden) || 0;
     if (publicaciones.some(p => p.orden === ordenNum && p.año === año && p.id !== publicacion?.id)) {
@@ -295,24 +306,24 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
     <div className="w-full h-full bg-white dark:bg-neutral-900 shadow-sm flex flex-col overflow-hidden animate-in fade-in duration-200">
 
         {/* ── Header ── */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-neutral-700 shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">📝</span>
+        <div className="flex items-center justify-between px-2 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-neutral-700 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl">📝</span>
             <div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white leading-none">
+              <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-none">
                 {publicacion?.id ? 'Editar Publicación' : 'Nueva Publicación'}
               </h2>
-              <p className="text-xs text-gray-400 mt-0.5">Los cambios se reflejan en la página pública</p>
+              <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">Los cambios se reflejan en la página pública</p>
             </div>
           </div>
           
-          <button onClick={onClose} disabled={estaOcupado} className="flex items-center gap-2 px-3 py-2 -mr-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 text-sm font-medium">
-            <ArrowLeft className="w-5 h-5" /> Volver
+          <button onClick={onClose} disabled={estaOcupado} className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 -mr-1 sm:-mr-2 rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-neutral-800 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-50 text-xs sm:text-sm font-medium">
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" /> Volver
           </button>
         </div>
 
         {/* ── Cuerpo con scroll ── */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-2 sm:px-6 py-4 sm:py-6 space-y-5 sm:space-y-6">
 
           {/* Datos Base */}
           <section className="space-y-4">
@@ -334,7 +345,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
 
             {/* Descripción */}
             <div className="space-y-1">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Descripción *</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Descripción (Opcional)</label>
               <textarea
                 value={descripcion}
                 onChange={e => setDescripcion(e.target.value)}
@@ -347,44 +358,44 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
 
               {/* Año, Fecha Pub, Orden y Política en grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Año al que corresponde la información (Ej. Informe Fiscal 2025)">Año (Contenido) *</label>
-                <div className="relative">
-                  <select
-                    value={año}
-                    onChange={e => setAño(Number(e.target.value))}
-                    disabled={estaOcupado}
-                    className="w-full appearance-none px-4 py-3 pr-8 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                  >
-                    {AÑOS.map(a => <option key={a} value={a}>{a}</option>)}
-                  </select>
-                  <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
+               <div className="space-y-1">
+                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Año al que corresponde la información (Ej. Informe Fiscal 2025)">Año (Contenido) *</label>
+                 <div className="relative">
+                   <select
+                     value={año}
+                     onChange={e => setAño(Number(e.target.value))}
+                     disabled={estaOcupado}
+                     className="w-full appearance-none px-4 py-3 pr-8 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                   >
+                     {AÑOS.map(a => <option key={a} value={a}>{a}</option>)}
+                   </select>
+                   <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                 </div>
+               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Día, Mes y Año en que se publica oficialmente">F. Publicación</label>
-                <input
-                  type="date"
-                  value={fecha}
-                  onChange={e => setFecha(e.target.value)}
-                  disabled={estaOcupado}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                />
-              </div>
+               <div className="space-y-1">
+                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300" title="Día, Mes y Año en que se publica oficialmente">F. Publicación</label>
+                 <input
+                   type="date"
+                   value={fecha}
+                   onChange={e => setFecha(e.target.value)}
+                   disabled={estaOcupado}
+                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                 />
+               </div>
 
-              <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Orden</label>
-                <input
-                  type="number"
-                  min={0}
-                  value={orden}
-                  onChange={e => setOrden(e.target.value === '' ? '' : Number(e.target.value))}
-                  onFocus={e => e.target.select()}
-                  disabled={estaOcupado}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-              </div>
+               <div className="space-y-1">
+                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Orden</label>
+                 <input
+                   type="number"
+                   min={0}
+                   value={orden}
+                   onChange={e => setOrden(e.target.value === '' ? '' : Number(e.target.value))}
+                   onFocus={e => e.target.select()}
+                   disabled={estaOcupado}
+                   className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                 />
+               </div>
 
               <div className="space-y-1">
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Política</label>
@@ -411,7 +422,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
               {([
                 { key: 'imagenes', icon: ImageIcon, label: 'Imágenes', color: 'blue' },
                 { key: 'documentos', icon: FileText, label: 'Documentos PDF', color: 'amber' },
-                { key: 'grafica', icon: BarChart2, label: 'Gráfica', color: 'emerald' },
+                { key: 'grafica', icon: BarChart2, label: 'Estadísticas', color: 'emerald' },
               ] as const).map(({ key, icon: Icon, label, color }) => (
                 <button
                   key={key}
@@ -433,7 +444,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
 
           {/* ─── Sección Imágenes ──────────────────────────────────────────────── */}
           {secciones.has('imagenes') && (
-            <section className="relative space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+            <section className="relative space-y-3 p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
               <button type="button" onClick={() => eliminarSeccion('imagenes')} className="absolute top-3 right-3 text-red-500 hover:text-red-700 bg-white/50 hover:bg-red-50 dark:bg-neutral-800/50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800" title="Eliminar sección completa">
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -443,14 +454,26 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
 
               {/* Imágenes ya cargadas */}
               {imagenes.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 sm:gap-2.5">
                   {imagenes.map((url, i) => (
-                    <div key={i} className="relative group">
+                    <div key={i} className="relative group aspect-square rounded-lg overflow-hidden border border-blue-200 dark:border-blue-700 bg-neutral-800">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${url}`} alt={`img-${i}`} className="w-20 h-20 object-cover rounded-lg border border-blue-200 dark:border-blue-700" />
-                      <button onClick={() => eliminarImagen(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-md">
-                        <X className="w-3 h-3" />
-                      </button>
+                      <img src={url.startsWith('http') ? url : `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${url}`} alt={`img-${i}`} className="w-full h-full object-cover" />
+                      
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex flex-col justify-between p-1">
+                        <div className="flex justify-between w-full items-center">
+                          <button type="button" onClick={() => moverImagen(i, 'izq')} disabled={i === 0} className="p-1 bg-white/80 hover:bg-white rounded-md text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <ArrowLeft className="w-3 h-3" />
+                          </button>
+                          <span className="bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md">{i + 1}</span>
+                          <button type="button" onClick={() => moverImagen(i, 'der')} disabled={i === imagenes.length - 1} className="p-1 bg-white/80 hover:bg-white rounded-md text-gray-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                            <ArrowLeft className="w-3 h-3 rotate-180" />
+                          </button>
+                        </div>
+                        <button type="button" onClick={() => eliminarImagen(i)} className="p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-md mx-auto mb-0.5">
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -462,6 +485,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
                 folderPath={`publicaciones/publicacion-${publicationCode}`}
                 currentImagePath={null}
                 permitirTodos={false}
+                forceWebp={true}
                 onUploadSuccess={(path) => {
                   setImagenes(prev => [...prev, path]);
                   toast.success('Imagen agregada ✓');
@@ -474,7 +498,7 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
 
           {/* ─── Sección Documentos ───────────────────────────────────────────── */}
           {secciones.has('documentos') && (
-            <section className="relative space-y-3 p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+            <section className="relative space-y-3 p-2.5 sm:p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
               <button type="button" onClick={() => eliminarSeccion('documentos')} className="absolute top-3 right-3 text-red-500 hover:text-red-700 bg-white/50 hover:bg-red-50 dark:bg-neutral-800/50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800" title="Eliminar sección completa">
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -563,57 +587,85 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
 
           {/* ─── Sección Gráfica ──────────────────────────────────────────────── */}
           {secciones.has('grafica') && (
-            <section className="relative space-y-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+            <section className="relative space-y-3 p-3 sm:p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
               <button type="button" onClick={() => eliminarSeccion('grafica')} className="absolute top-3 right-3 text-red-500 hover:text-red-700 bg-white/50 hover:bg-red-50 dark:bg-neutral-800/50 dark:hover:bg-red-900/30 p-1.5 rounded-lg transition-colors border border-transparent hover:border-red-200 dark:hover:border-red-800" title="Eliminar sección completa">
                 <Trash2 className="w-4 h-4" />
               </button>
               <h4 className="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
-                <BarChart2 className="w-4 h-4" /> Datos de Gráfica
+                <BarChart2 className="w-4 h-4" /> Estadísticas
               </h4>
 
-              <div className="space-y-2">
-                <div className="grid grid-cols-3 gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1">
-                  <span>Concepto</span>
-                  <span>Presupuestado (Q)</span>
-                  <span>Ejecutado (Q)</span>
+              <div className="space-y-3">
+                {/* Encabezados visibles en pantallas medianas y grandes */}
+                <div className="hidden sm:grid sm:grid-cols-12 gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 px-1">
+                  <span className="col-span-5">Concepto</span>
+                  <span className="col-span-3">Presupuestado (Q)</span>
+                  <span className="col-span-3">Ejecutado (Q)</span>
+                  <span className="col-span-1"></span>
                 </div>
+
                 {filas.map((fila, i) => (
-                  <div key={i} className="grid grid-cols-3 gap-2 items-center">
-                    <input
-                      type="text"
-                      value={fila.concepto}
-                      onChange={e => setFilas(prev => prev.map((f, j) => j === i ? { ...f, concepto: e.target.value } : f))}
-                      placeholder="Ej: Puente Valle Arriba"
-                      className="px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={formatNumberWithCommas(fila.presupuestado)}
-                      onChange={e => setFilas(prev => prev.map((f, j) => j === i ? { ...f, presupuestado: handleNumberChange(e.target.value) } : f))}
-                      onFocus={e => e.target.select()}
-                      className="px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
-                    />
-                    <div className="flex gap-1">
+                  <div key={i} className="p-3 sm:p-0 bg-white/70 dark:bg-neutral-800/70 sm:bg-transparent rounded-xl border sm:border-0 border-emerald-200/60 dark:border-emerald-800/40 space-y-2.5 sm:space-y-0 sm:grid sm:grid-cols-12 sm:gap-2 sm:items-center">
+                    {/* Concepto */}
+                    <div className="sm:col-span-5">
+                      <label className="sm:hidden text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Concepto</label>
                       <input
                         type="text"
-                        value={formatNumberWithCommas(fila.ejecutado)}
-                        onChange={e => setFilas(prev => prev.map((f, j) => j === i ? { ...f, ejecutado: handleNumberChange(e.target.value) } : f))}
-                        onFocus={e => e.target.select()}
-                        className="flex-1 px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
+                        value={fila.concepto}
+                        onChange={e => setFilas(prev => prev.map((f, j) => j === i ? { ...f, concepto: e.target.value } : f))}
+                        placeholder="Ej: Puente Valle Arriba"
+                        className="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
                       />
-                      {filas.length > 1 && (
-                        <button onClick={() => setFilas(prev => prev.filter((_, j) => j !== i))} className="p-2 text-red-400 hover:text-red-600 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
                     </div>
+
+                    {/* Presupuestado y Ejecutado */}
+                    <div className="grid grid-cols-2 gap-2 sm:contents">
+                      <div className="sm:col-span-3">
+                        <label className="sm:hidden text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Presupuestado (Q)</label>
+                        <input
+                          type="text"
+                          value={formatNumberWithCommas(fila.presupuestado)}
+                          onChange={e => setFilas(prev => prev.map((f, j) => j === i ? { ...f, presupuestado: handleNumberChange(e.target.value) } : f))}
+                          onFocus={e => e.target.select()}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
+                        />
+                      </div>
+                      <div className="sm:col-span-3">
+                        <label className="sm:hidden text-[11px] font-semibold text-gray-500 dark:text-gray-400 mb-1 block">Ejecutado (Q)</label>
+                        <input
+                          type="text"
+                          value={formatNumberWithCommas(fila.ejecutado)}
+                          onChange={e => setFilas(prev => prev.map((f, j) => j === i ? { ...f, ejecutado: handleNumberChange(e.target.value) } : f))}
+                          onFocus={e => e.target.select()}
+                          placeholder="0.00"
+                          className="w-full px-3 py-2 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Botón eliminar fila */}
+                    {filas.length > 1 && (
+                      <div className="flex justify-end sm:justify-center sm:col-span-1 pt-1 sm:pt-0">
+                        <button
+                          type="button"
+                          onClick={() => setFilas(prev => prev.filter((_, j) => j !== i))}
+                          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                          title="Eliminar fila"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span className="sm:hidden font-medium">Eliminar fila</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
 
               <button
+                type="button"
                 onClick={() => setFilas(prev => [...prev, { concepto: '', presupuestado: '', ejecutado: '' }])}
-                className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 font-medium transition-colors"
+                className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200 font-medium transition-colors pt-1"
               >
                 <Plus className="w-4 h-4" /> Agregar fila
               </button>
@@ -622,8 +674,8 @@ export function PublicacionEditorModal({ open, onClose, onGuardado, publicacion,
         </div>
 
         {/* ── Footer ── */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-neutral-700 shrink-0 flex items-center justify-end gap-3 bg-gray-50 dark:bg-neutral-900/80">
-          <button onClick={handleGuardar} disabled={estaOcupado} className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold transition-colors text-sm">
+        <div className="px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200 dark:border-neutral-700 shrink-0 flex items-center justify-end gap-3 bg-gray-50 dark:bg-neutral-900/80">
+          <button onClick={handleGuardar} disabled={estaOcupado} className="flex items-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold transition-colors text-sm">
             {isPending ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : <><Save className="w-4 h-4" /> Guardar</>}
           </button>
         </div>

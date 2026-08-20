@@ -299,6 +299,17 @@ export const TODOS_LOS_MODULOS: ModuloDashboard[] = [
     subgrupo: "Recepción",
   },
   {
+    id: "MODULO_WEB",
+    permiso: "CS",
+    titulo: "Módulo Web",
+    descripcion: "Gestione el contenido público, publicaciones y ajustes del portal web.",
+    ruta: "/sigem/admin-portal",
+    iconoKey: "pfzzikja",
+    colorProps: { primaryColor: "#4bb3fd", secondaryColor: "#1e3a8a" },
+    categoria: "Gestión Administrativa",
+    subgrupo: "Comunicación Social",
+  },
+  {
     id: "DEV",
     permiso: "SUPER",
     titulo: "Mensajes del Sistema",

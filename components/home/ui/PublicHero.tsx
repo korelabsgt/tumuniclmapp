@@ -23,21 +23,28 @@ export function PublicHero({ configuracion }: PublicHeroProps) {
 
   return (
     <>
-      <Parallax bgImage={portadaUrl} strength={200}>
+      <Parallax 
+        bgImage={portadaUrl} 
+        strength={80}
+        bgImageStyle={{
+          objectFit: 'cover',
+          objectPosition: 'center 30%',
+        }}
+      >
         <section
-          className="relative w-full h-[calc(100vh+50px)] min-h-[550px] flex flex-col justify-center items-center text-center overflow-hidden bg-transparent"
+          className="relative w-full h-[700px] md:h-[825px] flex flex-col justify-start items-center text-center overflow-hidden bg-transparent"
         >
           {/* Hero Content */}
-          <div className="relative z-10 -mt-[320px] px-4 drop-shadow-lg text-gray-900">
-            <h1 className="font-blacksword text-5xl md:text-6xl lg:text-7xl mb-12">
+          <div className="relative z-10 w-full px-4 flex flex-col items-center text-black pt-[100px] sm:pt-[110px] md:pt-[90px] lg:pt-[80px]">
+            <h1 className="font-blacksword text-[30px] sm:text-[40px] md:text-[56px] lg:text-[66px] leading-tight mb-2 sm:mb-3 md:mb-4 whitespace-nowrap drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
               {eslogan}
             </h1>
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
+            <h2 className="text-[19px] sm:text-[23px] md:text-[34px] lg:text-[40px] font-bold tracking-tight leading-snug drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]">
               Gobierno Municipal
+              <span className="block font-semibold text-[17px] sm:text-[21px] md:text-[30px] lg:text-[36px] mt-0.5 sm:mt-1">
+                2024-2028
+              </span>
             </h2>
-            <h3 className="text-3xl md:text-4xl lg:text-5xl font-medium mt-1">
-              2024-2028
-            </h3>
           </div>
         </section>
       </Parallax>

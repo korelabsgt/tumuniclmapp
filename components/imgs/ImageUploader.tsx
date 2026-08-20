@@ -37,10 +37,12 @@ interface ImageUploaderProps {
   onEstadoChange?: (estado: { uploading: boolean; deleting: boolean }) => void;
   /** Clase CSS adicional para la vista previa de la imagen (ej. max-h-[250px]) */
   previewClassName?: string;
-  /** Límite de tamaño máximo en MB para la compresión (default: 0.5 MB) */
+  /** Límite de tamaño máximo en MB para la compresión (default: 0.2 MB) */
   maxSizeMB?: number;
   /** Máxima anchura o altura en píxeles (default: 1920) */
   maxWidthOrHeight?: number;
+  /** Si es true, fuerza la conversión de la imagen a WebP sin importar su tipo original */
+  forceWebp?: boolean;
 }
 
 const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(function ImageUploader({
@@ -59,6 +61,7 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
   previewClassName,
   maxSizeMB = 0.2,
   maxWidthOrHeight = 1920,
+  forceWebp = false,
 }, ref) {
   const supabase = createClient();
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -102,18 +105,25 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
     setLoadingPreview(false);
   }, [currentImagePath, bucketName]);
 
-  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [fileQueue, setFileQueue] = useState<File[]>([]);
 
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('Solo se permiten imágenes JPG, PNG o WebP.');
-      return;
+  const handleFilesSelected = (files: FileList | File[]) => {
+    const validFiles = Array.from(files).filter(f => ['image/jpeg', 'image/png', 'image/webp'].includes(f.type));
+    
+    if (validFiles.length > 10) {
+      alert('Se limitó la selección a 10 imágenes máximo por lote.');
+      validFiles.splice(10);
     }
+    
+    if (validFiles.length > 0) {
+      const [first, ...rest] = validFiles;
+      setEditingFile(first);
+      setFileQueue(rest);
+    }
+  };
 
-    setEditingFile(file);
-    // Reset the input so the same file can be selected again
+  const handleFileSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) handleFilesSelected(e.target.files);
     e.target.value = '';
   };
 
@@ -148,17 +158,7 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
     setIsDragging(false);
     
     if (!tienePermisoSubir || isProcessing || currentImagePath) return;
-
-    const file = e.dataTransfer.files?.[0];
-    if (!file) return;
-
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('Solo se permiten imágenes JPG, PNG o WebP.');
-      return;
-    }
-
-    setEditingFile(file);
+    if (e.dataTransfer.files) handleFilesSelected(e.dataTransfer.files);
   };
 
   const buildUniqueName = (ext: string) => {
@@ -178,10 +178,11 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
     setUploading(true);
     setEditingFile(null);
     try {
-      const outputType = editedFile.type === 'image/png' ? 'image/png' : 
-                         editedFile.type === 'image/webp' ? 'image/webp' : 'image/jpeg';
+      const outputType = forceWebp ? 'image/webp' :
+                         (editedFile.type === 'image/png' ? 'image/png' : 
+                         editedFile.type === 'image/webp' ? 'image/webp' : 'image/jpeg');
       
-      let ext = outputType.split('/')[1];
+      let ext = forceWebp ? 'webp' : outputType.split('/')[1];
       if (ext === 'jpeg') ext = 'jpg';
 
       const compressed = await imageCompression(editedFile, {
@@ -206,6 +207,13 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
 
       // 5. Callback
       await onUploadSuccess(newPath);
+
+      // 6. Procesar la siguiente en la cola
+      if (fileQueue.length > 0) {
+        const [next, ...rest] = fileQueue;
+        setFileQueue(rest);
+        setTimeout(() => setEditingFile(next), 100);
+      }
     } catch (err: any) {
       console.error('Error al subir imagen:', err);
       alert('Error al subir la imagen: ' + (err?.message || 'Error desconocido'));
@@ -254,6 +262,7 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
       <input
         ref={fileInputRef}
         type="file"
+        multiple
         accept="image/jpeg,image/png,image/webp"
         onChange={handleFileSelected}
         className="hidden"
@@ -261,6 +270,7 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
       <input
         ref={cameraInputRef}
         type="file"
+        multiple
         accept="image/jpeg,image/png,image/webp"
         capture="environment"
         onChange={handleFileSelected}
@@ -404,7 +414,10 @@ const ImageUploader = forwardRef<ImageUploaderHandle, ImageUploaderProps>(functi
           aspect={aspect}
           aspectLabel={aspectLabel}
           onApply={uploadEditedFile}
-          onCancel={() => setEditingFile(null)}
+          onCancel={() => {
+            setEditingFile(null);
+            setFileQueue([]);
+          }}
         />
       )}
 

@@ -22,7 +22,7 @@ import { useAsuetos, getAsuetoPorFecha, buildParentByDependenciaId } from '@/hoo
 import { ComisionConFechaYHoraSeparada } from '@/hooks/comisiones/useObtenerComisiones';
 import VerComision from '@/components/comisiones/VerComision';
 import { esOficinaSinMarcajeAsistencia } from '@/components/asistencia/lib/oficinas-sin-marcaje';
-import { esEntradaTardeMarcaje, esTipoMarcajeLibre } from '@/components/asistencia/lib/estado-marcaje';
+import { esEntradaTardeMarcaje } from '@/components/asistencia/lib/estado-marcaje';
 import { AccordionToggleButton } from '@/components/ui/accordion-toggle';
 
 type UsuarioConDependencia = {
@@ -292,7 +292,7 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
     registrosFiltrados.forEach(registro => {
       const oficinaNombre = registro.oficina_nombre || 'Sin Oficina';
       if (esOficinaSinMarcajeAsistencia(oficinaNombre)) return;
-      const diaString = format(parseISO(registro.created_at), 'yyyy-MM-dd');
+      const diaString = format(new Date(registro.created_at), 'yyyy-MM-dd');
       const userId = registro.user_id;
       const oficinaPath = registro.oficina_path_orden || '0';
       const claveUnica = `${diaString}-${userId}`;
@@ -315,12 +315,12 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
 
       const tipoRegistroStr = registro.tipo_registro as string;
 
-      if (esTipoMarcajeLibre(tipoRegistroStr)) {
-        registrosTemp[oficinaNombre][claveUnica].multiple.push(registro);
-      } else if (tipoRegistroStr === 'Entrada') {
+      if (tipoRegistroStr === 'Entrada') {
         registrosTemp[oficinaNombre][claveUnica].entrada = registro;
       } else if (tipoRegistroStr === 'Salida') {
         registrosTemp[oficinaNombre][claveUnica].salida = registro;
+      } else {
+        registrosTemp[oficinaNombre][claveUnica].multiple.push(registro);
       }
     });
     return registrosTemp;

@@ -359,12 +359,12 @@ export default function OficinaAccordion({
                       const mostrarEncabezadoDia = registro.diaString !== diaActual;
                       if (mostrarEncabezadoDia) diaActual = registro.diaString;
 
-                      const esVacio = registro.esDiaVacio || registro.esAusencia;
+                      const esMultiple = registro.multiple && registro.multiple.length > 0;
+                      const totalRegistros = (registro.entrada ? 1 : 0) + (registro.salida ? 1 : 0) + (registro.multiple?.length || 0);
+                      const esVacio = (registro.esDiaVacio || registro.esAusencia) && totalRegistros === 0;
                       const permiso = getPermisoParaDia(registro.userId, registro.diaString);
                       const asueto = resolverAsueto(registro.userId, registro.diaString);
                       const comision = !asueto && !permiso ? getComisionParaDia(registro.userId, registro.diaString) : null;
-                      const esMultiple = registro.multiple && registro.multiple.length > 0;
-                      const totalRegistros = (registro.entrada ? 1 : 0) + (registro.salida ? 1 : 0) + (registro.multiple?.length || 0);
                       if (isAfter(parseISO(registro.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
 
                       return (
@@ -486,8 +486,8 @@ export default function OficinaAccordion({
                           {/* Filas de asistencia */}
                           {usuario.asistencias.map((asistencia: any, idx: number) => {
                              const esMultiple = asistencia.multiple && asistencia.multiple.length > 0;
-                             const esAusencia = asistencia.esAusencia;
                              const totalRegistros = (asistencia.entrada ? 1 : 0) + (asistencia.salida ? 1 : 0) + (asistencia.multiple?.length || 0);
+                             const esAusencia = !!asistencia.esAusencia && totalRegistros === 0;
                              const permiso = getPermisoParaDia(usuario.userId, asistencia.diaString);
                              const asueto = resolverAsueto(usuario.userId, asistencia.diaString);
                              const comision = !asueto && !permiso ? getComisionParaDia(usuario.userId, asistencia.diaString) : null;

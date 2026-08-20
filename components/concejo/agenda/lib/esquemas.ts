@@ -43,6 +43,7 @@ export interface ActividadConcejo {
   status: string;
   assigned_to: string | null;
   confirmed_at: string | null;
+  updated_at?: string | null;
   assignee_nombre: string;
   checklist?: { title: string; is_completed: boolean }[] | null;
   archivos?: ArchivoAdjunto[] | null;
@@ -56,6 +57,7 @@ export interface ActividadConcejoConContexto extends ActividadConcejo {
   agenda_titulo: string;
   agenda_fecha: string;
   agenda_estado: string;
+  agenda_descripcion: string;
 }
 
 export interface Tarea {

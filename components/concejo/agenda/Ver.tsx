@@ -1,21 +1,24 @@
 'use client';
 
 import React, { useEffect, useState, useMemo, memo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import useUserData from '@/hooks/sesion/useUserData';
 import { eliminarAgenda } from './lib/acciones';
 import { useAgendasConcejo } from './lib/hooks';
 import { type AgendaConcejo } from './lib/esquemas';
+import { obtenerTodasActividadesConcejo } from './tareas/lib/actividades';
 import AgendaForm from './forms/Sesion';
 import ResumenAsistencia from './modals/ResumenAsistencia';
 import InformeDietas from './modals/InformeDietas';
 import GestorActa from '@/components/concejo/agenda/gestorActa';
 import ListaActividadesAsignadas from './ListaActividadesAsignadas';
+import FiltroPeriodoAgenda from './FiltroPeriodoAgenda';
 import { CalendarPlus, Pencil, ArrowRight, Trash2, CalendarClock, CalendarDays, CalendarCheck, FileText, Table, FileUp, X, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import CargandoAnimacion from '@/components/ui/animations/Cargando';
 import { useRouter } from 'next/navigation';
-import { getYear, setMonth, format, differenceInDays, isToday, isFuture, isPast } from 'date-fns';
+import { getYear, format, differenceInDays, isToday, isFuture, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import BotonVolver from '@/components/ui/botones/BotonVolver';
 import Swal from 'sweetalert2';
@@ -175,10 +178,19 @@ AgendaCard.displayName = 'AgendaCard';
 
 type VistaType = 'hoy' | 'proximas' | 'terminadas' | 'actividades';
 
+const ACTIVIDADES_QUERY_KEY = ['actividades-concejo-todas', 'v3'] as const;
+
 export default function Ver() {
   const router = useRouter();
   const { permisos, rol, cargando: cargandoUsuario } = useUserData();
   const { agendas, cargando: cargandoAgendas, error, fetchAgendas } = useAgendasConcejo();
+  const { data: actividades = [], isLoading: cargandoActividades, isError: errorActividades } = useQuery({
+    queryKey: ACTIVIDADES_QUERY_KEY,
+    queryFn: obtenerTodasActividadesConcejo,
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 10,
+  });
+  const hayActividades = actividades.length > 0;
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isResumenOpen, setIsResumenOpen] = useState(false);
   const [isInformeOpen, setIsInformeOpen] = useState(false);
@@ -214,12 +226,6 @@ export default function Ver() {
   
   const [vista, setVista] = useState<VistaType>('hoy');
   const [haCargadoVistaInicial, setHaCargadoVistaInicial] = useState(false);
-
-  const anios = Array.from({ length: 10 }, (_, i) => getYear(new Date()) - 5 + i);
-  const meses = Array.from({ length: 12 }, (_, i) => ({
-    numero: i.toString(),
-    nombre: format(setMonth(new Date(), i), 'LLLL', { locale: es }),
-  }));
 
   const agendasFiltradasBase = useMemo(() => {
     return agendas.filter(agenda => {
@@ -260,6 +266,14 @@ export default function Ver() {
       if (!haCargadoVistaInicial) setHaCargadoVistaInicial(true);
     }
   }, [counts, vista, haCargadoVistaInicial, cargandoAgendas]);
+
+  useEffect(() => {
+    if (cargandoActividades || hayActividades || vista !== 'actividades') return;
+    if (counts.hoy > 0) setVista('hoy');
+    else if (counts.proximas > 0) setVista('proximas');
+    else if (counts.terminadas > 0) setVista('terminadas');
+    else setVista('hoy');
+  }, [cargandoActividades, hayActividades, vista, counts]);
 
   const agendasVisibles = useMemo(() => {
     let lista: AgendaConcejo[] = [];
@@ -335,23 +349,12 @@ export default function Ver() {
             <div className="flex w-full xl:w-auto items-center gap-3">
                 <BotonVolver ruta="/sigem/" />
                 
-                <div className="flex items-center gap-2 flex-1 justify-end xl:flex-none">
-                    <select
-                    value={filtroAnio}
-                    onChange={(e) => setFiltroAnio(e.target.value)}
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring w-24"
-                    >
-                    {anios.map(anio => <option key={anio} value={anio}>{anio}</option>)}
-                    </select>
-                    <select
-                    value={filtroMes !== null ? filtroMes : ''}
-                    onChange={(e) => setFiltroMes(e.target.value === '' ? null : e.target.value)}
-                    className="h-10 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring flex-1 xl:w-auto"
-                    >
-                    <option value="">Todos los meses</option>
-                    {meses.map(mes => <option key={mes.numero} value={mes.numero}>{mes.nombre.charAt(0).toUpperCase() + mes.nombre.slice(1)}</option>)}
-                    </select>
-                </div>
+                <FiltroPeriodoAgenda
+                  filtroAnio={filtroAnio}
+                  filtroMes={filtroMes}
+                  onChangeAnio={setFiltroAnio}
+                  onChangeMes={setFiltroMes}
+                />
             </div>
 
 
@@ -394,16 +397,18 @@ export default function Ver() {
                         {vista === 'terminadas' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 dark:bg-red-400" />}
                     </button>
                 )}
-                <button onClick={() => setVista('actividades')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'actividades' ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
-                    <ClipboardList className="h-4 w-4" /> <span>Actividades Asignadas</span>
-                    {vista === 'actividades' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-purple-600 dark:bg-purple-400" />}
-                </button>
+                {(hayActividades || vista === 'actividades' || cargandoActividades) && !errorActividades && (
+                    <button onClick={() => setVista('actividades')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'actividades' ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
+                        <ClipboardList className="h-4 w-4" /> <span>Actividades Asignadas</span>
+                        {vista === 'actividades' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-purple-600 dark:bg-purple-400" />}
+                    </button>
+                )}
             </div>
         </div>
 
       </header>
       <div className="w-full">
-        {vista === 'actividades' ? (
+        {vista === 'actividades' && hayActividades ? (
           <AnimatePresence mode="wait">
             <motion.div
               key="actividades"
@@ -412,7 +417,7 @@ export default function Ver() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              <ListaActividadesAsignadas />
+              <ListaActividadesAsignadas filtroAnio={filtroAnio} filtroMes={filtroMes} />
             </motion.div>
           </AnimatePresence>
         ) : agendasVisibles.length === 0 ? (

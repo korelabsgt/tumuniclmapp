@@ -442,7 +442,6 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
                     tareaId={tarea.id} 
                     archivosIniciales={tarea.archivos} 
                     esLectura={isReadOnly}
-                    expandido
                 />
             </div>
 

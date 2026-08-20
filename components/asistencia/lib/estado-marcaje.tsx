@@ -92,22 +92,37 @@ export function esEntradaTardeMarcaje(params: {
   return (notas ?? "").toLowerCase().includes("entrada tarde");
 }
 
-export function esTipoMarcajeLibre(tipo: string | null | undefined): boolean {
-  const t = (tipo ?? "")
+function normalizarTextoMarcaje(valor: string | null | undefined): string {
+  return (valor ?? "")
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
+}
+
+export function esTipoMarcajeLibre(tipo: string | null | undefined): boolean {
+  const t = normalizarTextoMarcaje(tipo);
   return t === "marca" || t === "multiple";
 }
 
 export function esNombreHorarioMultiple(nombre: string | null | undefined): boolean {
-  const n = (nombre ?? "")
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  return n === "multiple";
+  const n = normalizarTextoMarcaje(nombre);
+  if (!n) return false;
+  return n === "multiple" || n.split(/[\s_-]+/).includes("multiple");
+}
+
+export function diaUsaMarcajeLibre(params: {
+  esHorarioMultiple?: boolean;
+  registros: { tipo_registro?: string | null }[];
+  tieneEntrada?: boolean;
+  tieneSalida?: boolean;
+}): boolean {
+  const { esHorarioMultiple = false, registros, tieneEntrada = false, tieneSalida = false } = params;
+  if (registros.length === 0) return false;
+  if (esHorarioMultiple) return true;
+  if (registros.some((r) => esTipoMarcajeLibre(r.tipo_registro))) return true;
+  if (registros.length > 2) return true;
+  return !tieneEntrada && !tieneSalida;
 }
 
 export function resolverEstadoMarcaje(params: {

@@ -33,7 +33,7 @@ export default function useAsistenciasJefe(
     ],
 
     queryFn: async () => {
-      if (!jefeId) return [];
+      if (!jefeId) return { registros: [], dependenciasPermitidas: [] };
       const supabase = createClient();
       const { data: allDependencias, error: errDep } = await supabase
         .from("dependencias")
@@ -48,7 +48,7 @@ export default function useAsistenciasJefe(
         rootIds = allDependencias?.filter((d) => d.jefe_id === jefeId).map((d) => d.id) || [];
       }
 
-      if (rootIds.length === 0) return [];
+      if (rootIds.length === 0) return { registros: [], dependenciasPermitidas: [] };
 
       const todosIdsSet = new Set<string>();
       const agregarDescendientes = (id: string) => {
@@ -60,7 +60,7 @@ export default function useAsistenciasJefe(
       rootIds.forEach((id) => agregarDescendientes(id));
       const todosIds = Array.from(todosIdsSet);
 
-      if (todosIds.length === 0) return [];
+      if (todosIds.length === 0) return { registros: [], dependenciasPermitidas: [] };
 
       const { data: usuarios, error: errUsuarios } = await supabase
         .from("info_usuario")
@@ -71,7 +71,7 @@ export default function useAsistenciasJefe(
 
       const userIds = usuarios?.map((u) => u.user_id) || [];
 
-      if (userIds.length === 0) return [];
+      if (userIds.length === 0) return { registros: [], dependenciasPermitidas: [] };
 
       const mapaUsuarios = new Map(usuarios?.map((u) => [u.user_id, u]));
 
@@ -105,7 +105,7 @@ export default function useAsistenciasJefe(
 
       const mapaDependencias = new Map(allDependencias?.map((d) => [d.id, d]));
 
-      return allRegistros.map((reg: any) => {
+      const registrosMap = allRegistros.map((reg: any) => {
         const userInfo = mapaUsuarios.get(reg.user_id);
         const depId = userInfo?.dependencia_id;
 
@@ -142,10 +142,20 @@ export default function useAsistenciasJefe(
           oficina_path_orden: idOrden,
         } as AsistenciaTableData;
       });
+
+      return {
+        registros: registrosMap,
+        dependenciasPermitidas: todosIds
+      };
     },
     enabled: !!jefeId,
     staleTime: 1000 * 60 * 5,
   });
 
-  return { registros: data || [], loading: isLoading, error };
+  return { 
+    registros: data?.registros || [], 
+    dependenciasPermitidas: data?.dependenciasPermitidas || [], 
+    loading: isLoading, 
+    error 
+  };
 }

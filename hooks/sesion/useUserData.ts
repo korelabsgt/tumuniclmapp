@@ -60,7 +60,7 @@ export default function useUserData(): UserData {
   });
 
   return {
-    userId: data?.id || null,
+    userId: data?.user_id || data?.id || null,
     nombre: data?.nombre || "",
     email: data?.email || "",
     rol: data?.rol || "",

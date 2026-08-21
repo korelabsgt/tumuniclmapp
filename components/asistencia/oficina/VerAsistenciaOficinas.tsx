@@ -13,7 +13,7 @@ export default function VerAsistenciaOficinas() {
   const [fechaFinal, setFechaFinal] = useState<string | null>(null);
   const [oficinaId, setOficinaId] = useState<string | null>(null);
 
-  const { registros, loading } = useAsistenciasJefe(
+  const { registros, dependenciasPermitidas, loading } = useAsistenciasJefe(
     userId,
     fechaInicio,
     fechaFinal,
@@ -28,6 +28,7 @@ export default function VerAsistenciaOficinas() {
     <div className="w-full">
       <AsistenciaTable
         registros={registros as any}
+        dependenciasPermitidas={dependenciasPermitidas}
         rolActual={rol}
         loading={loading}
         setOficinaId={setOficinaId}

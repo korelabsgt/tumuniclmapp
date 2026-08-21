@@ -38,6 +38,7 @@ type UsuarioConDependencia = {
 type Props = {
   registros: AsistenciaEnriquecida[];
   rolActual: string | null; 
+  dependenciasPermitidas?: string[];
   loading: boolean;
   setOficinaId: (id: string | null) => void;
   setFechaInicio: (fecha: string | null) => void;
@@ -73,7 +74,7 @@ const rangoMes = (mes: number, anio: number) => {
   return { start, end };
 };
 
-export default function AsistenciaTable({ registros, loading, setOficinaId, setFechaInicio, setFechaFinal }: Props) {
+export default function AsistenciaTable({ registros, loading, setOficinaId, setFechaInicio, setFechaFinal, rolActual, dependenciasPermitidas }: Props) {
   const { dependencias, loading: loadingDependencias } = useDependencias();
   const { usuarios: todosLosUsuarios } = useListaUsuarios();
   const { horariosMap } = useHorariosUsuarios();
@@ -343,6 +344,14 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
   const usuariosMunicipales = useMemo(() => {
     return todosLosUsuarios.filter((u: { oficina_nombre?: string | null; dependencia_id?: string | null; nombre?: string | null }) => {
       if (esOficinaSinMarcajeAsistencia(u.oficina_nombre)) return false;
+      
+      // Filtrar por las dependencias que el jefe tiene permitidas (si se pasa la prop)
+      if (dependenciasPermitidas !== undefined) {
+        if (!u.dependencia_id || !dependenciasPermitidas.includes(u.dependencia_id)) {
+          return false;
+        }
+      }
+
       if (idsDependenciaFiltro) {
         const depId = u.dependencia_id;
         if (depId && idsDependenciaFiltro.has(depId)) return true;
@@ -355,7 +364,7 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
       }
       return true;
     });
-  }, [todosLosUsuarios, idsDependenciaFiltro, dependencias]);
+  }, [todosLosUsuarios, idsDependenciaFiltro, dependencias, dependenciasPermitidas]);
 
   const usuariosPorOficina = useMemo(() => {
     const map: Record<string, { userId: string; nombre: string; puesto: string; path: string }[]> = {};

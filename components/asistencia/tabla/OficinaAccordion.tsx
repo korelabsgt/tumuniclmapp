@@ -390,7 +390,7 @@ export default function OficinaAccordion({
                                     onClick={() => !esVacio && onAbrirModal(registro)}
                                   >
                                     {esMultiple || totalRegistros > 2 ? (
-                                      <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
+                                      <div className="w-fit px-4 py-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
                                         Ver Asistencia ({totalRegistros})
                                       </div>
                                     ) : esVacio ? (() => {
@@ -536,7 +536,7 @@ export default function OficinaAccordion({
                                       {esAusencia ? (
                                         renderEntSalVacio(permiso, asueto, comision)
                                       ) : esMultiple || totalRegistros > 2 ? (
-                                        <div className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
+                                        <div className="w-fit px-4 py-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
                                           Ver Asistencia ({totalRegistros})
                                         </div>
                                       ) : (

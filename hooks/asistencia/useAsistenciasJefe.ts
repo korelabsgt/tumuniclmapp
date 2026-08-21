@@ -35,32 +35,30 @@ export default function useAsistenciasJefe(
     queryFn: async () => {
       if (!jefeId) return [];
       const supabase = createClient();
-      let idsOficinas: string[] = [];
+      const { data: allDependencias, error: errDep } = await supabase
+        .from("dependencias")
+        .select("id, nombre, parent_id, jefe_id, es_puesto");
 
+      if (errDep) throw new Error(errDep.message);
+
+      let rootIds: string[] = [];
       if (filtroOficinaId) {
-        idsOficinas = [filtroOficinaId];
+        rootIds = [filtroOficinaId];
       } else {
-        const { data: oficinas, error: errOficinas } = await supabase
-          .from("dependencias")
-          .select("id")
-          .eq("jefe_id", jefeId);
-
-        if (errOficinas) throw new Error(errOficinas.message);
-        idsOficinas = oficinas?.map((o) => o.id) || [];
+        rootIds = allDependencias?.filter((d) => d.jefe_id === jefeId).map((d) => d.id) || [];
       }
 
-      if (idsOficinas.length === 0) return [];
+      if (rootIds.length === 0) return [];
 
-      const { data: puestos, error: errPuestos } = await supabase
-        .from("dependencias")
-        .select("id, nombre, parent_id")
-        .in("parent_id", idsOficinas)
-        .eq("es_puesto", true);
+      const todosIdsSet = new Set<string>();
+      const agregarDescendientes = (id: string) => {
+        if (todosIdsSet.has(id)) return;
+        todosIdsSet.add(id);
+        allDependencias?.filter((d) => d.parent_id === id).forEach((d) => agregarDescendientes(d.id));
+      };
 
-      if (errPuestos) throw new Error(errPuestos.message);
-
-      const idsPuestos = puestos?.map((p) => p.id) || [];
-      const todosIds = [...idsOficinas, ...idsPuestos];
+      rootIds.forEach((id) => agregarDescendientes(id));
+      const todosIds = Array.from(todosIdsSet);
 
       if (todosIds.length === 0) return [];
 
@@ -77,32 +75,37 @@ export default function useAsistenciasJefe(
 
       const mapaUsuarios = new Map(usuarios?.map((u) => [u.user_id, u]));
 
-      let query = supabase
-        .from("registros_asistencia")
-        .select("id, created_at, tipo_registro, ubicacion, notas, user_id")
-        .in("user_id", userIds)
-        .order("created_at", { ascending: false });
+      let allRegistros: any[] = [];
+      let from = 0;
+      const step = 1000;
+      let hasMore = true;
 
-      if (fechaInicio) query = query.gte("created_at", fechaInicio);
-      if (fechaFinal) query = query.lte("created_at", fechaFinal);
+      while (hasMore) {
+        let query = supabase
+          .from("registros_asistencia")
+          .select("id, created_at, tipo_registro, ubicacion, notas, user_id")
+          .in("user_id", userIds)
+          .order("created_at", { ascending: false })
+          .range(from, from + step - 1);
 
-      const { data: registros, error: errReg } = await query;
-      if (errReg) throw new Error(errReg.message);
+        if (fechaInicio) query = query.gte("created_at", fechaInicio);
+        if (fechaFinal) query = query.lte("created_at", fechaFinal);
 
-      const { data: infoOficinas } = await supabase
-        .from("dependencias")
-        .select("id, nombre")
-        .in("id", idsOficinas);
+        const { data: chunk, error: errReg } = await query;
+        if (errReg) throw new Error(errReg.message);
 
-      const mapaOficinas = new Map(infoOficinas?.map((o) => [o.id, o.nombre]));
-      const mapaPuestos = new Map(
-        puestos?.map((p) => [
-          p.id,
-          { nombre: p.nombre, parentId: p.parent_id },
-        ]),
-      );
+        if (chunk && chunk.length > 0) {
+          allRegistros = allRegistros.concat(chunk);
+          if (chunk.length < step) hasMore = false;
+          else from += step;
+        } else {
+          hasMore = false;
+        }
+      }
 
-      return registros.map((reg: any) => {
+      const mapaDependencias = new Map(allDependencias?.map((d) => [d.id, d]));
+
+      return allRegistros.map((reg: any) => {
         const userInfo = mapaUsuarios.get(reg.user_id);
         const depId = userInfo?.dependencia_id;
 
@@ -110,15 +113,17 @@ export default function useAsistenciasJefe(
         let nombrePuesto = null;
         let idOrden = depId;
 
-        if (mapaOficinas.has(depId)) {
-          nombreOficina = mapaOficinas.get(depId) || "";
-          idOrden = depId;
-        } else if (mapaPuestos.has(depId)) {
-          const puestoData = mapaPuestos.get(depId);
-          nombrePuesto = puestoData?.nombre || null;
-          const parentId = puestoData?.parentId;
-          nombreOficina = mapaOficinas.get(parentId) || "Oficina Superior";
-          idOrden = parentId;
+        if (depId && mapaDependencias.has(depId)) {
+          const dep = mapaDependencias.get(depId);
+          if (dep?.es_puesto) {
+            nombrePuesto = dep.nombre;
+            const parent = dep.parent_id ? mapaDependencias.get(dep.parent_id) : null;
+            nombreOficina = parent ? parent.nombre : "Oficina Superior";
+            idOrden = dep.parent_id || depId;
+          } else {
+            nombreOficina = dep?.nombre || "Desconocida";
+            idOrden = dep?.id || depId;
+          }
         }
 
         return {

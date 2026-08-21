@@ -181,6 +181,7 @@ export async function getPublicaciones(
   let query = supabase
     .from('publicaciones')
     .select('*, politicas(nombre)')
+    .order('año', { ascending: false })
     .order('orden', { ascending: true });
 
   if (año) query = query.eq('año', año);

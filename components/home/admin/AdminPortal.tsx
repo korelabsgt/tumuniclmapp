@@ -16,7 +16,7 @@ export default async function AdminPortal({ configuracion }: AdminPortalProps) {
   ]);
 
   return (
-    <div className="-mt-2 sm:-mt-5 min-h-screen bg-gray-50 dark:bg-neutral-950 font-sans w-full">
+    <div className="-mt-2 min-h-screen bg-gray-50 dark:bg-neutral-950 font-sans w-full">
       <PublicHero configuracion={configuracion} />
       <AdminContent 
         publicacionesIniciales={publicaciones}

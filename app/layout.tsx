@@ -57,6 +57,7 @@ export default async function RootLayout({
   const isStandalonePage =
     pathname === "/" ||
     pathname.startsWith("/albergues") ||
+    pathname.startsWith("/informacionpublica") ||
     pathname.startsWith("/restablecer-contrasena");
   return (
     <html lang="es" className={geistSans.className} suppressHydrationWarning>
@@ -79,7 +80,7 @@ export default async function RootLayout({
                 <BloqueoContrasenaVencida />
 
                 {isStandalonePage ? (
-                  <main className="w-full flex-1 overflow-y-auto">{children}</main>
+                  <main className="relative w-full flex-1 overflow-y-auto">{children}</main>
                 ) : (
                   <ProtectedChrome>{children}</ProtectedChrome>
                 )}

@@ -135,9 +135,30 @@ export function PublicHeader({ configuracion, modoAdmin = false, forceSolid = fa
             Información<br className="block sm:hidden" /> pública
           </a>
         </div>
-        {/* Right Side: Theme Switcher and Refresh (Static) */}
-        <div className="flex items-center gap-0">
-          <div className="drop-shadow-md">
+        {/* Right Side: Empty in header, everything moved to fixed container for perfect alignment */}
+        <div className="flex items-center">
+        </div>
+      </header>
+
+      {/* Botones flotantes (fixed) que siempre siguen al usuario */}
+      <div 
+        className={`fixed z-[100] flex items-center gap-0 transition-all duration-300 ${
+          scrolled && !sheetOpen
+            ? 'top-3 right-3 sm:top-4 sm:right-6 h-auto' 
+            : (forceSolid || sheetOpen) 
+            ? 'top-0 right-4 sm:right-8 h-[76px]' 
+            : 'top-0 right-4 sm:right-8 h-[92px]'
+        }`}
+      >
+        {/* Contenedor animado para Sol y Recargar */}
+        <div 
+          className={`flex items-center gap-0 transition-all duration-300 origin-right ${
+            scrolled && !sheetOpen 
+              ? 'opacity-0 scale-75 w-0 pointer-events-none' 
+              : 'opacity-100 scale-100 w-[4.5rem] sm:w-[5.5rem] mr-0 sm:mr-0'
+          }`}
+        >
+          <div className="drop-shadow-md shrink-0 sm:mr-3">
             <ThemeSwitcher className="[&_svg]:size-6 w-8 h-9 sm:w-8 sm:h-10 hover:scale-110" />
           </div>
 
@@ -146,8 +167,7 @@ export function PublicHeader({ configuracion, modoAdmin = false, forceSolid = fa
             onClick={handleRefresh}
             disabled={isRefreshing}
             aria-label="Actualizar"
-            className={`inline-flex items-center justify-center w-8 h-9 sm:w-8 sm:h-10 cursor-pointer drop-shadow-md hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity focus-visible:outline-none ${forceSolid ? 'text-gray-900 dark:text-white' : 'text-white'
-              }`}
+            className={`inline-flex items-center justify-center w-8 h-9 sm:w-8 sm:h-10 shrink-0 cursor-pointer drop-shadow-md hover:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 transition-opacity focus-visible:outline-none ${scrolled || forceSolid || sheetOpen ? 'text-gray-900 dark:text-white' : 'text-white'}`}
           >
             <AnimatedIcon
               iconKey="qzorewvq"
@@ -155,27 +175,13 @@ export function PublicHeader({ configuracion, modoAdmin = false, forceSolid = fa
               className="w-7 h-7 sm:w-7 sm:h-7"
             />
           </button>
-          
-          {/* Espacio reservado para el botón fixed de los 3 puntos */}
-          <div className="w-5 sm:w-6 shrink-0" />
         </div>
-      </header>
 
-      {/* Botones flotantes (fixed) que siempre siguen al usuario */}
-      <div 
-        className={`fixed z-[100] flex items-center transition-all duration-300 ${
-          scrolled && !sheetOpen
-            ? 'top-3 right-3 sm:top-4 sm:right-6 h-auto' 
-            : (forceSolid || sheetOpen) 
-            ? 'top-0 right-4 sm:right-8 h-[76px]' 
-            : 'top-0 right-4 sm:right-8 h-[92px]'
-        }`}
-      >
         {/* Menú Lateral (Sheet) */}
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen} modal={false}>
             <SheetTrigger asChild>
               <button
-                className={`inline-flex h-9 w-6 sm:h-10 sm:w-8 cursor-pointer items-center justify-center transition-all focus-visible:outline-none drop-shadow-md rounded-full ${
+                className={`inline-flex h-9 w-6 sm:h-10 sm:w-6 shrink-0 cursor-pointer items-center justify-center transition-all focus-visible:outline-none drop-shadow-md rounded-full ${
                   scrolled && !sheetOpen
                     ? 'text-[#0066cc] dark:text-blue-400 hover:opacity-80'
                     : sheetOpen || forceSolid

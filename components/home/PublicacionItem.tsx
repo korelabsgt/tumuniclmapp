@@ -512,28 +512,28 @@ export function PublicacionItem({ publicacion }: Props) {
   return (
     <article
       ref={ref}
-      className="w-full py-10 border-b border-gray-100 dark:border-neutral-700 last:border-none animate-in fade-in slide-in-from-bottom-4 duration-500"
+      className="w-full pt-3 pb-6 border-b border-gray-100 dark:border-neutral-700 last:border-none animate-in fade-in slide-in-from-bottom-4 duration-500"
     >
       {/* Badge de Política */}
       {publicacion.politicas?.nombre && (
-        <p className="text-sm font-semibold uppercase tracking-widest text-[#5f656f] dark:text-gray-400 mb-2">
+        <p className="text-sm font-semibold uppercase tracking-widest text-[#5f656f] dark:text-gray-400 mb-1">
           {publicacion.politicas.nombre}
         </p>
       )}
 
       {/* Título principal — estilo referencia: azul marino oscuro, muy grande */}
-      <h2 className="text-3xl md:text-[2.5rem] font-bold text-[#02245b] dark:text-blue-400 leading-tight mb-10">
+      <h2 className="text-3xl md:text-[2.5rem] font-bold text-[#02245b] dark:text-blue-400 leading-tight mb-1.5">
         {publicacion.nombre}
       </h2>
 
       {/* Año — estilo referencia: centrado, bold, grande */}
-      <p className="text-2xl md:text-[1.75rem] font-bold text-gray-800 dark:text-gray-200 text-center mb-8">
+      <p className="text-2xl md:text-[1.75rem] font-bold text-gray-800 dark:text-gray-200 text-center mb-3">
         Año {publicacion.año}
       </p>
 
       {/* Descripción — estilo referencia: texto grande, gris oscuro, centrado, con soporte para hashtags */}
       {publicacion.descripcion && publicacion.descripcion.trim() && (
-        <p className="text-[1.1rem] md:text-[1.25rem] text-[#555] dark:text-gray-300 leading-[1.8] text-center whitespace-pre-wrap mb-10 max-w-5xl mx-auto">
+        <p className="text-[1.1rem] md:text-[1.25rem] text-[#555] dark:text-gray-300 leading-[1.8] text-center whitespace-pre-wrap mb-6 max-w-5xl mx-auto">
           {renderDescripcion(publicacion.descripcion)}
         </p>
       )}

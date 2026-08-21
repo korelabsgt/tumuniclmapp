@@ -66,7 +66,7 @@ export function RequisitosTramites() {
   ];
 
   return (
-    <section className="w-full max-w-[95%] lg:max-w-[85%] mx-auto px-2 md:px-0 py-16 mb-12">
+    <section className="w-full max-w-[95%] lg:max-w-[85%] mx-auto px-2 md:px-0 pt-8 pb-12 mb-12">
       <div className="text-center mb-8">
         <h2 className="text-2xl md:text-3xl font-bold text-[#02245b] dark:text-white">
           Requisitos para Trámites de servicios

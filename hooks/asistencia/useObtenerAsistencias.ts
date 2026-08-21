@@ -38,23 +38,41 @@ export function useObtenerAsistencias(
     queryFn: async () => {
       const supabase = createClient();
       let supabaseError = null;
+      let allData: AsistenciaEnriquecida[] = [];
 
       try {
-        const { data, error } = await supabase.rpc('asistencias_usuarios', { 
-          p_oficina_id: oficinaId,
-          p_fecha_inicio: fechaInicio,
-          p_fecha_final: fechaFinal
-        });
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-        supabaseError = error;
+        while (hasMore) {
+          const { data, error } = await supabase.rpc('asistencias_usuarios', { 
+            p_oficina_id: oficinaId,
+            p_fecha_inicio: fechaInicio,
+            p_fecha_final: fechaFinal
+          }).range(from, from + step - 1);
 
-        if (supabaseError) {
-          console.error('Error en useObtenerAsistencias:', supabaseError);
-          toast.error('Error al cargar las asistencias de la oficina.');
-          throw new Error(supabaseError.message);
+          supabaseError = error;
+
+          if (supabaseError) {
+            console.error('Error en useObtenerAsistencias:', supabaseError);
+            toast.error('Error al cargar las asistencias de la oficina.');
+            throw new Error(supabaseError.message);
+          }
+
+          if (data && data.length > 0) {
+            allData = allData.concat(data as AsistenciaEnriquecida[]);
+            if (data.length < step) {
+              hasMore = false;
+            } else {
+              from += step;
+            }
+          } else {
+            hasMore = false;
+          }
         }
 
-        return (data as AsistenciaEnriquecida[]) ?? [];
+        return allData;
 
       } catch (err: any) {
         if (!supabaseError) {

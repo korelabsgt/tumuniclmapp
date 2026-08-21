@@ -32,18 +32,36 @@ export default function useAsistenciasOficina(
             const p_fecha_inicio = (fechaInicio && fechaInicio !== '') ? fechaInicio : null;
             const p_fecha_final = (fechaFinal && fechaFinal !== '') ? fechaFinal : null;
             
-            const { data, error } = await supabase.rpc('asistencias_oficinas', {
-                p_oficina_id: oficinaId, 
-                p_fecha_inicio: p_fecha_inicio,
-                p_fecha_final: p_fecha_final
-            });
+            let allData: any[] = [];
+            let from = 0;
+            const step = 1000;
+            let hasMore = true;
 
-            if (error) {
-                console.error("Error fetching asistencias_oficinas:", error);
-                return [];
+            while (hasMore) {
+                const { data, error } = await supabase.rpc('asistencias_oficinas', {
+                    p_oficina_id: oficinaId, 
+                    p_fecha_inicio: p_fecha_inicio,
+                    p_fecha_final: p_fecha_final
+                }).range(from, from + step - 1);
+
+                if (error) {
+                    console.error("Error fetching asistencias_oficinas:", error);
+                    return allData.length > 0 ? allData : [];
+                }
+
+                if (data && data.length > 0) {
+                    allData = allData.concat(data);
+                    if (data.length < step) {
+                        hasMore = false;
+                    } else {
+                        from += step;
+                    }
+                } else {
+                    hasMore = false;
+                }
             }
 
-            return data || [];
+            return allData;
         },
         
         staleTime: FIVE_MINUTES, 

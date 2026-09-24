@@ -164,9 +164,11 @@ export default function BloqueoActividad() {
               {actividad.title}
             </p>
             {actividad.description && (
-              <p className="text-sm text-gray-800 dark:text-gray-200 mb-4 whitespace-pre-wrap">
-                {actividad.description}
-              </p>
+              <div className="max-h-48 overflow-y-auto pr-2 mb-4">
+                <p className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap">
+                  {actividad.description}
+                </p>
+              </div>
             )}
 
             <div className="flex items-center gap-2 bg-white dark:bg-neutral-900 p-3 rounded-lg border border-indigo-100 dark:border-neutral-800">

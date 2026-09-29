@@ -19,10 +19,11 @@ const PermisoTemplate = React.forwardRef<HTMLDivElement, Props>(({ permiso }, re
   return (
     <div 
       ref={ref}
-      className="p-8 bg-white text-neutral-900 border border-neutral-200 rounded-lg relative overflow-hidden"
+      className="light p-8 bg-white text-neutral-900 border border-neutral-200 rounded-lg relative overflow-hidden"
       style={{
         width: '850px',
         fontFamily: "'Outfit', 'Inter', sans-serif",
+        colorScheme: 'light',
       }}
     >
 
@@ -88,7 +89,9 @@ const PermisoTemplate = React.forwardRef<HTMLDivElement, Props>(({ permiso }, re
 
         <div className="grid grid-cols-2 gap-6 mb-8 relative z-10">
             <div className="flex flex-col gap-1 px-5 py-4 bg-slate-50/50 rounded-xl border border-slate-100">
-              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Aprobado Jefe</label>
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                {permiso.estado === "rechazado_jefe" ? "Rechazado Jefe" : "Aprobado Jefe"}
+              </label>
               <p className="text-sm font-bold text-neutral-800">
                 {permiso.aprobado_jefe_nombre || "--"}
               </p>
@@ -101,7 +104,9 @@ const PermisoTemplate = React.forwardRef<HTMLDivElement, Props>(({ permiso }, re
               )}
             </div>
             <div className="flex flex-col gap-1 px-5 py-4 bg-slate-50/50 rounded-xl border border-slate-100">
-              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Aprobado RRHH</label>
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
+                {permiso.estado === "rechazado_rrhh" ? "Rechazado RRHH" : "Aprobado RRHH"}
+              </label>
               <p className="text-sm font-bold text-neutral-800">
                 {permiso.aprobado_rrhh_nombre || "--"}
               </p>
@@ -131,7 +136,11 @@ const PermisoTemplate = React.forwardRef<HTMLDivElement, Props>(({ permiso }, re
                         </span>
                         
                         {permiso.remunerado !== null && (
-                             <span className={`px-4 py-1.5 rounded-full text-[11px] font-black tracking-wider border ${getRemuneradoBadgeClass(permiso.remunerado)}`}>
+                             <span className={`px-4 py-1.5 rounded-full text-[11px] font-black tracking-wider border ${
+                               permiso.remunerado
+                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                 : 'bg-red-50 text-red-700 border-red-200'
+                             }`}>
                                 {getRemuneradoEtiqueta(permiso.remunerado)}
                              </span>
                         )}

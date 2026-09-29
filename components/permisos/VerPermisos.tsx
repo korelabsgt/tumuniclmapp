@@ -31,11 +31,22 @@ import {
   Umbrella,
   GraduationCap,
   CreditCard,
+  BarChart2,
+  LayoutList,
+  LayoutGrid,
+  MoreVertical,
+  CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
 import PreviewPermiso from "./modals/PreviewPermiso";
 import JustificacionPermiso from "./modals/JustificacionPermiso";
 import GestionAsueto from "./modals/GestionAsueto";
+import GestionEstadoPermisoModal from "./modals/GestionEstadoPermisoModal";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { PermisoEmpleado } from "./types";
 import { Button } from "@/components/ui/button";
 import Cargando from "@/components/ui/animations/Cargando";
@@ -43,6 +54,9 @@ import CrearEditarPermiso from "./modals/CrearEditarPermiso";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePermisos, TipoVistaPermisos } from "./hooks";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/Switch";
+import EstadisticasPermisos from "./EstadisticasPermisos";
+import TablaPermisosPrincipal from "./TablaPermisosPrincipal";
 import {
   formatearFechaTarjetaDesdeISO,
   formatearRangoTarjeta,
@@ -71,13 +85,13 @@ function getEstadoTextoPlain(estado: string) {
   switch (estado) {
     case "aprobado":
       return (
-        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-sm lg:text-base">
+        <span className="text-emerald-600 dark:text-emerald-400 font-semibold text-xs sm:text-sm">
           Aprobado RRHH
         </span>
       );
     case "aprobado_jefe":
       return (
-        <span className="text-blue-600 dark:text-blue-400 font-bold text-sm lg:text-base">
+        <span className="text-blue-600 dark:text-blue-400 font-semibold text-xs sm:text-sm">
           Preaprobado Jefe
         </span>
       );
@@ -85,7 +99,7 @@ function getEstadoTextoPlain(estado: string) {
     case "rechazado_rrhh":
     case "rechazado":
       return (
-        <span className="text-red-600 dark:text-red-400 font-bold text-sm lg:text-base">
+        <span className="text-red-600 dark:text-red-400 font-semibold text-xs sm:text-sm">
           {estado === "rechazado_jefe"
             ? "Rechazado Jefe"
             : estado === "rechazado_rrhh"
@@ -95,7 +109,7 @@ function getEstadoTextoPlain(estado: string) {
       );
     default:
       return (
-        <span className="text-amber-600 dark:text-amber-400 font-bold text-sm lg:text-base">
+        <span className="text-amber-600 dark:text-amber-400 font-semibold text-xs sm:text-sm">
           Pendiente Jefe
         </span>
       );
@@ -122,6 +136,7 @@ export default function VerPermisos({ tipoVista }: Props) {
     oficinasAbiertas,
     todosAbiertos,
     datosAgrupados,
+    registrosFinales,
     estadisticas,
     conteosPendientes,
     usuariosParaModal,
@@ -142,6 +157,15 @@ export default function VerPermisos({ tipoVista }: Props) {
     handleEliminarPermiso,
   } = actions;
 
+  const [modoEstadisticas, setModoEstadisticas] = React.useState(false);
+  const [modoVistaVisual, setModoVistaVisual] = React.useState<"tarjetas" | "tabla">("tabla");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setModoVistaVisual(window.innerWidth < 768 ? "tarjetas" : "tabla");
+    }
+  }, []);
+  const [modoTipoPermiso, setModoTipoPermiso] = React.useState<"generales" | "igss">("generales");
   const [modalPreviewAbierto, setModalPreviewAbierto] = React.useState(false);
   const [permisoParaImagen, setPermisoParaImagen] =
     React.useState<PermisoEmpleado | null>(null);
@@ -150,6 +174,10 @@ export default function VerPermisos({ tipoVista }: Props) {
   const [permisoParaJustificar, setPermisoParaJustificar] =
     React.useState<PermisoEmpleado | null>(null);
   const [modalAsuetoAbierto, setModalAsuetoAbierto] = React.useState(false);
+  const [modalGestionEstadoAbierto, setModalGestionEstadoAbierto] =
+    React.useState(false);
+  const [permisoParaGestionar, setPermisoParaGestionar] =
+    React.useState<PermisoEmpleado | null>(null);
   const puedeGestionarEvidencia = ["RRHH", "SUPER", "SECRETARIO"].includes(
     perfilUsuario?.rol || "",
   );
@@ -317,6 +345,21 @@ export default function VerPermisos({ tipoVista }: Props) {
             <div className="flex flex-col gap-2 w-full sm:flex-row sm:items-center sm:justify-between">
               <PermisosNav tipoVista={navTipoVista} />
               <div className="flex gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setModoEstadisticas((prev) => !prev)}
+                  className={cn(
+                    "flex flex-1 sm:flex-initial min-w-0 items-center justify-center gap-1.5 h-8 lg:h-10 px-2 sm:px-2.5 lg:px-3 text-[11px] sm:text-xs lg:text-sm font-bold rounded-md transition-colors border-2 cursor-pointer",
+                    modoEstadisticas
+                      ? "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/20 hover:bg-purple-100 dark:hover:bg-purple-900/40 border-purple-600 dark:border-purple-400"
+                      : "text-purple-700 bg-purple-50/50 dark:text-purple-300 dark:bg-purple-950/30 hover:bg-purple-100/80 dark:hover:bg-purple-900/30 border-purple-400 dark:border-purple-500/60"
+                  )}
+                >
+                  <BarChart2 className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+                  <span className="truncate">
+                    {modoEstadisticas ? "Ver Lista" : "Reportes"}
+                  </span>
+                </button>
                 {tipoVista === "gestion_rrhh" && (
                   <button
                     type="button"
@@ -324,27 +367,27 @@ export default function VerPermisos({ tipoVista }: Props) {
                     className="flex flex-1 sm:flex-initial min-w-0 items-center justify-center gap-1.5 h-8 lg:h-10 px-2 sm:px-2.5 lg:px-3 text-[11px] sm:text-xs lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
                   >
                     <PartyPopper className="w-3 h-3 lg:w-4 lg:h-4 shrink-0" />
-                    <span className="truncate">Gestionar Asuetos</span>
+                    <span className="truncate">Asuetos</span>
                   </button>
                 )}
                 {(tipoVista === "mis_permisos" ||
                   tipoVista === "gestion_rrhh") && (
-                  <button
-                    type="button"
-                    onClick={handleNuevoPermiso}
-                    className="flex flex-1 sm:flex-initial min-w-0 items-center justify-center gap-1.5 h-8 lg:h-10 px-2 sm:px-2.5 lg:px-3 text-[11px] sm:text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                    <span className="truncate">Nuevo Permiso</span>
-                  </button>
-                )}
+                    <button
+                      type="button"
+                      onClick={handleNuevoPermiso}
+                      className="flex flex-1 sm:flex-initial min-w-0 items-center justify-center gap-1.5 h-8 lg:h-10 px-2 sm:px-2.5 lg:px-3 text-[11px] sm:text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+                      <span className="truncate">Nuevo Permiso</span>
+                    </button>
+                  )}
               </div>
             </div>
 
             <div className="flex flex-col gap-3 sm:gap-4 bg-gray-50/50 dark:bg-neutral-900/30 py-4 sm:py-5 px-2 sm:px-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
-              {/* Buscador + Ocultar */}
-              <div className="flex items-center gap-2 w-full">
-                <div className="relative flex-1 min-w-0">
+              {/* Buscador + Controles */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+                <div className="relative w-full sm:flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
                   <input
                     type="text"
@@ -354,22 +397,54 @@ export default function VerPermisos({ tipoVista }: Props) {
                     className="w-full h-9 sm:h-10 lg:h-11 pl-10 lg:pl-11 pr-3 text-xs lg:text-base border border-gray-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
                   />
                 </div>
-                <Button
-                  size="sm"
-                  onClick={toggleTodos}
-                  className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
-                >
-                  <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">
-                    {todosAbiertos ? "Ocultar Todos" : "Ver Todos"}
-                  </span>
-                  <span className="sm:hidden">
-                    {todosAbiertos ? "Ocultar" : "Ver"}
-                  </span>
-                </Button>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="flex items-center bg-gray-200/80 dark:bg-neutral-800 p-1 rounded-lg border border-gray-300/60 dark:border-neutral-700/80 flex-1 sm:flex-none justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setModoVistaVisual("tabla")}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
+                        modoVistaVisual === "tabla"
+                          ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <LayoutList className="w-4 h-4 shrink-0" />
+                      <span>Tabla</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoVistaVisual("tarjetas")}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
+                        modoVistaVisual === "tarjetas"
+                          ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <LayoutGrid className="w-4 h-4 shrink-0" />
+                      <span>Tarjetas</span>
+                    </button>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={toggleTodos}
+                    className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
+                  >
+                    <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">
+                      {todosAbiertos ? "Ocultar Todos" : "Ver Todos"}
+                    </span>
+                    <span className="sm:hidden">
+                      {todosAbiertos ? "Ocultar" : "Ver"}
+                    </span>
+                  </Button>
+                </div>
               </div>
 
-              {(tipoVista === "gestion_jefe" || tipoVista === "gestion_rrhh") &&
+              {!modoEstadisticas &&
+                (tipoVista === "gestion_jefe" || tipoVista === "gestion_rrhh") &&
                 (conteosPendientes.pendientes > 0 ||
                   conteosPendientes.avalados > 0) && (
                   <div className="flex gap-2 w-full">
@@ -445,46 +520,84 @@ export default function VerPermisos({ tipoVista }: Props) {
                   alCambiarModo={() => setFiltroEstado("todos")}
                 />
 
-                <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1 shrink-0 w-full lg:w-auto justify-start">
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (filtroEstado === "aprobado") {
-                        setFiltroEstado("todos");
-                      } else {
-                        setFiltroEstado("aprobado");
-                        if (modoFiltro === "pendientes") volverAModoMes();
-                      }
-                    }}
-                    className={cn(
-                      "h-9 sm:h-10 lg:h-11 px-2 sm:px-3 text-[10px] sm:text-[11px] font-bold rounded-lg border transition-all shadow-sm",
-                      filtroEstado === "aprobado"
-                        ? "bg-emerald-600 text-white border-emerald-600"
-                        : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
-                    )}
-                  >
-                    Apr: {estadisticas.aprobados}
-                  </Button>
+                <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1.5 shrink-0 w-full lg:w-auto justify-center sm:justify-end">
+                  {modoEstadisticas ? (
+                    <div className="flex items-center gap-2 h-9 sm:h-10 lg:h-11 bg-white dark:bg-neutral-950 px-2 sm:px-2.5 rounded-lg border border-gray-200 dark:border-neutral-800 shrink-0 shadow-sm">
+                      <button
+                        type="button"
+                        onClick={() => setModoTipoPermiso("generales")}
+                        className={cn(
+                          "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer",
+                          modoTipoPermiso === "generales"
+                            ? "bg-blue-600 text-white shadow-sm"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                        )}
+                      >
+                        Permisos Generales
+                      </button>
+                      <Switch
+                        checked={modoTipoPermiso === "igss"}
+                        onCheckedChange={(checked) =>
+                          setModoTipoPermiso(checked ? "igss" : "generales")
+                        }
+                        aria-label="Alternar entre Permisos Generales e IGSS"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setModoTipoPermiso("igss")}
+                        className={cn(
+                          "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer",
+                          modoTipoPermiso === "igss"
+                            ? "bg-amber-600 text-white shadow-sm"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                        )}
+                      >
+                        IGSS
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (filtroEstado === "aprobado") {
+                            setFiltroEstado("todos");
+                          } else {
+                            setFiltroEstado("aprobado");
+                            if (modoFiltro === "pendientes") volverAModoMes();
+                          }
+                        }}
+                        className={cn(
+                          "h-9 sm:h-10 lg:h-11 px-2 sm:px-3 text-[10px] sm:text-[11px] font-bold rounded-lg border transition-all shadow-sm",
+                          filtroEstado === "aprobado"
+                            ? "bg-emerald-600 text-white border-emerald-600"
+                            : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800",
+                        )}
+                      >
+                        Apr: {estadisticas.aprobados}
+                      </Button>
 
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (filtroEstado === "rechazado") {
-                        setFiltroEstado("todos");
-                      } else {
-                        setFiltroEstado("rechazado");
-                        if (modoFiltro === "pendientes") volverAModoMes();
-                      }
-                    }}
-                    className={cn(
-                      "h-9 sm:h-10 lg:h-11 px-2 sm:px-3 text-[10px] sm:text-[11px] font-bold rounded-lg border transition-all shadow-sm",
-                      filtroEstado === "rechazado"
-                        ? "bg-red-600 text-white border-red-600"
-                        : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-                    )}
-                  >
-                    Rech: {estadisticas.rechazados}
-                  </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          if (filtroEstado === "rechazado") {
+                            setFiltroEstado("todos");
+                          } else {
+                            setFiltroEstado("rechazado");
+                            if (modoFiltro === "pendientes") volverAModoMes();
+                          }
+                        }}
+                        className={cn(
+                          "h-9 sm:h-10 lg:h-11 px-2 sm:px-3 text-[10px] sm:text-[11px] font-bold rounded-lg border transition-all shadow-sm",
+                          filtroEstado === "rechazado"
+                            ? "bg-red-600 text-white border-red-600"
+                            : "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
+                        )}
+                      >
+                        Rech: {estadisticas.rechazados}
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -493,10 +606,35 @@ export default function VerPermisos({ tipoVista }: Props) {
           <div className="border-t border-gray-100 dark:border-neutral-800 pt-3 sm:pt-4">
             {loadingPermisos ? (
               <Cargando texto="Cargando permisos..." />
+            ) : modoEstadisticas ? (
+              <EstadisticasPermisos
+                permisos={registrosFinales || []}
+                searchTerm={searchTerm}
+                modoTipoPermiso={modoTipoPermiso}
+              />
             ) : gruposConDatos.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400 text-xs py-8">
                 No hay información disponible.
               </p>
+            ) : modoVistaVisual === "tabla" ? (
+              <TablaPermisosPrincipal
+                gruposConDatos={gruposConDatos}
+                tipoVista={tipoVista}
+                todosAbiertos={todosAbiertos}
+                puedeGestionarEvidencia={puedeGestionarEvidencia}
+                perfilUsuario={perfilUsuario}
+                cargarDatos={cargarDatos}
+                handleVerPreview={handleVerPreview}
+                handleAbrirJustificacion={handleAbrirJustificacion}
+                handleClickFila={handleClickFila}
+                handleEliminarPermiso={handleEliminarPermiso}
+                getCategoriaBadgeClass={getCategoriaBadgeClass}
+                getCategoriaIcon={getCategoriaIcon}
+                getCategoria={getCategoria}
+                getHorasTrabajo={getHorasTrabajo}
+                formatHorasLabel={formatHorasLabel}
+                getEstadoTextoPlain={getEstadoTextoPlain}
+              />
             ) : (
               <div className="flex flex-col gap-3">
                 {gruposConDatos.map((grupo) => {
@@ -569,6 +707,10 @@ export default function VerPermisos({ tipoVista }: Props) {
                                   handleAbrirJustificacion={
                                     handleAbrirJustificacion
                                   }
+                                  handleAbrirGestionEstado={(p) => {
+                                    setPermisoParaGestionar(p);
+                                    setModalGestionEstadoAbierto(true);
+                                  }}
                                   handleClickFila={handleClickFila}
                                   handleEliminarPermiso={handleEliminarPermiso}
                                   getCategoriaBorderClass={
@@ -617,6 +759,14 @@ export default function VerPermisos({ tipoVista }: Props) {
         tipoVista={tipoVista}
         usuariosParaModal={usuariosParaModal}
       />
+      <GestionEstadoPermisoModal
+        isOpen={modalGestionEstadoAbierto}
+        onClose={() => setModalGestionEstadoAbierto(false)}
+        permiso={permisoParaGestionar}
+        onSuccess={cargarDatos}
+        perfilUsuario={perfilUsuario}
+        tipoVista={tipoVista}
+      />
       <GestionAsueto
         isOpen={modalAsuetoAbierto}
         onClose={() => setModalAsuetoAbierto(false)}
@@ -632,6 +782,7 @@ function UsuarioGrupoPermisos({
   puedeGestionarEvidencia,
   handleVerPreview,
   handleAbrirJustificacion,
+  handleAbrirGestionEstado,
   handleClickFila,
   handleEliminarPermiso,
   getCategoriaBorderClass,
@@ -646,6 +797,7 @@ function UsuarioGrupoPermisos({
   puedeGestionarEvidencia: boolean;
   handleVerPreview: (e: React.MouseEvent, p: PermisoEmpleado) => void;
   handleAbrirJustificacion: (e: React.MouseEvent, p: PermisoEmpleado) => void;
+  handleAbrirGestionEstado: (p: PermisoEmpleado) => void;
   handleClickFila: (p: PermisoEmpleado) => void;
   handleEliminarPermiso: (e: React.MouseEvent, id: string) => void;
   getCategoriaBorderClass: (t: string, d: string | null) => string;
@@ -886,6 +1038,11 @@ function UsuarioGrupoPermisos({
         <AnimatePresence mode="popLayout">
           {permisosFiltrados.map((permiso) => {
             const esPendiente = permiso.estado === "pendiente";
+            const esFaseJefe = permiso.estado === "pendiente";
+            const esFaseRRHH = permiso.estado === "aprobado_jefe";
+            const puedeGestionar =
+              (tipoVista === "gestion_jefe" && esFaseJefe) ||
+              (tipoVista === "gestion_rrhh" && (esFaseJefe || esFaseRRHH));
             const puedeEliminar =
               tipoVista === "gestion_rrhh" ||
               (tipoVista === "mis_permisos" && esPendiente);
@@ -932,14 +1089,14 @@ function UsuarioGrupoPermisos({
                   borderClass,
                 )}
               >
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-center mb-2">
                   {(() => {
                     const cat = getCategoria(permiso);
                     const CatIcon = getCategoriaIcon(cat);
                     return (
                       <span
                         className={cn(
-                          "inline-flex items-center gap-1.5 text-xs lg:text-base px-2.5 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider",
+                          "inline-flex items-center gap-1.5 text-xs lg:text-base px-2.5 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider shrink-0",
                           getCategoriaBadgeClass(cat),
                         )}
                       >
@@ -951,14 +1108,26 @@ function UsuarioGrupoPermisos({
                       </span>
                     );
                   })()}
-                  <div className="flex items-center gap-1.5 shrink-0">
+
+                  <div className="flex-1 text-center px-2 min-w-0">
                     <span className="text-xs lg:text-sm text-gray-400 font-medium whitespace-nowrap">
                       {formatearFechaTarjetaDesdeISO(permiso.created_at)}
                     </span>
                   </div>
+
+                  <PermisoTarjetaAccionesMenu
+                    permiso={permiso}
+                    puedeGestionar={puedeGestionar}
+                    puedeEditar={puedeEditar}
+                    puedeEliminar={puedeEliminar}
+                    handleVerPreview={handleVerPreview}
+                    handleAbrirGestionEstado={handleAbrirGestionEstado}
+                    handleClickFila={handleClickFila}
+                    handleEliminarPermiso={handleEliminarPermiso}
+                  />
                 </div>
 
-                <div className="space-y-2 mb-3">
+                <div className="space-y-2">
                   <div className="bg-slate-50 dark:bg-neutral-800/50 p-2 rounded">
                     <p className="text-xs lg:text-lg font-bold text-slate-700 dark:text-slate-300 capitalize mb-1">
                       {permiso.tipo.replace("_", " ")}
@@ -1030,7 +1199,7 @@ function UsuarioGrupoPermisos({
                       {permiso.aprobado_jefe_nombre && (
                         <p>
                           <span className="font-bold text-slate-500 dark:text-slate-500">
-                            Preaprobado por:
+                            {permiso.estado === "rechazado_jefe" ? "Rechazado por Jefe:" : "Preaprobado por:"}
                           </span>{" "}
                           {permiso.aprobado_jefe_nombre}
                         </p>
@@ -1038,7 +1207,7 @@ function UsuarioGrupoPermisos({
                       {permiso.aprobado_rrhh_nombre && (
                         <p>
                           <span className="font-bold text-slate-500 dark:text-slate-500">
-                            Aprobado por:
+                            {permiso.estado === "rechazado_rrhh" ? "Rechazado por RRHH:" : "Aprobado por:"}
                           </span>{" "}
                           {permiso.aprobado_rrhh_nombre}
                         </p>
@@ -1062,43 +1231,110 @@ function UsuarioGrupoPermisos({
                       )}
                   </div>
                 </div>
-
-                <div className="flex w-full gap-2 mt-auto pt-3 border-t border-gray-200 dark:border-neutral-700">
-                  <button
-                    onClick={(e) => handleVerPreview(e, permiso)}
-                    className="flex flex-1 min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 lg:py-3 text-xs lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
-                  >
-                    <CreditCard className="w-4 h-4 shrink-0" />
-                    Permiso
-                  </button>
-
-                  {puedeEditar && (
-                    <button
-                      onClick={() => handleClickFila(permiso)}
-                      className="flex flex-1 min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 lg:py-3 text-xs lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
-                    >
-                      <Pencil className="w-4 h-4 shrink-0" />
-                      <span className="truncate">Editar / Aprobar</span>
-                    </button>
-                  )}
-
-                  {puedeEliminar && (
-                    <button
-                      onClick={(e) => handleEliminarPermiso(e, permiso.id)}
-                      className="flex flex-1 min-w-0 items-center justify-center gap-1.5 px-2 py-2.5 lg:py-3 text-xs lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer"
-                      title="Borrar"
-                      aria-label="Borrar"
-                    >
-                      <Trash2 className="w-4 h-4 shrink-0" />
-                      Borrar
-                    </button>
-                  )}
-                </div>
               </motion.div>
             );
           })}
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+function PermisoTarjetaAccionesMenu({
+  permiso,
+  puedeGestionar,
+  puedeEditar,
+  puedeEliminar,
+  handleVerPreview,
+  handleAbrirGestionEstado,
+  handleClickFila,
+  handleEliminarPermiso,
+}: {
+  permiso: PermisoEmpleado;
+  puedeGestionar: boolean;
+  puedeEditar: boolean;
+  puedeEliminar: boolean;
+  handleVerPreview: (e: React.MouseEvent, permiso: PermisoEmpleado) => void;
+  handleAbrirGestionEstado: (permiso: PermisoEmpleado) => void;
+  handleClickFila: (permiso: PermisoEmpleado) => void;
+  handleEliminarPermiso: (e: React.MouseEvent, id: string) => void;
+}) {
+  const [popoverOpen, setPopoverOpen] = React.useState(false);
+
+  return (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer shrink-0"
+          title="Opciones del permiso"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="center"
+        side="left"
+        sideOffset={8}
+        collisionPadding={10}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="w-48 p-1 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-xl rounded-xl z-50 flex flex-col gap-0.5"
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            setPopoverOpen(false);
+            handleVerPreview(e, permiso);
+          }}
+          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+        >
+          <CreditCard className="w-4 h-4 shrink-0" />
+          <span>Ver permiso</span>
+        </button>
+
+        {puedeGestionar && (
+          <button
+            type="button"
+            onClick={() => {
+              setPopoverOpen(false);
+              handleAbrirGestionEstado(permiso);
+            }}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+          >
+            <CheckCircle2 className="w-4 h-4 shrink-0" />
+            <span>Aprobar o Rechazar</span>
+          </button>
+        )}
+
+        {puedeEditar && (
+          <button
+            type="button"
+            onClick={() => {
+              setPopoverOpen(false);
+              handleClickFila(permiso);
+            }}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+          >
+            <Pencil className="w-4 h-4 shrink-0" />
+            <span>Editar Permiso</span>
+          </button>
+        )}
+
+        {puedeEliminar && (
+          <button
+            type="button"
+            onClick={(e) => {
+              setPopoverOpen(false);
+              handleEliminarPermiso(e, permiso.id);
+            }}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+          >
+            <Trash2 className="w-4 h-4 shrink-0" />
+            <span>Borrar</span>
+          </button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }

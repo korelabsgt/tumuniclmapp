@@ -106,12 +106,10 @@ export default function CrearEditarPermiso({
     (tipoVista === "gestion_jefe" && esFaseJefe) ||
     (tipoVista === "gestion_rrhh" && (esFaseJefe || esFaseRRHH));
 
-  // CORRECCIÓN 1: RRHH puede editar siempre, excepto cuando está en la pantalla de "Gestionar" (botones de aprobar/rechazar)
-  // Si estoy gestionando, es solo lectura visual. Si NO estoy gestionando (ej. editando uno viejo), RRHH puede escribir.
+  // CORRECCIÓN 1: El modal es exclusivamente para crear o editar datos del permiso.
+  // La aprobación se realiza de forma independiente desde las celdas de estado o acciones dedicadas.
   const esSoloLectura =
-    puedeGestionar || // Si tengo los botones de Aprobar/Rechazar, bloqueo inputs para evitar confusión
-    (!!permisoAEditar && !esRRHH && !puedeGestionar) || // Empleado normal no edita lo enviado
-    (contieneBloqueo && !esRRHH); // Si está finalizado, solo RRHH puede tocar
+    (!!permisoAEditar && !esRRHH && contieneBloqueo); // Empleado normal no edita lo finalizado, pero en edición siempre se permite modificar campos si tiene permisos
 
   const puedeElegirEmpleado =
     tipoVista === "gestion_rrhh" && !permisoAEditar && esRRHH;
@@ -607,60 +605,20 @@ export default function CrearEditarPermiso({
             )}
 
             <div className="flex flex-wrap items-center justify-end gap-2 shrink-0 ml-auto">
-            {puedeGestionar ? (
-              <>
+              {!esSoloLectura && (
                 <button
-                  type="button"
-                  onClick={() => handleGestion("rechazar")}
-                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                  type="submit"
+                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                   disabled={loading}
                 >
                   {loading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <XCircle className="w-4 h-4" />
+                    <Save className="w-4 h-4" />
                   )}
-                  Rechazar
+                  {permisoAEditar ? "Actualizar Permiso" : "Guardar Permiso"}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleGestion("aprobar")}
-                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-emerald-600 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-900/20 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 rounded-md transition-colors border-2 border-emerald-600 dark:border-emerald-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="w-4 h-4" />
-                  )}
-                  {esFaseJefe ? "Aprobar como jefe" : "Aprobar como RRHH"}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-zinc-600 bg-zinc-50 dark:text-zinc-300 dark:bg-zinc-800/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-md transition-colors border-2 border-zinc-500 dark:border-zinc-400 cursor-pointer"
-                >
-                  Cerrar
-                </button>
-                {(!esSoloLectura || (esRRHH && contieneBloqueo)) && (
-                  <button
-                    type="submit"
-                    className="flex items-center justify-center gap-1.5 h-10 px-4 text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4" />
-                    )}
-                    {contieneBloqueo ? "Actualizar Datos" : "Guardar"}
-                  </button>
-                )}
-              </>
-            )}
+              )}
             </div>
           </div>
         </form>

@@ -376,6 +376,8 @@ export const usePermisos = (tipoVista: TipoVistaPermisos) => {
       oficinasAbiertas,
       todosAbiertos,
       datosAgrupados: datosAgrupadosInterno,
+      registrosFinales,
+      permisosVisibles,
       estadisticas,
       conteosPendientes,
       usuariosParaModal,

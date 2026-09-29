@@ -18,7 +18,7 @@ import { es } from "date-fns/locale";
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import React, { useMemo } from "react";
 
-type ModoFecha = "dia" | "semana" | "rango";
+type ModoFecha = "dia" | "semana" | "anio" | "rango";
 
 type SetFecha = (fecha: string) => void;
 
@@ -79,6 +79,7 @@ export default function FiltroFechaPermisos({
   const [calendarFinOpen, setCalendarFinOpen] = React.useState(false);
 
   const mes = (fechaInicio || format(new Date(), "yyyy-MM-dd")).substring(0, 7);
+  const anioActual = (fechaInicio || format(new Date(), "yyyy-MM-dd")).substring(0, 4);
   const rangoMes = useMemo(() => getRangoMes(mes), [mes]);
   const semanasDisponibles = useMemo(() => getSemanasDelMes(mes), [mes]);
 
@@ -86,6 +87,11 @@ export default function FiltroFechaPermisos({
     const rango = getRangoMes(yyyyMM);
     setFechaInicio(rango.inicio);
     setFechaFin(rango.fin);
+  };
+
+  const seleccionarAnioCompleto = (yyyy: string) => {
+    setFechaInicio(`${yyyy}-01-01`);
+    setFechaFin(`${yyyy}-12-31`);
   };
 
   React.useEffect(() => {
@@ -116,17 +122,45 @@ export default function FiltroFechaPermisos({
     );
   };
 
+  const cambiarAnio = (delta: number) => {
+    const anioNum = parseInt(anioActual, 10);
+    if (!isNaN(anioNum)) {
+      seleccionarAnioCompleto(String(anioNum + delta));
+    }
+  };
+
+  const esAnioCompleto =
+    modoFiltro === "rango" &&
+    fechaInicio.endsWith("-01-01") &&
+    fechaFin.endsWith("-12-31") &&
+    fechaInicio.substring(0, 4) === fechaFin.substring(0, 4);
+
   const handleCambioModo = (modo: ModoFecha) => {
     alCambiarModo?.();
     if (modo === "semana") {
       aplicarModoMes({ setModoFiltro, setFechaInicio, setFechaFin });
       return;
     }
+    if (modo === "anio") {
+      setModoFiltro("rango");
+      seleccionarAnioCompleto(anioActual);
+      return;
+    }
+    if (modo === "rango") {
+      setModoFiltro("rango");
+      if (esAnioCompleto || !fechaInicio || !fechaFin) {
+        const hoy = format(new Date(), "yyyy-MM-dd");
+        setFechaInicio(hoy);
+        setFechaFin(hoy);
+      }
+      return;
+    }
     setModoFiltro(modo);
   };
 
-  const modoActual: ModoFecha =
-    modoFiltro === "dia" || modoFiltro === "semana" || modoFiltro === "rango"
+  const modoActual: ModoFecha = esAnioCompleto
+    ? "anio"
+    : modoFiltro === "dia" || modoFiltro === "semana" || modoFiltro === "rango"
       ? modoFiltro
       : "semana";
 
@@ -138,20 +172,16 @@ export default function FiltroFechaPermisos({
     >
       <option value="dia">Día</option>
       <option value="semana">Mes</option>
+      <option value="anio">Año</option>
       <option value="rango">Rango</option>
     </select>
   );
 
   return (
-    <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full flex flex-col items-center gap-1.5">
-      {modoFiltro !== "pendientes" && (
-        <div className="flex items-center gap-2 w-full min-w-0 lg:justify-center">
-          {renderSelectModo("w-[4.75rem] min-w-[4.75rem] lg:hidden")}
-        </div>
-      )}
+    <div className="order-2 lg:order-none lg:col-start-1 lg:row-start-1 lg:justify-self-start flex-1 min-w-0 w-full flex flex-wrap items-center justify-center lg:justify-start gap-1.5">
+      {renderSelectModo("w-[4.75rem] min-w-[4.75rem]")}
 
-      <div className="flex items-center justify-center gap-1.5 w-full min-w-0">
-        {renderSelectModo("hidden lg:block w-[4.75rem] min-w-[4.75rem]")}
+      <div className="flex items-center justify-center gap-1.5 min-w-0 flex-wrap sm:flex-nowrap">
 
         {modoFiltro === "dia" && (
           <Popover open={calendarDiaOpen} onOpenChange={setCalendarDiaOpen}>
@@ -257,7 +287,39 @@ export default function FiltroFechaPermisos({
           </>
         )}
 
-        {modoFiltro === "rango" && (
+        {modoActual === "anio" && (
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              type="button"
+              onClick={() => cambiarAnio(-1)}
+              className={flechaMesClass}
+              aria-label="Año anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+
+            <div
+              className={cn(
+                controlClass,
+                "flex items-center justify-center gap-1.5 min-w-[7rem] font-bold text-center",
+              )}
+            >
+              <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              <span>{anioActual}</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => cambiarAnio(1)}
+              className={flechaMesClass}
+              aria-label="Año siguiente"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {modoFiltro === "rango" && !esAnioCompleto && (
           <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">
             <Popover
               open={calendarInicioOpen}

@@ -16,15 +16,25 @@ import {
   ChevronsUpDown,
   ArrowUpDown,
   CalendarClock,
+  LayoutList,
+  LayoutGrid,
+  MoreVertical,
+  CreditCard,
 } from "lucide-react";
 import PreviewAcuerdo from "./modals/PreviewAcuerdo";
 import ElegirDiasSemanaAcuerdo from "./modals/ElegirDiasSemanaAcuerdo";
+import TablaAcuerdosPrincipal from "./TablaAcuerdosPrincipal";
 import { AcuerdoEmpleado } from "./types";
 import { Button } from "@/components/ui/button";
 import Cargando from "@/components/ui/animations/Cargando";
 import CrearEditarAcuerdo from "./modals/CrearEditarAcuerdo";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAcuerdos, TipoVistaAcuerdos } from "./hooks";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { type PerfilUsuario } from "@/components/permisos/acciones";
 import { cn } from "@/lib/utils";
 import FiltroFechaPermisos, {
@@ -98,6 +108,13 @@ export default function VerAcuerdos({ tipoVista }: Props) {
   const [acuerdoParaImagen, setAcuerdoParaImagen] = React.useState<AcuerdoEmpleado | null>(null);
   const [modalElegirDiasAbierto, setModalElegirDiasAbierto] = React.useState(false);
   const [acuerdoParaElegirDias, setAcuerdoParaElegirDias] = React.useState<AcuerdoEmpleado | null>(null);
+  const [modoVistaVisual, setModoVistaVisual] = React.useState<"tarjetas" | "tabla">("tabla");
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      setModoVistaVisual(window.innerWidth < 768 ? "tarjetas" : "tabla");
+    }
+  }, []);
   const volverAModoMes = () =>
     aplicarModoMes({ setModoFiltro, setFechaInicio, setFechaFin });
 
@@ -190,8 +207,8 @@ export default function VerAcuerdos({ tipoVista }: Props) {
             </div>
 
             <div className="flex flex-col gap-2 sm:gap-3 bg-gray-50/50 dark:bg-neutral-900/30 p-2 sm:p-3 rounded-xl border border-gray-100 dark:border-neutral-800/50 w-full">
-              <div className="flex items-center gap-2 w-full">
-                <div className="relative flex-1 min-w-0">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full">
+                <div className="relative w-full sm:flex-1 min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-gray-400" />
                   <input
                     type="text"
@@ -201,15 +218,46 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                     className="w-full h-9 sm:h-10 lg:h-11 pl-10 lg:pl-11 pr-3 text-xs lg:text-base border border-gray-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
                   />
                 </div>
-                <Button
-                  size="sm"
-                  onClick={toggleTodos}
-                  className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
-                >
-                  <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">{todosAbiertos ? "Ocultar Todos" : "Ver Todos"}</span>
-                  <span className="sm:hidden">{todosAbiertos ? "Ocultar" : "Ver"}</span>
-                </Button>
+                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                  <div className="flex items-center bg-gray-200/80 dark:bg-neutral-800 p-1 rounded-lg border border-gray-300/60 dark:border-neutral-700/80 flex-1 sm:flex-none justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setModoVistaVisual("tabla")}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
+                        modoVistaVisual === "tabla"
+                          ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <LayoutList className="w-4 h-4 shrink-0" />
+                      <span>Tabla</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoVistaVisual("tarjetas")}
+                      className={cn(
+                        "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
+                        modoVistaVisual === "tarjetas"
+                          ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <LayoutGrid className="w-4 h-4 shrink-0" />
+                      <span>Tarjetas</span>
+                    </button>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={toggleTodos}
+                    className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
+                  >
+                    <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">{todosAbiertos ? "Ocultar Todos" : "Ver Todos"}</span>
+                    <span className="sm:hidden">{todosAbiertos ? "Ocultar" : "Ver"}</span>
+                  </Button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-2 lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-end lg:gap-3 w-full">
@@ -277,6 +325,18 @@ export default function VerAcuerdos({ tipoVista }: Props) {
               <p className="text-center text-gray-500 dark:text-gray-400 text-xs py-8">
                 No hay información disponible.
               </p>
+            ) : modoVistaVisual === "tabla" ? (
+              <TablaAcuerdosPrincipal
+                gruposConDatos={gruposConDatos}
+                tipoVista={tipoVista}
+                todosAbiertos={todosAbiertos}
+                perfilUsuario={perfilUsuario}
+                handleVerPreview={handleVerPreview}
+                handleElegirDiasSemana={handleElegirDiasSemana}
+                handleClickFila={handleClickFila}
+                handleEliminarAcuerdo={handleEliminarAcuerdo}
+                getEstadoBadge={getEstadoBadge}
+              />
             ) : (
               <div className="flex flex-col gap-3">
                 {gruposConDatos.map((grupo) => {
@@ -589,10 +649,10 @@ function UsuarioGrupoAcuerdos({
                   borderClass,
                 )}
               >
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-center mb-2">
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 text-[10px] lg:text-sm px-2 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider",
+                      "inline-flex items-center gap-1 text-[10px] lg:text-sm px-2 lg:px-3 py-0.5 lg:py-1 rounded font-mono font-bold tracking-wider shrink-0",
                       getCategoriaAcuerdoBadgeClass(cat),
                     )}
                   >
@@ -602,11 +662,19 @@ function UsuarioGrupoAcuerdos({
                       {`${acuerdo.id.substring(0, 3)}-${acuerdo.id.substring(3, 6)}`.toUpperCase()}
                     </span>
                   </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex-1 text-center px-2 min-w-0">
                     <span className="text-[9px] lg:text-xs text-gray-400 font-medium whitespace-nowrap">
                       {formatearFechaTarjetaDesdeISO(acuerdo.created_at)}
                     </span>
                   </div>
+                  <AcuerdoTarjetaAccionesMenu
+                    acuerdo={acuerdo}
+                    puedeEditar={puedeEditar}
+                    puedeEliminar={puedeEliminar}
+                    handleVerPreview={handleVerPreview}
+                    handleClickFila={handleClickFila}
+                    handleEliminarAcuerdo={handleEliminarAcuerdo}
+                  />
                 </div>
 
                 <div className="space-y-2 mb-3">
@@ -671,37 +739,6 @@ function UsuarioGrupoAcuerdos({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center justify-center md:justify-end gap-1.5 flex-wrap">
-                    <button
-                      onClick={(e) => handleVerPreview(e, acuerdo)}
-                      className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded-md transition-colors border-2 border-blue-600 dark:border-blue-400 cursor-pointer"
-                    >
-                      <Eye className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                      Ver
-                    </button>
-
-                    {puedeEditar && (
-                      <button
-                        onClick={() => handleClickFila(acuerdo)}
-                        className="flex items-center justify-center gap-1.5 px-2.5 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-amber-600 bg-amber-50 dark:text-amber-400 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-md transition-colors border-2 border-amber-600 dark:border-amber-400 cursor-pointer"
-                      >
-                        <Pencil className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                        Editar
-                      </button>
-                    )}
-
-                    {puedeEliminar && (
-                      <button
-                        onClick={(e) => handleEliminarAcuerdo(e, acuerdo.id)}
-                        className="flex items-center justify-center gap-1.5 px-2 lg:px-3 py-1.5 lg:py-1.5 text-[10px] lg:text-sm font-bold text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/40 rounded-md transition-colors border-2 border-red-600 dark:border-red-400 cursor-pointer"
-                        title="Borrar"
-                        aria-label="Borrar"
-                      >
-                        <Trash2 className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-                        <span className="hidden md:inline">Borrar</span>
-                      </button>
-                    )}
-                  </div>
                 </div>
               </motion.div>
             );
@@ -709,5 +746,86 @@ function UsuarioGrupoAcuerdos({
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+function AcuerdoTarjetaAccionesMenu({
+  acuerdo,
+  puedeEditar,
+  puedeEliminar,
+  handleVerPreview,
+  handleClickFila,
+  handleEliminarAcuerdo,
+}: {
+  acuerdo: AcuerdoEmpleado;
+  puedeEditar: boolean;
+  puedeEliminar: boolean;
+  handleVerPreview: (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => void;
+  handleClickFila: (acuerdo: AcuerdoEmpleado) => void;
+  handleEliminarAcuerdo: (e: React.MouseEvent, id: string) => void;
+}) {
+  const [popoverOpen, setPopoverOpen] = React.useState(false);
+
+  return (
+    <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="p-1.5 text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-lg transition-colors cursor-pointer shrink-0"
+          title="Opciones del acuerdo"
+        >
+          <MoreVertical className="w-4 h-4" />
+        </button>
+      </PopoverTrigger>
+
+      <PopoverContent
+        align="center"
+        side="left"
+        sideOffset={8}
+        collisionPadding={10}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        className="w-48 p-1 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-neutral-800 shadow-xl rounded-xl z-50 flex flex-col gap-0.5"
+      >
+        <button
+          type="button"
+          onClick={(e) => {
+            setPopoverOpen(false);
+            handleVerPreview(e, acuerdo);
+          }}
+          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+        >
+          <Eye className="w-4 h-4 shrink-0 text-blue-500" />
+          <span>Ver Vista Previa</span>
+        </button>
+
+        {puedeEditar && (
+          <button
+            type="button"
+            onClick={() => {
+              setPopoverOpen(false);
+              handleClickFila(acuerdo);
+            }}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+          >
+            <Pencil className="w-4 h-4 shrink-0 text-amber-500" />
+            <span>Editar</span>
+          </button>
+        )}
+
+        {puedeEliminar && (
+          <button
+            type="button"
+            onClick={(e) => {
+              setPopoverOpen(false);
+              handleEliminarAcuerdo(e, acuerdo.id);
+            }}
+            className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+          >
+            <Trash2 className="w-4 h-4 shrink-0 text-red-500" />
+            <span>Borrar</span>
+          </button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }

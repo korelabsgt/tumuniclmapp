@@ -76,29 +76,50 @@ export function getSemanasDelMes(yyyyMM: string) {
   return semanas;
 }
 
-export function formatearFechaTarjeta(date: Date): string {
-  const diaRaw = format(date, "EEE", { locale: es }).replace(".", "");
-  const dia = `${diaRaw.charAt(0).toUpperCase()}${diaRaw.slice(1)}`;
-  const numeros = format(date, "dd/MM/yy");
-  return `${dia} ${numeros}`;
+export function formatearFechaTarjeta(date: Date | string | undefined | null): string {
+  if (!date) return "—";
+  try {
+    const d = typeof date === "string"
+      ? (date.includes("T") ? parseISO(date) : new Date(`${date.substring(0, 10)}T12:00:00`))
+      : date;
+    if (isNaN(d.getTime())) return "—";
+    const diaRaw = format(d, "EEE", { locale: es }).replace(".", "");
+    const dia = `${diaRaw.charAt(0).toUpperCase()}${diaRaw.slice(1)}`;
+    const numeros = format(d, "dd/MM/yy");
+    return `${dia} ${numeros}`;
+  } catch {
+    return "—";
+  }
 }
 
 export function formatearFechaTarjetaDesdeISO(iso: string): string {
-  const d = iso.includes("T")
-    ? parseISO(iso)
-    : new Date(`${iso.substring(0, 10)}T12:00:00`);
-  return formatearFechaTarjeta(d);
+  return formatearFechaTarjeta(iso);
 }
 
 export function formatearFechaFiltro(fecha: string): string {
-  return formatearFechaTarjeta(new Date(`${fecha.substring(0, 10)}T12:00:00`));
+  return formatearFechaTarjeta(fecha);
 }
 
 export function formatearRangoTarjeta(
-  inicio: Date,
-  fin: Date,
-  mismoDia: boolean,
+  inicio: Date | string | undefined | null,
+  fin: Date | string | undefined | null,
+  mismoDia?: boolean,
 ): string {
-  if (mismoDia) return formatearFechaTarjeta(inicio);
-  return `Del ${formatearFechaTarjeta(inicio)} al ${formatearFechaTarjeta(fin)}`;
+  if (!inicio || !fin) return "—";
+  try {
+    const dInicio = typeof inicio === "string"
+      ? (inicio.includes("T") ? parseISO(inicio) : new Date(`${inicio.substring(0, 10)}T12:00:00`))
+      : inicio;
+    const dFin = typeof fin === "string"
+      ? (fin.includes("T") ? parseISO(fin) : new Date(`${fin.substring(0, 10)}T12:00:00`))
+      : fin;
+
+    if (isNaN(dInicio.getTime()) || isNaN(dFin.getTime())) return "—";
+
+    const esMismo = mismoDia ?? isSameDay(dInicio, dFin);
+    if (esMismo) return formatearFechaTarjeta(dInicio);
+    return `Del ${formatearFechaTarjeta(dInicio)} al ${formatearFechaTarjeta(dFin)}`;
+  } catch {
+    return "—";
+  }
 }

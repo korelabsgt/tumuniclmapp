@@ -1,4 +1,4 @@
-import { format, parseISO, isSameMonth } from "date-fns";
+import { format, parseISO, isSameMonth, isSameDay } from "date-fns";
 import { es } from "date-fns/locale";
 
 function limpiarMes(fecha: Date, patron: string): string {

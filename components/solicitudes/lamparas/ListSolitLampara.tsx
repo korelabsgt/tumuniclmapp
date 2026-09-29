@@ -9,7 +9,7 @@ import CambioEstadoModal from './modals/CambioEstadoModal';
 import ResumenElectricistasView from './modals/ResumenElectricistasModal';
 import ImprimirReporteModal from './modals/ImprimirReporteModal';
 
-import { Search, Calendar as CalendarIcon, SearchX, CalendarDays, Plus, AlertTriangle, CheckCircle2, Clock, RefreshCw, BarChart2, List, ArrowRight, Printer } from 'lucide-react';
+import { Search, Calendar as CalendarIcon, SearchX, CalendarDays, Plus, AlertTriangle, CheckCircle2, Clock, RefreshCw, BarChart2, List, ArrowRight, Printer, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Calendario from '@/components/ui/Calendario';
 import { format } from 'date-fns';
@@ -270,14 +270,33 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
     'en_revision': 'En Revisión',
   };
 
+  // Paginación (15, 30, 45, 'todos')
+  const [itemsPerPage, setItemsPerPage] = useState<number | 'todos'>(15);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Reiniciar página actual cuando se cambian los filtros de búsqueda o fecha
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtroEstado, filtroMantenimiento, searchTerm, dateFilterMode, selectedDate, startDate, endDate, semanaSeleccionada, itemsPerPage]);
+
   const listaVisual = useMemo(() => {
     const filtered = solicitudesFiltradasGlobal.filter(s => filtroEstado === 'Todos' ? true : s.estado === filtroEstado);
     return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [solicitudesFiltradasGlobal, filtroEstado]);
 
+  const totalItems = listaVisual.length;
+  const totalPages = itemsPerPage === 'todos' ? 1 : Math.max(1, Math.ceil(totalItems / itemsPerPage));
+  const validCurrentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+  const paginatedSolicitudes = useMemo(() => {
+    if (itemsPerPage === 'todos') return listaVisual;
+    const startIndex = (validCurrentPage - 1) * itemsPerPage;
+    return listaVisual.slice(startIndex, startIndex + itemsPerPage);
+  }, [listaVisual, validCurrentPage, itemsPerPage]);
+
   const groupedSolicitudes = useMemo(() => {
     const groups: { label: string; dateObj: Date; items: SolicitudLampara[] }[] = [];
-    listaVisual.forEach((sol) => {
+    paginatedSolicitudes.forEach((sol) => {
       const dateGT = getGTDate(sol.created_at);
       const dateKey = dateGT.toDateString();
       let group = groups.find(g => g.dateObj.toDateString() === dateKey);
@@ -288,7 +307,22 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
       group.items.push(sol);
     });
     return groups;
-  }, [listaVisual]);
+  }, [paginatedSolicitudes]);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    const pages: (number | string)[] = [];
+    if (validCurrentPage <= 4) {
+      pages.push(1, 2, 3, 4, 5, '...', totalPages);
+    } else if (validCurrentPage >= totalPages - 3) {
+      pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, '...', validCurrentPage - 1, validCurrentPage, validCurrentPage + 1, '...', totalPages);
+    }
+    return pages;
+  };
 
   const handleAsignar = async (sol: SolicitudLampara) => {
     if (electricistas.length === 0) {
@@ -701,6 +735,103 @@ export default function ListSolitLampara({ initialData, userServerSide }: Props)
                     </div>
                   </div>
                 ))}
+
+                {/* Paginación y selector de cantidad */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 pt-4 border-t border-slate-200 dark:border-neutral-800/80 text-sm text-slate-600 dark:text-slate-400">
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
+                    <span className="text-xs sm:text-sm">
+                      Mostrando <span className="font-semibold text-slate-800 dark:text-slate-200">{itemsPerPage === 'todos' ? (totalItems > 0 ? 1 : 0) : Math.min((validCurrentPage - 1) * itemsPerPage + 1, totalItems)}</span> a{' '}
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{itemsPerPage === 'todos' ? totalItems : Math.min(validCurrentPage * itemsPerPage, totalItems)}</span> de{' '}
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">{totalItems}</span> solicitudes
+                    </span>
+
+                    <div className="flex items-center gap-1.5 ml-0 sm:ml-2">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Por página:</span>
+                      <div className="flex items-center bg-slate-100 dark:bg-neutral-800 p-0.5 rounded-lg border border-slate-200 dark:border-neutral-700">
+                        {([15, 30, 45, 'todos'] as const).map((option) => (
+                          <button
+                            key={option}
+                            onClick={() => {
+                              setItemsPerPage(option);
+                              setCurrentPage(1);
+                            }}
+                            className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                              itemsPerPage === option
+                                ? 'bg-blue-600 text-white shadow-sm'
+                                : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-neutral-700/60'
+                            }`}
+                          >
+                            {option === 'todos' ? 'Todos' : option}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {itemsPerPage !== 'todos' && totalPages > 1 && (
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => setCurrentPage(1)}
+                        disabled={validCurrentPage === 1}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
+                        title="Primera página"
+                      >
+                        <ChevronsLeft size={16} />
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={validCurrentPage === 1}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
+                        title="Página anterior"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+
+                      <div className="flex items-center gap-1 mx-1">
+                        {getPageNumbers().map((page, idx) => {
+                          if (page === '...') {
+                            return (
+                              <span key={`dots-${idx}`} className="px-2 py-1 text-xs text-slate-400">
+                                ...
+                              </span>
+                            );
+                          }
+                          const isCurrent = page === validCurrentPage;
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => setCurrentPage(Number(page))}
+                              className={`min-w-[32px] h-8 px-2 text-xs font-bold rounded-lg border transition-all ${
+                                isCurrent
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                  : 'bg-white dark:bg-neutral-900 border-slate-200 dark:border-neutral-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-neutral-800'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                        disabled={validCurrentPage === totalPages}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
+                        title="Página siguiente"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                      <button
+                        onClick={() => setCurrentPage(totalPages)}
+                        disabled={validCurrentPage === totalPages}
+                        className="p-1.5 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 text-slate-600 dark:text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-neutral-800 transition-colors"
+                        title="Última página"
+                      >
+                        <ChevronsRight size={16} />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>

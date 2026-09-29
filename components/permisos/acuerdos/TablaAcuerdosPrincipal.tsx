@@ -88,11 +88,12 @@ export default function TablaAcuerdosPrincipal({
       // Agrupar acuerdos por empleado para generar claves
       const acuerdosPorEmpleado: Record<string, AcuerdoEmpleado[]> = {};
       g.acuerdos.forEach((a) => {
+        const aAny = a as any;
         const empId =
           a.user_id ||
-          a.usuario_id ||
+          aAny.usuario_id ||
           a.usuario?.id ||
-          a.nombre_empleado ||
+          aAny.nombre_empleado ||
           "desconocido";
         if (!acuerdosPorEmpleado[empId]) acuerdosPorEmpleado[empId] = [];
         acuerdosPorEmpleado[empId].push(a);
@@ -139,29 +140,30 @@ export default function TablaAcuerdosPrincipal({
               > = {};
 
               grupo.acuerdos.forEach((acuerdo) => {
+                const aAny = acuerdo as any;
                 const empId =
                   acuerdo.user_id ||
-                  acuerdo.usuario_id ||
+                  aAny.usuario_id ||
                   acuerdo.usuario?.id ||
-                  acuerdo.nombre_empleado ||
+                  aAny.nombre_empleado ||
                   "desconocido";
 
                 const nombre =
                   acuerdo.usuario?.nombre ||
-                  acuerdo.usuario?.nombre_completo ||
-                  acuerdo.nombre_empleado ||
+                  aAny.nombre_completo ||
+                  aAny.nombre_empleado ||
                   "Empleado Sin Nombre";
 
                 const puesto =
                   acuerdo.usuario?.puesto_nombre ||
-                  acuerdo.puesto_empleado ||
-                  acuerdo.puesto ||
+                  aAny.puesto_empleado ||
+                  aAny.puesto ||
                   "";
 
                 const dpi =
-                  acuerdo.usuario?.dpi ||
-                  acuerdo.dpi_empleado ||
-                  acuerdo.dpi ||
+                  (acuerdo.usuario as any)?.dpi ||
+                  aAny.dpi_empleado ||
+                  aAny.dpi ||
                   "";
 
                 if (!acuerdosPorEmpleado[empId]) {
@@ -302,7 +304,7 @@ export default function TablaAcuerdosPrincipal({
                                         const catLabel = getCategoriaAcuerdoLabel(catKey);
                                         const badgeClass = getCategoriaAcuerdoBadgeClass(catKey);
                                         const codigoCorto = acuerdo.id.substring(0, 7).toUpperCase();
-                                        const rawDias = acuerdo.dias_semana_json ?? acuerdo.dias;
+                                        const rawDias = (acuerdo as any).dias_semana_json ?? acuerdo.dias;
                                         const parsedDias = parseDiasAcuerdo(rawDias);
                                         const modalidad = getModalidadAcuerdo(parsedDias);
                                         const esSemanalFlexible = modalidad === "semanal";

@@ -36,6 +36,8 @@ import {
   LayoutGrid,
   MoreVertical,
   CheckCircle2,
+  Heart,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 import PreviewPermiso from "./modals/PreviewPermiso";
@@ -137,6 +139,7 @@ export default function VerPermisos({ tipoVista }: Props) {
     todosAbiertos,
     datosAgrupados,
     registrosFinales,
+    permisosVisibles,
     estadisticas,
     conteosPendientes,
     usuariosParaModal,
@@ -165,7 +168,7 @@ export default function VerPermisos({ tipoVista }: Props) {
       setModoVistaVisual(window.innerWidth < 768 ? "tarjetas" : "tabla");
     }
   }, []);
-  const [modoTipoPermiso, setModoTipoPermiso] = React.useState<"generales" | "igss">("generales");
+  const [modoTipoPermiso, setModoTipoPermiso] = React.useState<"permisos" | "igss" | "acuerdos">("permisos");
   const [modalPreviewAbierto, setModalPreviewAbierto] = React.useState(false);
   const [permisoParaImagen, setPermisoParaImagen] =
     React.useState<PermisoEmpleado | null>(null);
@@ -397,50 +400,52 @@ export default function VerPermisos({ tipoVista }: Props) {
                     className="w-full h-9 sm:h-10 lg:h-11 pl-10 lg:pl-11 pr-3 text-xs lg:text-base border border-gray-200 dark:border-neutral-800 rounded-lg bg-white dark:bg-neutral-950 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
                   />
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                  <div className="flex items-center bg-gray-200/80 dark:bg-neutral-800 p-1 rounded-lg border border-gray-300/60 dark:border-neutral-700/80 flex-1 sm:flex-none justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setModoVistaVisual("tabla")}
-                      className={cn(
-                        "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
-                        modoVistaVisual === "tabla"
-                          ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                      )}
-                    >
-                      <LayoutList className="w-4 h-4 shrink-0" />
-                      <span>Tabla</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setModoVistaVisual("tarjetas")}
-                      className={cn(
-                        "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
-                        modoVistaVisual === "tarjetas"
-                          ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
-                      )}
-                    >
-                      <LayoutGrid className="w-4 h-4 shrink-0" />
-                      <span>Tarjetas</span>
-                    </button>
-                  </div>
+                {!modoEstadisticas && (
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <div className="flex items-center bg-gray-200/80 dark:bg-neutral-800 p-1 rounded-lg border border-gray-300/60 dark:border-neutral-700/80 flex-1 sm:flex-none justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setModoVistaVisual("tabla")}
+                        className={cn(
+                          "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
+                          modoVistaVisual === "tabla"
+                            ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        )}
+                      >
+                        <LayoutList className="w-4 h-4 shrink-0" />
+                        <span>Tabla</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setModoVistaVisual("tarjetas")}
+                        className={cn(
+                          "flex items-center justify-center gap-1.5 flex-1 sm:flex-none px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors cursor-pointer",
+                          modoVistaVisual === "tarjetas"
+                            ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        )}
+                      >
+                        <LayoutGrid className="w-4 h-4 shrink-0" />
+                        <span>Tarjetas</span>
+                      </button>
+                    </div>
 
-                  <Button
-                    size="sm"
-                    onClick={toggleTodos}
-                    className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
-                  >
-                    <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">
-                      {todosAbiertos ? "Ocultar Todos" : "Ver Todos"}
-                    </span>
-                    <span className="sm:hidden">
-                      {todosAbiertos ? "Ocultar" : "Ver"}
-                    </span>
-                  </Button>
-                </div>
+                    <Button
+                      size="sm"
+                      onClick={toggleTodos}
+                      className="shrink-0 h-9 sm:h-10 lg:h-11 px-2.5 sm:px-3 text-[10px] sm:text-xs lg:text-sm font-bold bg-gray-100 text-gray-700 border border-gray-200 hover:bg-gray-200 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-700 dark:hover:bg-neutral-700 gap-1"
+                    >
+                      <ChevronsUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                      <span className="hidden sm:inline">
+                        {todosAbiertos ? "Ocultar Todos" : "Ver Todos"}
+                      </span>
+                      <span className="sm:hidden">
+                        {todosAbiertos ? "Ocultar" : "Ver"}
+                      </span>
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {!modoEstadisticas &&
@@ -522,37 +527,44 @@ export default function VerPermisos({ tipoVista }: Props) {
 
                 <div className="order-3 lg:order-none lg:col-start-3 lg:row-start-1 lg:justify-self-end flex items-center gap-1.5 shrink-0 w-full lg:w-auto justify-center sm:justify-end">
                   {modoEstadisticas ? (
-                    <div className="flex items-center gap-2 h-9 sm:h-10 lg:h-11 bg-white dark:bg-neutral-950 px-2 sm:px-2.5 rounded-lg border border-gray-200 dark:border-neutral-800 shrink-0 shadow-sm">
+                    <div className="flex items-center bg-gray-200/80 dark:bg-neutral-800 p-1 rounded-xl border border-gray-300/60 dark:border-neutral-700/80 shrink-0 shadow-sm">
                       <button
                         type="button"
-                        onClick={() => setModoTipoPermiso("generales")}
+                        onClick={() => setModoTipoPermiso("permisos")}
                         className={cn(
-                          "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer",
-                          modoTipoPermiso === "generales"
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                          "flex items-center justify-center px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                          modoTipoPermiso === "permisos"
+                            ? "bg-white dark:bg-neutral-900 text-blue-600 dark:text-blue-400 shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         )}
                       >
-                        Permisos Generales
+                        <span>Permisos</span>
                       </button>
-                      <Switch
-                        checked={modoTipoPermiso === "igss"}
-                        onCheckedChange={(checked) =>
-                          setModoTipoPermiso(checked ? "igss" : "generales")
-                        }
-                        aria-label="Alternar entre Permisos Generales e IGSS"
-                      />
+
                       <button
                         type="button"
                         onClick={() => setModoTipoPermiso("igss")}
                         className={cn(
-                          "px-2 sm:px-2.5 py-1 rounded-md text-[11px] sm:text-xs font-bold transition-all cursor-pointer",
+                          "flex items-center justify-center px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
                           modoTipoPermiso === "igss"
-                            ? "bg-amber-600 text-white shadow-sm"
-                            : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                            ? "bg-white dark:bg-neutral-900 text-amber-600 dark:text-amber-400 shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
                         )}
                       >
-                        IGSS
+                        <span>IGSS</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setModoTipoPermiso("acuerdos")}
+                        className={cn(
+                          "flex items-center justify-center px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer",
+                          modoTipoPermiso === "acuerdos"
+                            ? "bg-white dark:bg-neutral-900 text-purple-600 dark:text-purple-400 shadow-sm"
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200"
+                        )}
+                      >
+                        <span>Acuerdos</span>
                       </button>
                     </div>
                   ) : (
@@ -608,9 +620,11 @@ export default function VerPermisos({ tipoVista }: Props) {
               <Cargando texto="Cargando permisos..." />
             ) : modoEstadisticas ? (
               <EstadisticasPermisos
-                permisos={registrosFinales || []}
+                permisos={permisosVisibles || []}
                 searchTerm={searchTerm}
                 modoTipoPermiso={modoTipoPermiso}
+                fechaInicio={modoFiltro === "dia" ? fechaSeleccionada : fechaInicio}
+                fechaFin={modoFiltro === "dia" ? fechaSeleccionada : fechaFin}
               />
             ) : gruposConDatos.length === 0 ? (
               <p className="text-center text-gray-500 dark:text-gray-400 text-xs py-8">

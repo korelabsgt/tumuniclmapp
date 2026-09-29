@@ -11,7 +11,10 @@ interface EmpleadoReportePdf {
   permisos: PermisoEmpleado[];
 }
 
-export async function generarPdfReporteEmpleado(emp: EmpleadoReportePdf, modoTipoPermiso: "generales" | "igss" = "generales") {
+export async function generarPdfReporteEmpleado(
+  emp: EmpleadoReportePdf,
+  modoTipoPermiso: "permisos" | "igss" | "acuerdos" = "permisos"
+) {
   // Formato Oficio Vertical: Legal (215.9 mm x 355.6 mm)
   const doc = new jsPDF({
     orientation: "portrait",
@@ -21,14 +24,21 @@ export async function generarPdfReporteEmpleado(emp: EmpleadoReportePdf, modoTip
 
   let startY = 12;
 
+  const etiquetaCategoria =
+    modoTipoPermiso === "igss"
+      ? "IGSS"
+      : modoTipoPermiso === "acuerdos"
+        ? "ACUERDOS"
+        : "GENERALES";
+
   // Cargar e imprimir encabezado institucional si está disponible
   try {
     const logo = await cargarLogoMunicipal();
-    const tituloDoc = `REPORTE DE PERMISOS DE EMPLEADO (${modoTipoPermiso === "igss" ? "IGSS" : "GENERALES"})`;
+    const tituloDoc = `REPORTE DE PERMISOS DE EMPLEADO (${etiquetaCategoria})`;
     const lineasSubtitulo = [
       `Empleado: ${emp.nombre}`,
       `Dependencia/Oficina: ${emp.oficina || "General"}`,
-      `Total Permisos: ${emp.permisos.length}`,
+      `Total Registros: ${emp.permisos.length}`,
       `Fecha de impresión: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`,
     ];
 
@@ -49,14 +59,14 @@ export async function generarPdfReporteEmpleado(emp: EmpleadoReportePdf, modoTip
 
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42);
-    doc.text(`REPORTE DE PERMISOS DE EMPLEADO (${modoTipoPermiso === "igss" ? "IGSS" : "GENERALES"})`, 14, 28);
+    doc.text(`REPORTE DE PERMISOS DE EMPLEADO (${etiquetaCategoria})`, 14, 28);
 
     doc.setFontSize(9);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(71, 85, 105);
     doc.text(`Empleado: ${emp.nombre}`, 14, 34);
     doc.text(`Dependencia/Oficina: ${emp.oficina || "General"}`, 14, 39);
-    doc.text(`Total Permisos: ${emp.permisos.length} | Fecha: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, 14, 44);
+    doc.text(`Total Registros: ${emp.permisos.length} | Fecha: ${format(new Date(), "dd/MM/yyyy HH:mm", { locale: es })}`, 14, 44);
 
     startY = 48;
   }

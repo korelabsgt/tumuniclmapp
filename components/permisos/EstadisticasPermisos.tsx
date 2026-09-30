@@ -9,7 +9,7 @@ import {
   Printer,
   CalendarX2,
 } from "lucide-react";
-import { PermisoEmpleado, esTipoAcuerdo } from "./types";
+import { PermisoEmpleado, UsuarioConJerarquia, esTipoAcuerdo } from "./types";
 import { generarPdfReporteEmpleado } from "./pdfReporteEmpleado";
 import PreviewPermiso from "./modals/PreviewPermiso";
 import ModalInasistenciasEmpleado from "./modals/ModalInasistenciasEmpleado";
@@ -40,6 +40,7 @@ const CELDA_BASE = `px-3 py-2.5 border-r ${BORDE_TABLA} flex items-center`;
 
 interface Props {
   permisos: PermisoEmpleado[];
+  usuarios?: UsuarioConJerarquia[];
   searchTerm: string;
   modoTipoPermiso?: "permisos" | "igss" | "acuerdos";
   fechaInicio?: string;
@@ -56,6 +57,17 @@ function esAcuerdo(tipo: string, descripcion?: string | null): boolean {
   const t = (tipo || "").toLowerCase();
   const d = (descripcion || "").toLowerCase();
   return esTipoAcuerdo(tipo) || t.includes("acuerdo") || d.includes("acuerdo");
+}
+
+function formatearFechaPermiso(fechaStr?: string | null): string {
+  if (!fechaStr) return "-";
+  try {
+    const d = parseISO(fechaStr);
+    const texto = format(d, "eee dd/MM/yy", { locale: es });
+    return texto.charAt(0).toUpperCase() + texto.slice(1);
+  } catch {
+    return fechaStr;
+  }
 }
 
 function esAcuerdoEspecialOSuspensionIgss(tipo: string, descripcion?: string | null): boolean {
@@ -76,6 +88,7 @@ function esIgss(tipo: string, descripcion?: string | null): boolean {
 
 export default function EstadisticasPermisos({
   permisos,
+  usuarios,
   searchTerm,
   modoTipoPermiso = "permisos",
   fechaInicio,
@@ -89,22 +102,50 @@ export default function EstadisticasPermisos({
   const [inasistenciasModalDatos, setInasistenciasModalDatos] =
     useState<DatosInasistenciasEmpleado | null>(null);
 
-  // Extraer IDs únicos de los empleados para consulta ultra-rápida y específica
+  // Extraer IDs únicos de los empleados activos para consulta ultra-rápida y específica
   const userIds = useMemo(() => {
     const ids = new Set<string>();
+    if (usuarios && usuarios.length > 0) {
+      usuarios.forEach((u) => {
+        if (u.id && u.activo !== false) ids.add(u.id);
+      });
+    }
     permisos.forEach((p) => {
+      if (p.usuario && p.usuario.activo === false) return;
       const id = p.user_id || p.usuario?.id;
       if (id) ids.add(id);
     });
     return Array.from(ids);
-  }, [permisos]);
+  }, [permisos, usuarios]);
 
   const { calcularInasistenciasUsuario, isLoading: cargandoInasistencias } =
     useInasistenciasEmpleados(fechaInicio, fechaFin, userIds);
 
-  // Filtrar permisos según el modo (permisos | igss | acuerdos)
+  // Mapa memoizado O(1): userId -> fechas de inasistencia[] (evita miles de recálculos pesados en cada render/click)
+  const inasistenciasMap = useMemo(() => {
+    const mapa = new Map<string, string[]>();
+    if (cargandoInasistencias) return mapa;
+
+    const depMap = new Map<string, string | null>();
+    (usuarios || []).forEach((u) => u.id && depMap.set(u.id, u.dependencia_id || null));
+    permisos.forEach((p) => {
+      const uid = p.user_id || p.usuario?.id;
+      if (uid && !depMap.has(uid)) depMap.set(uid, (p.usuario as any)?.dependencia_id || null);
+    });
+
+    userIds.forEach((uid) => {
+      mapa.set(uid, calcularInasistenciasUsuario(uid, depMap.get(uid)));
+    });
+
+    return mapa;
+  }, [cargandoInasistencias, userIds, usuarios, permisos, calcularInasistenciasUsuario]);
+
+  // Filtrar permisos según el modo (permisos | igss | acuerdos) excluyendo inactivos
   const permisosFiltrados = useMemo(() => {
     return permisos.filter((p) => {
+      // Excluir usuarios inactivos
+      if (p.usuario && p.usuario.activo === false) return false;
+
       const esDeAcuerdo = esAcuerdo(p.tipo, p.descripcion);
 
       if (modoTipoPermiso === "acuerdos") {
@@ -140,6 +181,7 @@ export default function EstadisticasPermisos({
       }
     >();
 
+    // 1. Agregar primero los permisos filtrados
     for (const p of permisosFiltrados) {
       const u = p.usuario;
       const userId = p.user_id || u?.id || "desconocido";
@@ -162,6 +204,26 @@ export default function EstadisticasPermisos({
       mapa.get(userId)!.permisos.push(p);
     }
 
+    // 2. En el apartado de permisos, incluir a empleados activos que tengan inasistencias aunque no tengan permisos
+    if (modoTipoPermiso === "permisos" && usuarios && usuarios.length > 0) {
+      for (const u of usuarios) {
+        if (!u.id || u.activo === false) continue;
+        if (!mapa.has(u.id)) {
+          const inasistencias = inasistenciasMap.get(u.id) || [];
+          if (inasistencias.length > 0) {
+            mapa.set(u.id, {
+              userId: u.id,
+              nombre: u.nombre || "Empleado sin Nombre",
+              oficina: u.oficina_nombre || "Sin Asignar",
+              puesto: u.puesto_nombre || undefined,
+              dependencia_id: u.dependencia_id || null,
+              permisos: [],
+            });
+          }
+        }
+      }
+    }
+
     let lista = Array.from(mapa.values());
 
     if (searchTerm.trim()) {
@@ -174,8 +236,17 @@ export default function EstadisticasPermisos({
       );
     }
 
-    return lista.sort((a, b) => b.permisos.length - a.permisos.length);
-  }, [permisosFiltrados, searchTerm]);
+    return lista.sort((a, b) => {
+      // 1. Siempre ordenar prioritariamente por cantidad de permisos descendente
+      if (b.permisos.length !== a.permisos.length) {
+        return b.permisos.length - a.permisos.length;
+      }
+      // 2. En caso de empate (o ambos 0 permisos), ordenar por cantidad de inasistencias descendente
+      const inasistA = inasistenciasMap.get(a.userId)?.length || 0;
+      const inasistB = inasistenciasMap.get(b.userId)?.length || 0;
+      return inasistB - inasistA;
+    });
+  }, [permisosFiltrados, usuarios, modoTipoPermiso, searchTerm, inasistenciasMap]);
 
   // Función auxiliar para saber el tipo específico de acuerdo
   const clasificarAcuerdo = (p: PermisoEmpleado): "permiso_especial" | "suspension_igss" => {
@@ -251,10 +322,7 @@ export default function EstadisticasPermisos({
 
   const renderFilaEmpleado = (emp: typeof empleadosAgrupados[0], index: number, badgeTipo?: string) => {
     const expandido = !!empleadosExpandidos[emp.userId];
-    const inasistenciasFechas = calcularInasistenciasUsuario(
-      emp.userId,
-      emp.dependencia_id,
-    );
+    const inasistenciasFechas = inasistenciasMap.get(emp.userId) || [];
     const inasistenciasCount = inasistenciasFechas.length;
 
     return (
@@ -264,8 +332,8 @@ export default function EstadisticasPermisos({
           onClick={() => toggleExpandir(emp.userId)}
           className={`flex items-center gap-1.5 px-3 py-2.5 cursor-pointer ${COLOR_EMPLEADO.row} transition-colors sticky left-0 z-10 min-h-[3.5rem]`}
         >
-          <span className="shrink-0 text-xs font-bold text-slate-400 dark:text-slate-500 min-w-[20px] text-left">
-            {index + 1}.
+          <span className="shrink-0 text-xs font-bold font-mono text-slate-400 dark:text-slate-500 min-w-[24px] text-left">
+            {String(index + 1).padStart(2, "0")}.
           </span>
 
           <User size={15} className={`shrink-0 ${COLOR_EMPLEADO.text}`} />
@@ -389,68 +457,71 @@ export default function EstadisticasPermisos({
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.18, ease: "easeInOut" }}
               className="overflow-hidden"
             >
               <div className={`border-l-4 ${COLOR_EMPLEADO.border}`}>
-                {emp.permisos.map((p, idx) => {
-                  const fechaIniFormatted = p.inicio
-                    ? format(parseISO(p.inicio), "dd/MM/yyyy", { locale: es })
-                    : "-";
-                  const fechaFinFormatted = p.fin
-                    ? format(parseISO(p.fin), "dd/MM/yyyy", { locale: es })
-                    : "-";
-                  const esMismaFecha = fechaIniFormatted === fechaFinFormatted;
+                {emp.permisos.length === 0 ? (
+                  <div className="py-3 px-4 text-center text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30 flex items-center justify-center gap-2 border-b border-slate-300 dark:border-neutral-700">
+                    <FileText size={14} className="text-slate-400 opacity-60 shrink-0" />
+                    <span>Sin permisos registrados en este período</span>
+                  </div>
+                ) : (
+                  emp.permisos.map((p, idx) => {
+                    const fechaIniFormatted = formatearFechaPermiso(p.inicio);
+                    const fechaFinFormatted = formatearFechaPermiso(p.fin);
+                    const esMismaFecha = fechaIniFormatted === fechaFinFormatted;
 
-                  return (
-                    <div
-                      key={`${p.id}-${idx}`}
-                      onClick={() => setPermisoSeleccionado(p)}
-                      className={`${GRID_PERMISOS} ${COLOR_FILA} border-b ${BORDE_TABLA} last:border-b-0 hover:brightness-[0.98] dark:hover:brightness-110 cursor-pointer`}
-                    >
-                      {/* Columna 1: No. */}
-                      <div className={`${CELDA_BASE} justify-center font-mono font-semibold text-slate-500 dark:text-slate-400 shrink-0`}>
-                        No. {idx + 1}
-                      </div>
+                    return (
+                      <div
+                        key={`${p.id}-${idx}`}
+                        onClick={() => setPermisoSeleccionado(p)}
+                        className={`${GRID_PERMISOS} ${COLOR_FILA} border-b ${BORDE_TABLA} last:border-b-0 hover:brightness-[0.98] dark:hover:brightness-110 cursor-pointer`}
+                      >
+                        {/* Columna 1: Número */}
+                        <div className={`${CELDA_BASE} justify-center font-mono font-semibold text-slate-500 dark:text-slate-400 shrink-0`}>
+                          {String(idx + 1).padStart(2, "0")}
+                        </div>
 
-                      {/* Columna 2: Toda la información en una sola fila (Fecha + Tipo/Descripción + Rango de Fechas) */}
-                      <div className={`${CELDA_BASE} border-r-0 flex-wrap sm:flex-nowrap gap-1.5 justify-between py-2`}>
-                        <div className="flex flex-wrap items-baseline gap-1.5 min-w-0 flex-1">
-                          {/* Fecha / Rango destacado */}
-                          <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs">
-                            {esMismaFecha
-                              ? fechaIniFormatted
-                              : `${fechaIniFormatted} al ${fechaFinFormatted}`}
-                          </span>
+                        {/* Columna 2: Toda la información en una sola fila (Fecha + Tipo/Descripción + Rango de Fechas) */}
+                        <div className={`${CELDA_BASE} border-r-0 flex-wrap sm:flex-nowrap gap-1.5 justify-between py-2`}>
+                          <div className="flex flex-wrap items-baseline gap-1.5 min-w-0 flex-1">
+                            {/* Fecha / Rango destacado */}
+                            <span className="font-bold text-slate-900 dark:text-slate-100 font-mono text-xs">
+                              {esMismaFecha
+                                ? fechaIniFormatted
+                                : `${fechaIniFormatted} al ${fechaFinFormatted}`}
+                            </span>
 
-                          {/* Tipo de permiso */}
-                          <span className={cn(
-                            "font-bold",
-                            p.tipo.toLowerCase().includes("igss")
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-purple-600 dark:text-purple-400"
-                          )}>
-                            {p.tipo}
-                          </span>
+                            {/* Tipo de permiso */}
+                            <span className={cn(
+                              "font-bold",
+                              p.tipo.toLowerCase().includes("igss")
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-purple-600 dark:text-purple-400"
+                            )}>
+                              {p.tipo}
+                            </span>
 
-                          {/* Descripción / Justificación */}
-                          {p.descripcion && (
-                            <span className="text-slate-500 dark:text-slate-400 text-xs truncate max-w-full">
-                              - {p.descripcion}
+                            {/* Descripción / Justificación */}
+                            {p.descripcion && (
+                              <span className="text-slate-500 dark:text-slate-400 text-xs truncate max-w-full">
+                                - {p.descripcion}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Rango de fechas final si son diferentes */}
+                          {!esMismaFecha && (
+                            <span className="shrink-0 font-mono font-semibold text-[10px] text-slate-400 dark:text-slate-500 bg-slate-200/60 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
+                              {fechaIniFormatted} - {fechaFinFormatted}
                             </span>
                           )}
                         </div>
-
-                        {/* Rango de fechas final si son diferentes */}
-                        {!esMismaFecha && (
-                          <span className="shrink-0 font-mono font-semibold text-[10px] text-slate-400 dark:text-slate-500 bg-slate-200/60 dark:bg-neutral-800 px-1.5 py-0.5 rounded">
-                            {fechaIniFormatted} - {fechaFinFormatted}
-                          </span>
-                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })
+                )}
               </div>
             </motion.div>
           )}

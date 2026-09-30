@@ -522,9 +522,16 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
             </div>
 
             <div
-              className="relative flex w-full shrink-0 gap-2 sm:w-auto"
+              className="relative flex w-full shrink-0 gap-2 sm:w-auto items-center"
               ref={menuRef}
             >
+              <div className="flex items-center">
+                <AccordionToggleButton
+                  expanded={todosAbiertos}
+                  onToggle={toggleTodosAcordeon}
+                />
+              </div>
+
               {hasCreatePermission && (
                 <div className="relative w-full sm:w-auto">
                   <button
@@ -629,7 +636,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
             </div>
           </div>
 
-          <div className="border-t border-gray-100 dark:border-neutral-800 pt-2 mt-2">
+          <div className="pt-2 mt-2">
             {cargandoDependencias ? (
               <Cargando texto="Cargando usuarios..." />
             ) : usuariosAgrupados.length === 0 ? (
@@ -637,103 +644,98 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                 No se encontraron usuarios con los filtros seleccionados.
               </p>
             ) : (
-              <div className="w-full">
-                <div className="w-full overflow-x-auto">
-                  <table className="w-full table-fixed text-xs">
-                    <thead className="bg-slate-50 dark:bg-neutral-900 text-left border-b border-gray-100 dark:border-neutral-800">
-                      <tr>
-                        <th className="py-3 px-4 text-[10px] xl:text-xs w-[35%] font-semibold text-slate-600 dark:text-slate-400">
-                          Nombre
-                        </th>
-                        <th className="py-3 px-2 text-[10px] xl:text-xs w-[35%] font-semibold text-slate-600 dark:text-slate-400 pl-4">
-                          Usuario
-                        </th>
-                        <th className="py-3 px-2 text-[10px] xl:text-xs w-[30%] font-semibold text-slate-600 dark:text-slate-400 pl-4">
-                          <div className="flex items-center justify-between gap-2">
-                            <span>Puesto</span>
-                            <AccordionToggleButton
-                              expanded={todosAbiertos}
-                              onToggle={toggleTodosAcordeon}
-                            />
+              <div className="bg-white dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl shadow-sm overflow-hidden w-full">
+                <div className="overflow-x-auto w-full">
+                  <div className="divide-y divide-slate-300 dark:divide-neutral-700 min-w-[700px] w-full">
+                    {/* Lista de Grupos por Oficina */}
+                    {usuariosAgrupados.map((grupo) => {
+                      const estaAbierta =
+                        oficinasAbiertas[grupo.oficina_nombre] !== false;
+
+                      return (
+                        <div
+                          key={grupo.path_orden}
+                          className="border-b last:border-b-0 border-slate-200 dark:border-neutral-800"
+                        >
+                          {/* Nivel: Clic en la Oficina / Dependencia */}
+                          <div
+                            onClick={() => toggleOficina(grupo.oficina_nombre)}
+                            className="bg-slate-100 dark:bg-neutral-800/90 hover:bg-slate-200/70 dark:hover:bg-neutral-800 px-4 py-2.5 flex items-center justify-between border-b border-slate-300 dark:border-neutral-700 cursor-pointer transition-colors select-none sticky left-0 z-10"
+                          >
+                            <div className="flex items-center gap-2">
+                              <motion.div
+                                initial={false}
+                                animate={{ rotate: estaAbierta ? 180 : 0 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                              </motion.div>
+                              <span className="font-bold text-xs uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                                {grupo.oficina_nombre}
+                              </span>
+                            </div>
                           </div>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {usuariosAgrupados.map((grupo) => {
-                        const estaAbierta =
-                          oficinasAbiertas[grupo.oficina_nombre] || false;
 
-                        return (
-                          <Fragment key={grupo.path_orden}>
-                            <tr className="border-b border-slate-100 dark:border-neutral-800">
-                              <td colSpan={3} className="p-1">
-                                <div
-                                  onClick={() =>
-                                    toggleOficina(grupo.oficina_nombre)
-                                  }
-                                  className="bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 cursor-pointer transition-colors py-2.5 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center justify-between rounded-sm"
-                                >
-                                  <span>
-                                    {grupo.oficina_nombre} (
-                                    {grupo.usuarios.length})
-                                  </span>
-                                  <motion.div
-                                    initial={false}
-                                    animate={{ rotate: estaAbierta ? 180 : 0 }}
-                                    transition={{ duration: 0.3 }}
-                                  >
-                                    <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                                  </motion.div>
+                          {/* Lista de Usuarios dentro de la Oficina con su propio Encabezado */}
+                          <AnimatePresence initial={false}>
+                            {estaAbierta && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                transition={{ duration: 0.25 }}
+                                className="overflow-hidden"
+                              >
+                                <div>
+                                  {/* Encabezados de Columna dentro de la Oficina */}
+                                  <div className="grid grid-cols-[3.5rem_1.5fr_1.5fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-slate-100/90 dark:bg-neutral-800/80 font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-300 dark:border-neutral-700">
+                                    <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center">
+                                      No.
+                                    </div>
+                                    <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                      Nombre
+                                    </div>
+                                    <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                      Usuario
+                                    </div>
+                                    <div className="px-3 sm:px-4 py-2.5 flex items-center">
+                                      Puesto
+                                    </div>
+                                  </div>
+
+                                  {/* Filas de Empleados */}
+                                  <div className="divide-y divide-slate-300 dark:divide-neutral-700">
+                                    {grupo.usuarios.map((usuario, idx) => (
+                                      <div
+                                        key={usuario.id}
+                                        onClick={() => handleVerUsuario(usuario.id)}
+                                        className={`grid grid-cols-[3.5rem_1.5fr_1.5fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-white dark:bg-neutral-900/80 hover:bg-slate-50/80 dark:hover:bg-neutral-800/60 transition-colors ${
+                                          canOpenModal ? "cursor-pointer" : "cursor-default"
+                                        }`}
+                                      >
+                                        <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-semibold font-mono">
+                                          {String(idx + 1).padStart(2, "0")}
+                                        </div>
+                                        <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-700 dark:text-slate-300 font-medium truncate">
+                                          {usuario.nombre || "—"}
+                                        </div>
+                                        <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-600 dark:text-slate-400 truncate">
+                                          {usuario.email || "—"}
+                                        </div>
+                                        <div className="px-3 sm:px-4 py-2.5 flex items-center text-slate-600 dark:text-slate-400 truncate">
+                                          {usuario.puesto_nombre || "—"}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
-                              </td>
-                            </tr>
-
-                            <AnimatePresence initial={false}>
-                              {estaAbierta && (
-                                <motion.tr
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  transition={{
-                                    duration: 0.3,
-                                    ease: "easeInOut",
-                                  }}
-                                  style={{ overflow: "hidden" }}
-                                >
-                                  <td colSpan={3} className="p-0">
-                                    <table className="w-full">
-                                      <tbody>
-                                        {grupo.usuarios.map((usuario) => (
-                                          <tr
-                                            key={usuario.id}
-                                            onClick={() =>
-                                              handleVerUsuario(usuario.id)
-                                            }
-                                            className={`border-b border-slate-100 dark:border-neutral-800 transition-colors hover:bg-blue-50 dark:hover:bg-blue-900/20 group ${canOpenModal ? "cursor-pointer" : "cursor-default"}`}
-                                          >
-                                            <td className="py-3 px-4 text-[11px] xl:text-xs text-slate-700 dark:text-slate-300 w-[35%] truncate">
-                                              {usuario.nombre || "—"}
-                                            </td>
-                                            <td className="py-3 px-2 text-[11px] xl:text-xs text-slate-600 dark:text-slate-400 w-[35%] truncate pl-4">
-                                              {usuario.email || "—"}
-                                            </td>
-                                            <td className="py-3 px-2 text-[11px] xl:text-xs text-slate-600 dark:text-slate-400 w-[30%] truncate pl-4">
-                                              {usuario.puesto_nombre || "—"}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </td>
-                                </motion.tr>
-                              )}
-                            </AnimatePresence>
-                          </Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}

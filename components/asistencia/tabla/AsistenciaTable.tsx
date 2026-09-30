@@ -793,22 +793,9 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
                   )}
                 </div>
 
-                <div className="w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-neutral-800">
-                  <table className="w-full table-fixed text-xs">
-                    <thead className="bg-slate-50 dark:bg-neutral-900 text-left">
-                      <tr>
-                        <th className="py-3 px-3 text-[10px] xl:text-xs w-[35%] font-semibold text-slate-600 dark:text-slate-300">
-                          {vistaAgrupada === 'fecha' ? 'Usuario' : 'Fecha'}
-                        </th>
-                        <th className="py-3 px-3 text-[10px] xl:text-xs" colSpan={2}>
-                          <div className="flex items-center">
-                            <span className="w-3/4 font-semibold text-slate-600 dark:text-slate-300">Marcaje</span>
-                            <span className="w-1/4 text-center text-indigo-500 dark:text-indigo-400 font-semibold">Justificación</span>
-                          </div>
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className="bg-white dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl shadow-sm overflow-hidden w-full">
+                  <div className="overflow-x-auto w-full">
+                    <div className="divide-y divide-slate-300 dark:divide-neutral-700 min-w-[700px] w-full">
                       {oficinasOrdenadas.map((nombreOficina) => (
                         <OficinaAccordion 
                           key={nombreOficina}
@@ -834,14 +821,12 @@ export default function AsistenciaTable({ registros, loading, setOficinaId, setF
                         />
                       ))}
                       {oficinasOrdenadas.length === 0 && (
-                          <tr>
-                              <td colSpan={3} className="py-8 text-center text-gray-400 text-xs italic">
-                                  No hay registros que coincidan con el filtro seleccionado.
-                              </td>
-                          </tr>
+                        <div className="py-8 text-center text-gray-400 text-xs italic">
+                          No hay registros que coincidan con el filtro seleccionado.
+                        </div>
                       )}
-                    </tbody>
-                  </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

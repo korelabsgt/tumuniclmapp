@@ -51,7 +51,10 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
 
   const { usuarios: usuariosHook } = useListaUsuarios();
   const usuariosAdaptados = useMemo(
-    () => usuariosHook as unknown as UsuarioConJerarquia[],
+    () =>
+      (usuariosHook as unknown as UsuarioConJerarquia[]).filter(
+        (u) => u.activo === true,
+      ),
     [usuariosHook],
   );
 
@@ -117,17 +120,19 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
     if (!usuariosAdaptados.length || !registrosRawSinFiltrar) {
       return [] as AcuerdoEmpleado[];
     }
-    return registrosRaw.map((acuerdo) => {
-      const usuarioEncontrado = usuariosAdaptados.find(
-        (u) => u.id === acuerdo.user_id,
-      );
-      const diasParsed = parseDiasAcuerdo(acuerdo.dias);
-      return {
-        ...acuerdo,
-        dias: diasParsed ?? acuerdo.dias,
-        usuario: usuarioEncontrado,
-      };
-    });
+    return registrosRaw
+      .map((acuerdo) => {
+        const usuarioEncontrado = usuariosAdaptados.find(
+          (u) => u.id === acuerdo.user_id,
+        );
+        const diasParsed = parseDiasAcuerdo(acuerdo.dias);
+        return {
+          ...acuerdo,
+          dias: diasParsed ?? acuerdo.dias,
+          usuario: usuarioEncontrado,
+        };
+      })
+      .filter((acuerdo) => acuerdo.usuario && acuerdo.usuario.activo === true);
   }, [registrosRaw, usuariosAdaptados]);
 
   const { acuerdosVisibles, usuariosParaModal } = useMemo(() => {

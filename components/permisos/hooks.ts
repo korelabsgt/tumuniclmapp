@@ -47,7 +47,10 @@ export const usePermisos = (tipoVista: TipoVistaPermisos) => {
 
   const { usuarios: usuariosHook } = useListaUsuarios();
   const usuariosAdaptados = useMemo(
-    () => usuariosHook as unknown as UsuarioConJerarquia[],
+    () =>
+      (usuariosHook as unknown as UsuarioConJerarquia[]).filter(
+        (u) => u.activo === true,
+      ),
     [usuariosHook],
   );
 
@@ -103,12 +106,14 @@ export const usePermisos = (tipoVista: TipoVistaPermisos) => {
 
   const registrosEnriquecidos = useMemo(() => {
     if (!usuariosAdaptados.length || !registrosRaw) return EMPTY_PERMISOS;
-    return registrosRaw.map((permiso) => {
-      const usuarioEncontrado = usuariosAdaptados.find(
-        (u) => u.id === permiso.user_id,
-      );
-      return { ...permiso, usuario: usuarioEncontrado };
-    });
+    return registrosRaw
+      .map((permiso) => {
+        const usuarioEncontrado = usuariosAdaptados.find(
+          (u) => u.id === permiso.user_id,
+        );
+        return { ...permiso, usuario: usuarioEncontrado };
+      })
+      .filter((permiso) => permiso.usuario && permiso.usuario.activo === true);
   }, [registrosRaw, usuariosAdaptados]);
 
   const { permisosVisibles, usuariosParaModal } = useMemo(() => {

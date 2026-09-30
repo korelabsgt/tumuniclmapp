@@ -1,8 +1,6 @@
-'use client';
-
-import React, { Fragment, useMemo } from 'react';
+import React, { Fragment, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, AlertCircle, LogIn, LogOut, PartyPopper, Briefcase } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, LogIn, LogOut, PartyPopper, Briefcase, User } from 'lucide-react';
 import { format, parseISO, isAfter, startOfToday } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { PermisoEmpleado, esTipoAcuerdo } from '@/components/permisos/types';
@@ -79,6 +77,15 @@ export default function OficinaAccordion({
   usuarios = [],
   horariosMap = {},
 }: OficinaAccordionProps) {
+  const [empleadosAbiertos, setEmpleadosAbiertos] = useState<Record<string, boolean>>({});
+
+  const toggleEmpleado = (userId: string) => {
+    setEmpleadosAbiertos(prev => ({
+      ...prev,
+      [userId]: prev[userId] !== undefined ? !prev[userId] : false,
+    }));
+  };
+
   const resolverAsueto = (userId: string, diaString: string) =>
     getAsuetoPorFecha(
       asuetos,
@@ -323,268 +330,345 @@ export default function OficinaAccordion({
   };
 
   return (
-    <Fragment>
-      <tr className="border-b border-slate-100 dark:border-neutral-800">
-        <td colSpan={3} className="p-1">
-          <div
-            onClick={onToggle}
-            className="bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 cursor-pointer transition-colors py-2.5 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center justify-between rounded-sm"
+    <div className="border-b last:border-b-0 border-slate-200 dark:border-neutral-800">
+      {/* Nivel: Clic en la Oficina / Dependencia */}
+      <div
+        onClick={onToggle}
+        className="bg-slate-100 dark:bg-neutral-800/90 hover:bg-slate-200/70 dark:hover:bg-neutral-800 px-4 py-2.5 flex items-center justify-between border-b border-slate-300 dark:border-neutral-700 cursor-pointer transition-colors select-none sticky left-0 z-10"
+      >
+        <div className="flex items-center gap-2">
+          <motion.div
+            initial={false}
+            animate={{ rotate: estaAbierta ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
           >
-            <span>{nombreOficina} ({contarRegistrosReales()})</span>
-            <motion.div
-              initial={false}
-              animate={{ rotate: estaAbierta ? 180 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-            </motion.div>
-          </div>
-        </td>
-      </tr>
+            <ChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          </motion.div>
+          <span className="font-bold text-xs uppercase tracking-wider text-blue-600 dark:text-blue-400">
+            {nombreOficina}
+          </span>
+        </div>
+      </div>
 
       <AnimatePresence initial={false}>
         {estaAbierta && (
-          <motion.tr
+          <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            style={{ overflow: 'hidden' }}
+            transition={{ duration: 0.25 }}
+            className="overflow-hidden"
           >
-            <td colSpan={3} className="p-0">
-              <table className="w-full">
-                <tbody>
-                  {vistaAgrupada === 'fecha' ? (
-                    registros.map((registro: any, index: number) => {
-                      const mostrarEncabezadoDia = registro.diaString !== diaActual;
-                      if (mostrarEncabezadoDia) diaActual = registro.diaString;
+            <div>
+              {/* Contenido de Registros */}
+              <div className="divide-y divide-slate-300 dark:divide-neutral-700">
+                {vistaAgrupada === 'fecha' ? (
+                  <>
+                    {/* Encabezados de Columna para vista de Fecha */}
+                    <div className="grid grid-cols-[3.5rem_1.8fr_2fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-slate-100/90 dark:bg-neutral-800/80 font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-300 dark:border-neutral-700">
+                      <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center">
+                        No.
+                      </div>
+                      <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                        Usuario
+                      </div>
+                      <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                        Marcaje
+                      </div>
+                      <div className="px-3 sm:px-4 py-2.5 flex items-center justify-center">
+                        Justificación
+                      </div>
+                    </div>
+                    {registros.map((registro: any, index: number) => {
+                    const mostrarEncabezadoDia = registro.diaString !== diaActual;
+                    if (mostrarEncabezadoDia) diaActual = registro.diaString;
 
-                      const esMultiple = registro.multiple && registro.multiple.length > 0;
-                      const totalRegistros = (registro.entrada ? 1 : 0) + (registro.salida ? 1 : 0) + (registro.multiple?.length || 0);
-                      const esVacio = (registro.esDiaVacio || registro.esAusencia) && totalRegistros === 0;
-                      const permiso = getPermisoParaDia(registro.userId, registro.diaString);
-                      const asueto = resolverAsueto(registro.userId, registro.diaString);
-                      const comision = !asueto && !permiso ? getComisionParaDia(registro.userId, registro.diaString) : null;
-                      if (isAfter(parseISO(registro.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
+                    const esMultiple = registro.multiple && registro.multiple.length > 0;
+                    const totalRegistros = (registro.entrada ? 1 : 0) + (registro.salida ? 1 : 0) + (registro.multiple?.length || 0);
+                    const esVacio = (registro.esDiaVacio || registro.esAusencia) && totalRegistros === 0;
+                    const permiso = getPermisoParaDia(registro.userId, registro.diaString);
+                    const asueto = resolverAsueto(registro.userId, registro.diaString);
+                    const comision = !asueto && !permiso ? getComisionParaDia(registro.userId, registro.diaString) : null;
+                    if (isAfter(parseISO(registro.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
 
-                      return (
-                        <Fragment key={`${registro.userId}-${registro.diaString}-${index}`}>
-                          {mostrarEncabezadoDia && (
-                            <tr>
-                              <td colSpan={3} className="bg-slate-100 dark:bg-neutral-800 px-4 py-2 font-bold text-slate-700 dark:text-slate-200 border-t border-b border-slate-200 dark:border-neutral-700 capitalize text-xs">
-                                {format(parseISO(registro.diaString + 'T00:00:00'), "eeee, d 'de' LLLL", { locale: es })}
-                              </td>
-                            </tr>
-                          )}
+                    return (
+                      <Fragment key={`${registro.userId}-${registro.diaString}-${index}`}>
+                        {mostrarEncabezadoDia && (
+                          <div className="bg-slate-100/70 dark:bg-neutral-800/60 px-4 py-1.5 font-bold text-slate-700 dark:text-slate-200 border-b border-slate-300 dark:border-neutral-700 capitalize text-[11px]">
+                            {format(parseISO(registro.diaString + 'T00:00:00'), "eeee, d 'de' LLLL", { locale: es })}
+                          </div>
+                        )}
 
-                          <tr className="border-b border-slate-100 dark:border-neutral-800 transition-colors">
-                              {/* Nombre */}
-                              <td className="py-2 px-3 text-xs text-slate-700 dark:text-slate-300 w-[45%]">
-                                {registro.nombre}
-                              </td>
-                              {/* Asistencia + Permiso */}
-                              <td colSpan={2} className="py-2 px-3">
-                                <div className="flex items-center gap-1">
-                                  <div
-                                    className={`w-3/4 ${!esVacio ? 'cursor-pointer' : ''}`}
-                                    onClick={() => !esVacio && onAbrirModal(registro)}
-                                  >
-                                    {esMultiple || totalRegistros > 2 ? (
-                                      <div className="w-fit px-4 py-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
-                                        Ver Asistencia ({totalRegistros})
-                                      </div>
-                                    ) : esVacio ? (() => {
-                                      const msg = getMensajeDiaSinMarcaje(permiso, asueto, comision);
-                                      return (
-                                        <span className={`text-[9px] md:text-sm font-medium italic whitespace-nowrap ${msg.className}`}>
-                                          {msg.texto}
-                                        </span>
-                                      );
-                                    })() : (
-                                      <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                        <span className={MARCaje_FILA_CLASS}>
-                                          <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
-                                          {formatTime(registro.entrada?.created_at || registro.entrada?.fecha_hora, permiso, registro.diaString, 'entrada', false, registro.entrada?.notas, undefined, registro.userId)}
-                                        </span>
-                                        <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                        <span className={MARCaje_FILA_CLASS}>
-                                          <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
-                                          {registro.salida
-                                            ? formatTime(registro.salida?.created_at || registro.salida?.fecha_hora, permiso, registro.diaString, 'salida')
-                                            : formatTime(null, permiso, registro.diaString, 'salida', !!comision)}
-                                        </span>
-                                      </div>
-                                    )}
+                        <div className="grid grid-cols-[3.5rem_1.8fr_2fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-white dark:bg-neutral-900/80 hover:bg-slate-50/80 dark:hover:bg-neutral-800/60 transition-colors">
+                          {/* No. */}
+                          <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-semibold font-mono">
+                            {String(index + 1).padStart(2, '0')}
+                          </div>
+                          {/* Nombre */}
+                          <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-700 dark:text-slate-300 font-medium truncate">
+                            {registro.nombre}
+                          </div>
+                          {/* Marcaje */}
+                          <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                            <div
+                              className={`w-full ${!esVacio ? 'cursor-pointer' : ''}`}
+                              onClick={() => !esVacio && onAbrirModal(registro)}
+                            >
+                              {esMultiple || totalRegistros > 2 ? (
+                                <div className="w-fit px-3 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[10px]">
+                                  Ver Asistencia ({totalRegistros})
+                                </div>
+                              ) : esVacio ? (() => {
+                                const msg = getMensajeDiaSinMarcaje(permiso, asueto, comision);
+                                return (
+                                  <span className={`text-[10px] sm:text-xs font-medium italic whitespace-nowrap ${msg.className}`}>
+                                    {msg.texto}
+                                  </span>
+                                );
+                              })() : (
+                                <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
+                                  <span className={MARCaje_FILA_CLASS}>
+                                    <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
+                                    {formatTime(registro.entrada?.created_at || registro.entrada?.fecha_hora, permiso, registro.diaString, 'entrada', false, registro.entrada?.notas, undefined, registro.userId)}
+                                  </span>
+                                  <span className="text-gray-300 dark:text-neutral-700">|</span>
+                                  <span className={MARCaje_FILA_CLASS}>
+                                    <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
+                                    {registro.salida
+                                      ? formatTime(registro.salida?.created_at || registro.salida?.fecha_hora, permiso, registro.diaString, 'salida')
+                                      : formatTime(null, permiso, registro.diaString, 'salida', !!comision)}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          {/* Justificación */}
+                          <div className="px-2 py-2 flex items-center justify-center">
+                            <JustificacionBtn
+                              justificacion={permiso}
+                              asueto={asueto}
+                              comision={comision}
+                              fechaStr={registro.diaString}
+                              tieneEntrada={!!registro.entrada}
+                              tieneSalida={!!registro.salida}
+                              notasEntrada={registro.entrada?.notas}
+                              notasSalida={registro.salida?.notas}
+                              marcaEntradaAt={registro.entrada?.created_at || registro.entrada?.fecha_hora || registro.multiple?.[0]?.created_at}
+                              horarioEntrada={resolverHorarioEntrada(registro.userId, registro.diaString, permiso)}
+                              cantidadMarcajes={esMultiple || totalRegistros > 2 ? totalRegistros : null}
+                            />
+                          </div>
+                        </div>
+                      </Fragment>
+                    );
+                  })}
+                </>
+                ) : (
+                  registros.map((usuario: any, userIdx: number) => {
+                    const empAbierto = empleadosAbiertos[usuario.userId] !== false;
+                    const todayStr = format(new Date(), 'yyyy-MM-dd');
+                    const totalAusencias = usuario.asistencias.filter((a: any) => {
+                      if (!a.esAusencia) return false;
+                      if (a.diaString > todayStr) return false;
+                      const tieneComision = (comisionesMap[usuario.userId] || []).some(c => c.fecha_hora.startsWith(a.diaString));
+                      if (tieneComision) return false;
+                      const tienePermiso = (permisosMap[usuario.userId] || []).some(p =>
+                        permisoAplicaEnDia(p, a.diaString),
+                      );
+                      if (tienePermiso) return false;
+                      const tieneAsueto = !!resolverAsueto(usuario.userId, a.diaString);
+                      return !tieneAsueto;
+                    }).length;
+                    const totalSinEntrada = usuario.asistencias.filter((a: any) => !a.esAusencia && !a.entrada && (!a.multiple || a.multiple.length === 0)).length;
+                    const totalSinSalida = usuario.asistencias.filter((a: any) => !a.esAusencia && !a.salida && (!a.multiple || a.multiple.length === 0)).length;
+
+                    return (
+                      <div key={usuario.userId} className="border-b last:border-b-0 border-slate-200 dark:border-neutral-800">
+                        {/* Nivel 2: Clic en el Empleado */}
+                        <div
+                          onClick={() => toggleEmpleado(usuario.userId)}
+                          className="grid grid-cols-[3.5rem_1fr] items-center bg-slate-50 dark:bg-neutral-800/50 hover:bg-slate-100 dark:hover:bg-neutral-800 border-b border-slate-300 dark:border-neutral-700 cursor-pointer transition-colors select-none sticky left-0 z-10"
+                        >
+                          {/* Columna NO. con Chevron y Número */}
+                          <div className="py-2.5 px-1 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center gap-1">
+                            <motion.div
+                              initial={false}
+                              animate={{ rotate: empAbierto ? 90 : 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="shrink-0"
+                            >
+                              <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                            </motion.div>
+                            <span className="font-mono font-bold text-slate-500 dark:text-slate-400 text-xs">
+                              {String(userIdx + 1).padStart(2, '0')}
+                            </span>
+                          </div>
+
+                          {/* Contenido del Empleado */}
+                          <div className="px-3 sm:px-4 py-2 flex items-center justify-between gap-2 min-w-0">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <User className="w-4 h-4 text-blue-500 shrink-0" />
+                              <span className="font-bold text-xs text-slate-800 dark:text-slate-200 uppercase truncate">
+                                {usuario.nombre}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] shrink-0">
+                              {totalAusencias > 0 && (
+                                <span className="flex items-center gap-1 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800 font-medium">
+                                  <AlertCircle size={11} /> {totalAusencias} Inasistencia{totalAusencias !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {totalSinEntrada > 0 && (
+                                <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded border border-orange-200 dark:border-orange-800 font-medium">
+                                  <LogIn size={11} /> {totalSinEntrada} Sin Entrada
+                                </span>
+                              )}
+                              {totalSinSalida > 0 && (
+                                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800 font-medium">
+                                  <LogOut size={11} /> {totalSinSalida} Sin Salida
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Desplegable de Asistencias del Empleado */}
+                        <AnimatePresence initial={false}>
+                          {empAbierto && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: 'auto', opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.25 }}
+                              className="overflow-hidden"
+                            >
+                              <div>
+                                {/* Encabezados de Columna dentro del Empleado */}
+                                <div className="grid grid-cols-[3.5rem_1.8fr_2fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-slate-100/90 dark:bg-neutral-800/80 font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-300 dark:border-neutral-700">
+                                  <div className="px-2 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center">
+                                    No.
                                   </div>
-                                  <div className="w-1/4 flex-shrink-0 cursor-pointer">
-                                    <JustificacionBtn
-                                      justificacion={permiso}
-                                      asueto={asueto}
-                                      comision={comision}
-                                      fechaStr={registro.diaString}
-                                      tieneEntrada={!!registro.entrada}
-                                      tieneSalida={!!registro.salida}
-                                      notasEntrada={registro.entrada?.notas}
-                                      notasSalida={registro.salida?.notas}
-                                      marcaEntradaAt={registro.entrada?.created_at || registro.entrada?.fecha_hora || registro.multiple?.[0]?.created_at}
-                                      horarioEntrada={resolverHorarioEntrada(registro.userId, registro.diaString, permiso)}
-                                      cantidadMarcajes={esMultiple || totalRegistros > 2 ? totalRegistros : null}
-                                    />
+                                  <div className="px-3 sm:px-4 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                    Fecha
+                                  </div>
+                                  <div className="px-3 sm:px-4 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                    Marcaje
+                                  </div>
+                                  <div className="px-3 sm:px-4 py-2 flex items-center justify-center">
+                                    Justificación
                                   </div>
                                 </div>
-                              </td>
-                            </tr>
-                        </Fragment>
-                      );
-                    })
-                  ) : (
-                    registros.map((usuario: any) => {
-                      const todayStr = format(new Date(), 'yyyy-MM-dd');
-                      const totalAusencias = usuario.asistencias.filter((a: any) => {
-                        if (!a.esAusencia) return false;
-                        if (a.diaString > todayStr) return false; // excluir futuro
-                        // Excluir si tiene cualquier justificación
-                        const tieneComision = (comisionesMap[usuario.userId] || []).some(c => c.fecha_hora.startsWith(a.diaString));
-                        if (tieneComision) return false;
-                        const tienePermiso = (permisosMap[usuario.userId] || []).some(p =>
-                          permisoAplicaEnDia(p, a.diaString),
-                        );
-                        if (tienePermiso) return false;
-                        const tieneAsueto = !!resolverAsueto(usuario.userId, a.diaString);
-                        return !tieneAsueto;
-                      }).length;
-                      const totalSinEntrada = usuario.asistencias.filter((a: any) => !a.esAusencia && !a.entrada && (!a.multiple || a.multiple.length === 0)).length;
-                      const totalSinSalida = usuario.asistencias.filter((a: any) => !a.esAusencia && !a.salida && (!a.multiple || a.multiple.length === 0)).length;
 
-                        return (
-                        <Fragment key={usuario.userId}>
-                          {/* Encabezado usuario */}
-                          <tr>
-                            <td colSpan={3} className="bg-slate-50 dark:bg-neutral-900 py-1.5 px-4 font-medium text-slate-500 dark:text-slate-400 text-[11px] border-y border-slate-100 dark:border-neutral-800 tracking-wide">
-                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                <span className="uppercase text-slate-700 dark:text-slate-300 font-bold">{usuario.nombre}</span>
-                                <div className="flex items-center gap-3 text-[9px] md:text-sm">
-                                  {totalAusencias > 0 && (
-                                    <span className="flex items-center gap-1 text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-200 dark:border-red-800">
-                                      <AlertCircle size={10} /> {totalAusencias} Inasistencia{totalAusencias !== 1 ? 's' : ''}
-                                    </span>
-                                  )}
-                                  {totalSinEntrada > 0 && (
-                                    <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded border border-orange-200 dark:border-orange-800">
-                                      <LogIn size={10} /> {totalSinEntrada} Sin Entrada
-                                    </span>
-                                  )}
-                                  {totalSinSalida > 0 && (
-                                    <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800">
-                                      <LogOut size={10} /> {totalSinSalida} Sin Salida
-                                    </span>
-                                  )}
+                                <div className="divide-y divide-slate-300 dark:divide-neutral-700">
+                                  {usuario.asistencias.map((asistencia: any, idx: number) => {
+                                    const esMultiple = asistencia.multiple && asistencia.multiple.length > 0;
+                                    const totalRegistros = (asistencia.entrada ? 1 : 0) + (asistencia.salida ? 1 : 0) + (asistencia.multiple?.length || 0);
+                                    const esAusencia = !!asistencia.esAusencia && totalRegistros === 0;
+                                    const permiso = getPermisoParaDia(usuario.userId, asistencia.diaString);
+                                    const asueto = resolverAsueto(usuario.userId, asistencia.diaString);
+                                    const comision = !asueto && !permiso ? getComisionParaDia(usuario.userId, asistencia.diaString) : null;
+                                    if (isAfter(parseISO(asistencia.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
+
+                                    const ausenciaColor = esAusencia && !asueto
+                                      ? permiso
+                                        ? getJustificacionTextClass(permiso)
+                                        : comision ? COMISION_TEXT_CLASS : 'text-red-500'
+                                      : 'text-slate-700 dark:text-slate-300';
+                                    const sinRegistrosLabel = permiso
+                                      ? esTipoAcuerdo(permiso.tipo)
+                                        ? getCategoriaAcuerdoLabel(getCategoriaAcuerdo(permiso))
+                                        : getCategoriaLabel(getCategoriaPermiso(permiso))
+                                      : comision ? 'Comisión' : 'Sin registros';
+                                    const sinRegistrosColor = permiso
+                                      ? getJustificacionTextClass(permiso)
+                                      : comision ? COMISION_TEXT_CLASS : 'text-red-500';
+
+                                    return (
+                                      <div
+                                        key={`${usuario.userId}-${asistencia.diaString}-${idx}`}
+                                        className="grid grid-cols-[3.5rem_1.8fr_2fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-white dark:bg-neutral-900/80 hover:bg-slate-50/80 dark:hover:bg-neutral-800/60 transition-colors"
+                                      >
+                                        {/* No. Fecha */}
+                                        <div className="px-2 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-mono text-[10px]">
+                                          {String(idx + 1).padStart(2, '0')}
+                                        </div>
+
+                                        {/* Fecha */}
+                                        <div className={`px-3 sm:px-4 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center capitalize font-medium ${ausenciaColor}`}>
+                                          <span className="truncate">
+                                            {format(parseISO(asistencia.diaString + 'T00:00:00'), "eee d 'de' MMM", { locale: es })}
+                                          </span>
+                                          {esAusencia && !asueto && (
+                                            <span className={`ml-1 text-[9px] italic ${sinRegistrosColor} truncate`}>
+                                              — {sinRegistrosLabel}
+                                            </span>
+                                          )}
+                                          {asueto && <span className="ml-1 text-[9px] italic text-amber-600 truncate">— {asueto.nombre}</span>}
+                                        </div>
+
+                                        {/* Marcaje */}
+                                        <div className="px-3 sm:px-4 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                          <div
+                                            className={`w-full ${!esAusencia ? 'cursor-pointer' : ''}`}
+                                            onClick={() => !esAusencia && onAbrirModal(asistencia, usuario.nombre)}
+                                          >
+                                            {esAusencia ? (
+                                              renderEntSalVacio(permiso, asueto, comision)
+                                            ) : esMultiple || totalRegistros > 2 ? (
+                                              <div className="w-fit px-3 py-1 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[10px]">
+                                                Ver Asistencia ({totalRegistros})
+                                              </div>
+                                            ) : (
+                                              <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
+                                                <span className={MARCaje_FILA_CLASS}>
+                                                  <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
+                                                  {formatTime(asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora, permiso, asistencia.diaString, 'entrada', false, asistencia.entrada?.notas, undefined, usuario.userId)}
+                                                </span>
+                                                <span className="text-gray-300 dark:text-neutral-700">|</span>
+                                                <span className={MARCaje_FILA_CLASS}>
+                                                  <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
+                                                  {asistencia.salida
+                                                    ? formatTime(asistencia.salida?.created_at || asistencia.salida?.fecha_hora, permiso, asistencia.diaString, 'salida')
+                                                    : formatTime(null, permiso, asistencia.diaString, 'salida', !!comision)}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Justificación */}
+                                        <div className="px-2 py-1.5 flex items-center justify-center">
+                                          <JustificacionBtn
+                                            justificacion={permiso}
+                                            asueto={asueto}
+                                            comision={comision}
+                                            fechaStr={asistencia.diaString}
+                                            tieneEntrada={!!asistencia.entrada}
+                                            tieneSalida={!!asistencia.salida}
+                                            notasEntrada={asistencia.entrada?.notas}
+                                            notasSalida={asistencia.salida?.notas}
+                                            marcaEntradaAt={asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora || asistencia.multiple?.[0]?.created_at}
+                                            horarioEntrada={resolverHorarioEntrada(usuario.userId, asistencia.diaString, permiso)}
+                                            cantidadMarcajes={esMultiple || totalRegistros > 2 ? totalRegistros : null}
+                                          />
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
                                 </div>
                               </div>
-                            </td>
-                          </tr>
-                          {/* Filas de asistencia */}
-                          {usuario.asistencias.map((asistencia: any, idx: number) => {
-                             const esMultiple = asistencia.multiple && asistencia.multiple.length > 0;
-                             const totalRegistros = (asistencia.entrada ? 1 : 0) + (asistencia.salida ? 1 : 0) + (asistencia.multiple?.length || 0);
-                             const esAusencia = !!asistencia.esAusencia && totalRegistros === 0;
-                             const permiso = getPermisoParaDia(usuario.userId, asistencia.diaString);
-                             const asueto = resolverAsueto(usuario.userId, asistencia.diaString);
-                             const comision = !asueto && !permiso ? getComisionParaDia(usuario.userId, asistencia.diaString) : null;
-                             if (isAfter(parseISO(asistencia.diaString + 'T00:00:00'), startOfToday()) && totalRegistros === 0 && !asueto && !comision) return null;
-
-                            return (
-                              <tr
-                                key={`${usuario.userId}-${asistencia.diaString}-${idx}`}
-                                className="border-b border-slate-100 dark:border-neutral-800 transition-colors"
-                              >
-                                {/* Fecha */}
-                                {(() => {
-                                  const ausenciaColor = esAusencia && !asueto
-                                    ? permiso
-                                      ? getJustificacionTextClass(permiso)
-                                      : comision ? COMISION_TEXT_CLASS : 'text-red-500'
-                                    : 'text-slate-700 dark:text-slate-300';
-                                  const sinRegistrosLabel = permiso
-                                    ? esTipoAcuerdo(permiso.tipo)
-                                      ? getCategoriaAcuerdoLabel(getCategoriaAcuerdo(permiso))
-                                      : getCategoriaLabel(getCategoriaPermiso(permiso))
-                                    : comision ? 'Comisión' : 'Sin registros';
-                                  const sinRegistrosColor = permiso
-                                    ? getJustificacionTextClass(permiso)
-                                    : comision ? COMISION_TEXT_CLASS : 'text-red-500';
-                                  return (
-                                    <td className={`py-2 px-3 text-xs w-[45%] pl-8 capitalize font-medium ${ausenciaColor}`}>
-                                      {format(parseISO(asistencia.diaString + 'T00:00:00'), "eee d 'de' MMM", { locale: es })}
-                                      {esAusencia && !asueto && (
-                                        <span className={`ml-1 text-[9px] italic ${sinRegistrosColor}`}>
-                                          — {sinRegistrosLabel}
-                                        </span>
-                                      )}
-                                      {asueto && <span className="ml-1 text-[9px] italic text-amber-600">— {asueto.nombre}</span>}
-                                    </td>
-                                  );
-                                })()}
-
-                                {/* Asistencia + Permiso */}
-                                <td colSpan={2} className="py-2 px-3">
-                                  <div className="flex items-center gap-1">
-                                    <div
-                                      className={`w-3/4 ${!esAusencia ? 'cursor-pointer' : ''}`}
-                                      onClick={() => !esAusencia && onAbrirModal(asistencia, usuario.nombre)}
-                                    >
-                                      {esAusencia ? (
-                                        renderEntSalVacio(permiso, asueto, comision)
-                                      ) : esMultiple || totalRegistros > 2 ? (
-                                        <div className="w-fit px-4 py-1.5 rounded-md bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 font-semibold flex items-center justify-center text-center hover:bg-blue-100 dark:hover:bg-blue-900/40 text-[9px]">
-                                          Ver Asistencia ({totalRegistros})
-                                        </div>
-                                      ) : (
-                                        <div className="flex flex-row flex-wrap gap-x-2 gap-y-0.5 items-center">
-                                          <span className={MARCaje_FILA_CLASS}>
-                                            <span className={MARCaje_ETIQUETA_CLASS}>Ent: </span>
-                                            {formatTime(asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora, permiso, asistencia.diaString, 'entrada', false, asistencia.entrada?.notas, undefined, usuario.userId)}
-                                          </span>
-                                          <span className="text-gray-300 dark:text-neutral-700">|</span>
-                                          <span className={MARCaje_FILA_CLASS}>
-                                            <span className={MARCaje_ETIQUETA_CLASS}>Sal: </span>
-                                            {asistencia.salida
-                                              ? formatTime(asistencia.salida?.created_at || asistencia.salida?.fecha_hora, permiso, asistencia.diaString, 'salida')
-                                              : formatTime(null, permiso, asistencia.diaString, 'salida', !!comision)}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="w-1/4 flex-shrink-0 cursor-pointer">
-                                      <JustificacionBtn
-                                        justificacion={permiso}
-                                        asueto={asueto}
-                                        comision={comision}
-                                        fechaStr={asistencia.diaString}
-                                        tieneEntrada={!!asistencia.entrada}
-                                        tieneSalida={!!asistencia.salida}
-                                        notasEntrada={asistencia.entrada?.notas}
-                                        notasSalida={asistencia.salida?.notas}
-                                        marcaEntradaAt={asistencia.entrada?.created_at || asistencia.entrada?.fecha_hora || asistencia.multiple?.[0]?.created_at}
-                                        horarioEntrada={resolverHorarioEntrada(usuario.userId, asistencia.diaString, permiso)}
-                                        cantidadMarcajes={esMultiple || totalRegistros > 2 ? totalRegistros : null}
-                                      />
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </Fragment>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </td>
-          </motion.tr>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
-    </Fragment>
+    </div>
   );
 }

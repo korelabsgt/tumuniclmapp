@@ -621,6 +621,7 @@ export default function VerPermisos({ tipoVista }: Props) {
             ) : modoEstadisticas ? (
               <EstadisticasPermisos
                 permisos={permisosVisibles || []}
+                usuarios={usuariosParaModal || []}
                 searchTerm={searchTerm}
                 modoTipoPermiso={modoTipoPermiso}
                 fechaInicio={modoFiltro === "dia" ? fechaSeleccionada : fechaInicio}

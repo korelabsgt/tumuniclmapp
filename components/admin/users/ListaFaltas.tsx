@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { parseISO } from 'date-fns';
 import {
   SearchX,
-  ChevronDown,
+  ChevronRight,
   Calendar,
   User,
   FileText,
@@ -456,163 +456,193 @@ export default function ListaFaltas({ usuarios, rolActual }: Props) {
                   )}
                 </div>
 
-                <div className="w-full overflow-x-auto rounded-lg border border-gray-100 dark:border-neutral-800">
-                  {listaVisual.length === 0 ? (
-                    <div className="text-center py-12 px-4">
-                      <SearchX size={28} className="mx-auto text-slate-300 mb-3" />
-                      <p className="text-sm font-semibold text-slate-700 dark:text-gray-200">
-                        No se encontraron faltas
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
-                        Solo aparecen empleados que ya tienen faltas en el periodo.
-                      </p>
-                    </div>
-                  ) : (
-                    <table className="w-full text-xs">
-                      <thead className="bg-slate-50 dark:bg-neutral-900 text-left">
-                        <tr>
-                          <th className="py-3 px-3 text-[10px] xl:text-xs font-semibold text-slate-600 dark:text-slate-300">
-                            Empleado / Faltas
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {faltasAgrupadas.map((grupo) => {
+                <div className="w-full rounded-xl border border-slate-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto w-full">
+                    <div className="divide-y divide-slate-300 dark:divide-neutral-700 min-w-[700px] w-full">
+                      {listaVisual.length === 0 ? (
+                        <div className="text-center py-12 px-4">
+                          <SearchX size={28} className="mx-auto text-slate-300 mb-3" />
+                          <p className="text-sm font-semibold text-slate-700 dark:text-gray-200">
+                            No se encontraron faltas
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-gray-400 mt-1">
+                            Solo aparecen empleados que ya tienen faltas en el periodo.
+                          </p>
+                        </div>
+                      ) : (
+                        faltasAgrupadas.map((grupo) => {
                           const estaAbierta = oficinasAbiertas[grupo.key] || false;
                           return (
-                            <Fragment key={grupo.key}>
-                              <tr>
-                                <td colSpan={1} className="p-0">
-                                  <div
-                                    onClick={() => toggleOficina(grupo.key)}
-                                    className="bg-slate-100 dark:bg-neutral-800 hover:bg-slate-200 dark:hover:bg-neutral-700 cursor-pointer transition-colors py-2.5 px-4 text-sm font-semibold text-blue-600 dark:text-blue-400 flex items-center justify-between rounded-sm"
+                            <div key={grupo.key} className="border-b last:border-b-0 border-slate-200 dark:border-neutral-800">
+                              {/* Barra de Oficina */}
+                              <div
+                                onClick={() => toggleOficina(grupo.key)}
+                                className="bg-slate-100 dark:bg-neutral-800/90 hover:bg-slate-200/70 dark:hover:bg-neutral-800 px-4 py-2.5 flex items-center justify-between border-b border-slate-300 dark:border-neutral-700 cursor-pointer transition-colors select-none sticky left-0 z-10"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <motion.div
+                                    initial={false}
+                                    animate={{ rotate: estaAbierta ? 90 : 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="shrink-0"
                                   >
-                                    <span>
-                                      {grupo.titulo} ({grupo.total})
-                                    </span>
-                                    <motion.div
-                                      initial={false}
-                                      animate={{ rotate: estaAbierta ? 180 : 0 }}
-                                      transition={{ duration: 0.3 }}
-                                    >
-                                      <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                                    </motion.div>
-                                  </div>
-                                </td>
-                              </tr>
+                                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                                  </motion.div>
+                                  <span className="font-bold text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                                    {grupo.titulo}
+                                  </span>
+                                </div>
+                              </div>
+
                               <AnimatePresence initial={false}>
                                 {estaAbierta && (
-                                  <tr>
-                                    <td colSpan={1} className="p-0">
-                                      <motion.div
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ opacity: 1, height: 'auto' }}
-                                        exit={{ opacity: 0, height: 0 }}
-                                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                        style={{ overflow: 'hidden' }}
-                                      >
-                                        <div className="divide-y divide-slate-100 dark:divide-neutral-800">
-                                          {grupo.subgrupos.map((persona) => {
-                                            const empleadoAbierto = empleadosAbiertos[persona.key] || false;
-                                            return (
-                                            <div key={persona.key} className="px-3 py-2">
-                                              <div
-                                                onClick={() => toggleEmpleado(persona.key)}
-                                                className="flex items-center gap-2 px-2 py-2 rounded-md bg-slate-100/80 dark:bg-neutral-800/40 cursor-pointer hover:bg-slate-200/80 dark:hover:bg-neutral-700/50"
+                                  <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                    className="overflow-hidden divide-y divide-slate-200 dark:divide-neutral-800"
+                                  >
+                                    {grupo.subgrupos.map((persona, userIdx) => {
+                                      const empleadoAbierto = empleadosAbiertos[persona.key] || false;
+
+                                      return (
+                                        <div key={persona.key} className="border-b last:border-b-0 border-slate-200 dark:border-neutral-800">
+                                          {/* Fila del Empleado */}
+                                          <div
+                                            onClick={() => toggleEmpleado(persona.key)}
+                                            className="grid grid-cols-[3.5rem_1fr] items-center bg-slate-50 dark:bg-neutral-800/50 hover:bg-slate-100 dark:hover:bg-neutral-800 border-b border-slate-300 dark:border-neutral-700 cursor-pointer transition-colors select-none sticky left-0 z-10"
+                                          >
+                                            {/* Columna NO. con Chevron y Número a 2 dígitos */}
+                                            <div className="py-2.5 px-1 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center gap-1">
+                                              <motion.div
+                                                initial={false}
+                                                animate={{ rotate: empleadoAbierto ? 90 : 0 }}
+                                                transition={{ duration: 0.2 }}
+                                                className="shrink-0"
                                               >
-                                                <User size={14} className="text-slate-400 shrink-0" />
-                                                <span className="text-xs font-bold text-slate-700 dark:text-gray-200 truncate flex-1">
+                                                <ChevronRight className="w-3.5 h-3.5 text-slate-500" />
+                                              </motion.div>
+                                              <span className="font-mono font-bold text-slate-500 dark:text-slate-400 text-xs">
+                                                {String(userIdx + 1).padStart(2, '0')}
+                                              </span>
+                                            </div>
+
+                                            {/* Contenido del Empleado */}
+                                            <div className="px-3 sm:px-4 py-2 flex items-center justify-between gap-2 min-w-0">
+                                              <div className="flex items-center gap-2 flex-1 min-w-0">
+                                                <User className="w-4 h-4 text-blue-500 shrink-0" />
+                                                <span className="font-bold text-xs text-slate-800 dark:text-slate-200 uppercase truncate">
                                                   {persona.nombre}
                                                 </span>
-                                                <span className="shrink-0 text-[10px] font-semibold bg-slate-200 dark:bg-neutral-700 text-slate-600 dark:text-gray-300 px-2 py-0.5 rounded-full">
-                                                  {persona.faltas.length}
-                                                </span>
-                                                <motion.div
-                                                  initial={false}
-                                                  animate={{ rotate: empleadoAbierto ? 180 : 0 }}
-                                                  transition={{ duration: 0.3 }}
-                                                >
-                                                  <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400 shrink-0" />
-                                                </motion.div>
                                               </div>
-                                              <AnimatePresence initial={false}>
-                                                {empleadoAbierto && (
-                                                  <motion.div
-                                                    initial={{ opacity: 0, height: 0 }}
-                                                    animate={{ opacity: 1, height: 'auto' }}
-                                                    exit={{ opacity: 0, height: 0 }}
-                                                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                                                    style={{ overflow: 'hidden' }}
-                                                    className="mt-2 space-y-2 pl-2"
-                                                  >
-                                                {persona.faltas.map((falta) => {
-                                                  const escrita = esEscrita(falta.tipo);
-                                                  return (
-                                                    <button
-                                                      key={falta.id}
-                                                      type="button"
-                                                      onClick={() => {
-                                                        if (!canOpenModal) return;
-                                                        setFaltaModal({
-                                                          userId: persona.key,
-                                                          falta,
-                                                        });
-                                                      }}
-                                                      className={`relative w-full text-left p-3 rounded-lg border border-slate-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 overflow-hidden transition-colors ${
-                                                        canOpenModal
-                                                          ? 'hover:bg-slate-50 dark:hover:bg-neutral-800 cursor-pointer'
-                                                          : 'cursor-default'
-                                                      }`}
-                                                    >
-                                                      <div
-                                                        className={`absolute left-0 top-0 bottom-0 w-1 ${
-                                                          escrita ? 'bg-red-500' : 'bg-amber-500'
-                                                        }`}
-                                                      />
-                                                      <div className="pl-2">
-                                                        <span
-                                                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider mb-1.5 ${
-                                                            escrita
-                                                              ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                                                              : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                                            </div>
+                                          </div>
+
+                                          {/* Sub-tabla Desplegable de Faltas */}
+                                          <AnimatePresence initial={false}>
+                                            {empleadoAbierto && (
+                                              <motion.div
+                                                initial={{ opacity: 0, height: 0 }}
+                                                animate={{ opacity: 1, height: 'auto' }}
+                                                exit={{ opacity: 0, height: 0 }}
+                                                transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                                className="overflow-hidden"
+                                              >
+                                                <div>
+                                                  {/* Encabezados internos de la Falta */}
+                                                  <div className="grid grid-cols-[3.5rem_1.4fr_2fr_1.4fr] items-stretch text-[11px] sm:text-xs bg-slate-100/90 dark:bg-neutral-800/80 font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-300 dark:border-neutral-700">
+                                                    <div className="px-2 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center">
+                                                      No.
+                                                    </div>
+                                                    <div className="px-3 sm:px-4 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                                      Fecha
+                                                    </div>
+                                                    <div className="px-3 sm:px-4 py-2 border-r border-slate-300 dark:border-neutral-700 flex items-center">
+                                                      Descripción / Motivo
+                                                    </div>
+                                                    <div className="px-3 sm:px-4 py-2 flex items-center justify-center">
+                                                      Tipo de Falta
+                                                    </div>
+                                                  </div>
+
+                                                  <div className="divide-y divide-slate-300 dark:divide-neutral-700">
+                                                    {persona.faltas.map((falta, fIdx) => {
+                                                      const escrita = esEscrita(falta.tipo);
+
+                                                      return (
+                                                        <div
+                                                          key={falta.id}
+                                                          onClick={() => {
+                                                            if (!canOpenModal) return;
+                                                            setFaltaModal({
+                                                              userId: persona.key,
+                                                              falta,
+                                                            });
+                                                          }}
+                                                          className={`grid grid-cols-[3.5rem_1.4fr_2fr_1.4fr] items-stretch text-[11px] sm:text-xs bg-white dark:bg-neutral-900/80 transition-colors ${
+                                                            canOpenModal
+                                                              ? 'hover:bg-slate-50/80 dark:hover:bg-neutral-800/60 cursor-pointer'
+                                                              : 'cursor-default'
                                                           }`}
                                                         >
-                                                          {escrita ? (
-                                                            <FileText className="w-3 h-3 mr-1" />
-                                                          ) : (
-                                                            <MessageSquare className="w-3 h-3 mr-1" />
-                                                          )}
-                                                          Falta {falta.tipo}
-                                                        </span>
-                                                        <p className="text-sm font-semibold text-slate-800 dark:text-gray-100 whitespace-pre-wrap">
-                                                          {falta.descripcion}
-                                                        </p>
-                                                        <p className="mt-1 text-xs text-slate-500 dark:text-gray-400 flex items-center gap-1.5">
-                                                          <Calendar size={12} className="shrink-0" />
-                                                          {formatearFecha(falta.created_at)}
-                                                        </p>
-                                                      </div>
-                                                    </button>
-                                                  );
-                                                })}
-                                                  </motion.div>
-                                                )}
-                                              </AnimatePresence>
-                                            </div>
-                                            );
-                                          })}
+                                                          {/* No. */}
+                                                          <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-mono text-[10px]">
+                                                            {String(fIdx + 1).padStart(2, '0')}
+                                                          </div>
+
+                                                          {/* Fecha */}
+                                                          <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+                                                            <Calendar size={13} className="shrink-0 text-slate-400" />
+                                                            <span className="capitalize font-medium">
+                                                              {formatearFecha(falta.created_at)}
+                                                            </span>
+                                                          </div>
+
+                                                          {/* Descripción / Motivo */}
+                                                          <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-700 dark:text-slate-300 font-medium">
+                                                            <span className="line-clamp-2">
+                                                              {falta.descripcion}
+                                                            </span>
+                                                          </div>
+
+                                                          {/* Tipo de Falta */}
+                                                          <div className="px-2 py-2 flex items-center justify-center text-center">
+                                                            <span
+                                                              className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider ${
+                                                                escrita
+                                                                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800'
+                                                                  : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800'
+                                                              }`}
+                                                            >
+                                                              {escrita ? (
+                                                                <FileText className="w-3 h-3 mr-1" />
+                                                              ) : (
+                                                                <MessageSquare className="w-3 h-3 mr-1" />
+                                                              )}
+                                                              Falta {falta.tipo}
+                                                            </span>
+                                                          </div>
+                                                        </div>
+                                                      );
+                                                    })}
+                                                  </div>
+                                                </div>
+                                              </motion.div>
+                                            )}
+                                          </AnimatePresence>
                                         </div>
-                                      </motion.div>
-                                    </td>
-                                  </tr>
+                                      );
+                                    })}
+                                  </motion.div>
                                 )}
                               </AnimatePresence>
-                            </Fragment>
+                            </div>
                           );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

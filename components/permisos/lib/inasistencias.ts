@@ -85,13 +85,70 @@ export function useInasistenciasEmpleados(
         };
       }
 
-      // Consulta de marcajes en paralelo por usuario (usa el índice directo p_user_id en milisegundos)
+      // Consulta de marcajes completa y paginada (para no ser truncado por el límite de 1,000 filas de Supabase)
       const fetchMarcajesPorUsuario = async () => {
+        let pInicio = inicio;
+        let pFin = fin;
+
+        if (inicio && !inicio.includes("T")) {
+          const [yI, mI, dI] = inicio.split("-").map(Number);
+          pInicio = new Date(yI, mI - 1, dI, 0, 0, 0).toISOString();
+        }
+        if (fin && !fin.includes("T")) {
+          const [yF, mF, dF] = fin.split("-").map(Number);
+          pFin = new Date(yF, mF - 1, dF, 23, 59, 59, 999).toISOString();
+        }
+
+        try {
+          const allRegistros: { userId: string; created_at: string }[] = [];
+          let from = 0;
+          const step = 1000;
+          let hasMore = true;
+
+          while (hasMore) {
+            const { data: chunk, error } = await supabase
+              .from("registros_asistencia")
+              .select("user_id, created_at")
+              .in("user_id", targetUserIds)
+              .gte("created_at", pInicio)
+              .lte("created_at", pFin)
+              .range(from, from + step - 1);
+
+            if (error) {
+              console.warn("Error en consulta paginada registros_asistencia, fallback a RPC:", error);
+              break;
+            }
+
+            if (chunk && chunk.length > 0) {
+              for (let i = 0; i < chunk.length; i++) {
+                allRegistros.push({
+                  userId: chunk[i].user_id,
+                  created_at: chunk[i].created_at,
+                });
+              }
+              if (chunk.length < step) {
+                hasMore = false;
+              } else {
+                from += step;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+
+          if (allRegistros.length > 0 || !hasMore) {
+            return allRegistros;
+          }
+        } catch (err) {
+          console.warn("Fallback a RPC asistencias_usuario:", err);
+        }
+
+        // Respaldo por RPC si fuera necesario
         const promesas = targetUserIds.map(async (uid) => {
           const { data, error } = await supabase.rpc("asistencias_usuario", {
             p_user_id: uid,
-            p_fecha_inicio: inicio,
-            p_fecha_final: fin,
+            p_fecha_inicio: pInicio,
+            p_fecha_final: pFin,
           });
           if (error) {
             console.error(`Error al consultar asistencias de usuario ${uid}:`, error);
@@ -109,34 +166,64 @@ export function useInasistenciasEmpleados(
 
       // Consulta de permisos filtrada únicamente a los IDs de usuarios presentes
       const fetchPermisos = async () => {
-        const { data, error } = await supabase
-          .from("permisos_empleado")
-          .select("id, user_id, inicio, fin, tipo, estado, dias")
-          .in("user_id", targetUserIds)
-          .gte("fin", inicio)
-          .lte("inicio", `${fin}T23:59:59`);
+        let allData: any[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-        if (error) {
-          console.error("Error al consultar permisos_empleado:", error);
-          return [];
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from("permisos_empleado")
+            .select("id, user_id, inicio, fin, tipo, estado, dias")
+            .in("user_id", targetUserIds)
+            .gte("fin", inicio)
+            .lte("inicio", `${fin}T23:59:59`)
+            .range(from, from + step - 1);
+
+          if (error) {
+            console.error("Error al consultar permisos_empleado:", error);
+            break;
+          }
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+            if (data.length < step) hasMore = false;
+            else from += step;
+          } else {
+            hasMore = false;
+          }
         }
-        return data || [];
+        return allData;
       };
 
       // Consulta de comisiones del rango
       const fetchComisiones = async () => {
-        const { data, error } = await supabase
-          .from("comisiones")
-          .select("id, fecha_hora, aprobado, comision_asistentes(asistente_id)")
-          .eq("aprobado", true)
-          .gte("fecha_hora", inicio)
-          .lte("fecha_hora", `${fin}T23:59:59`);
+        let allData: any[] = [];
+        let from = 0;
+        const step = 1000;
+        let hasMore = true;
 
-        if (error) {
-          console.error("Error al consultar comisiones:", error);
-          return [];
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from("comisiones")
+            .select("id, fecha_hora, aprobado, comision_asistentes(asistente_id)")
+            .eq("aprobado", true)
+            .gte("fecha_hora", inicio)
+            .lte("fecha_hora", `${fin}T23:59:59`)
+            .range(from, from + step - 1);
+
+          if (error) {
+            console.error("Error al consultar comisiones:", error);
+            break;
+          }
+          if (data && data.length > 0) {
+            allData = allData.concat(data);
+            if (data.length < step) hasMore = false;
+            else from += step;
+          } else {
+            hasMore = false;
+          }
         }
-        return data || [];
+        return allData;
       };
 
       const [marcajesList, permisosList, comisionesList] = await Promise.all([

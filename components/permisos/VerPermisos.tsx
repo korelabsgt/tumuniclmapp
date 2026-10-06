@@ -188,6 +188,37 @@ export default function VerPermisos({ tipoVista }: Props) {
   const volverAModoMes = () =>
     aplicarModoMes({ setModoFiltro, setFechaInicio, setFechaFin });
 
+  // Transición automática al agotar pendientes
+  React.useEffect(() => {
+    if (loadingPermisos || modoFiltro !== "pendientes") return;
+
+    if (filtroEstado === "pendiente" && conteosPendientes.pendientes === 0) {
+      if (conteosPendientes.avalados > 0 && tipoVista === "gestion_rrhh") {
+        setFiltroEstado("aprobado_jefe");
+      } else {
+        setFiltroEstado("todos");
+        volverAModoMes();
+      }
+    } else if (
+      filtroEstado === "aprobado_jefe" &&
+      conteosPendientes.avalados === 0
+    ) {
+      if (conteosPendientes.pendientes > 0) {
+        setFiltroEstado("pendiente");
+      } else {
+        setFiltroEstado("todos");
+        volverAModoMes();
+      }
+    }
+  }, [
+    loadingPermisos,
+    modoFiltro,
+    filtroEstado,
+    conteosPendientes.pendientes,
+    conteosPendientes.avalados,
+    tipoVista,
+  ]);
+
   const handleVerPreview = (e: React.MouseEvent, permiso: PermisoEmpleado) => {
     e.stopPropagation();
     setPermisoParaImagen(permiso);

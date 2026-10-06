@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { CheckCircle2, XCircle, Loader2, X } from "lucide-react";
 import { PermisoEmpleado } from "../types";
-import { gestionarPermiso, PerfilUsuario, guardarPermiso } from "../acciones";
+import { gestionarPermiso, PerfilUsuario } from "../acciones";
 import { toast } from "react-toastify";
 import { Switch } from "@/components/ui/Switch";
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ export default function GestionEstadoPermisoModal({
   tipoVista,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [esRemunerado, setEsRemunerado] = useState(false);
+  const [esRemunerado, setEsRemunerado] = useState(true);
 
   React.useEffect(() => {
     if (permiso) {
@@ -46,18 +46,6 @@ export default function GestionEstadoPermisoModal({
   const handleAccion = async (accion: "aprobar" | "rechazar") => {
     setLoading(true);
     try {
-      if (esFaseRRHH && accion === "aprobar") {
-        const formUpdate = new FormData();
-        formUpdate.set("user_id", permiso.user_id);
-        formUpdate.set("tipo", permiso.tipo);
-        formUpdate.set("inicio", permiso.inicio);
-        formUpdate.set("fin", permiso.fin);
-        formUpdate.set("descripcion", permiso.descripcion || "");
-        formUpdate.set("remunerado", esRemunerado ? "on" : "off");
-        formUpdate.set("estado", permiso.estado);
-        await guardarPermiso(formUpdate, permiso.id);
-      }
-
       await gestionarPermiso(permiso.id, accion, permiso.user_id);
       toast.success(
         `Solicitud ${accion === "aprobar" ? "aprobada" : "rechazada"} correctamente`

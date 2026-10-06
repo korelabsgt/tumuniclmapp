@@ -49,6 +49,7 @@ export type DiaHorarioAcuerdo = {
 export type SemanaAcuerdoRegistro = {
   dias: DiaHorarioAcuerdo[];
   asignadoPor: string;
+  asignadoEl?: string;
 };
 
 export type DiasAcuerdoRecurrente = {
@@ -142,6 +143,10 @@ export function normalizarSemanaRegistro(
         typeof registro.asignadoPor === "string" && registro.asignadoPor.trim()
           ? registro.asignadoPor.trim()
           : "—",
+      asignadoEl:
+        typeof registro.asignadoEl === "string" && registro.asignadoEl.trim()
+          ? registro.asignadoEl.trim()
+          : undefined,
     };
   }
 
@@ -422,6 +427,7 @@ export function actualizarSemanaAcuerdo(
       [semanaKey]: {
         dias: ordenados,
         asignadoPor: asignadoPor.trim() || "—",
+        asignadoEl: new Date().toISOString(),
       },
     },
   };

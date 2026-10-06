@@ -78,7 +78,23 @@ export function useRegistrosPermisos(params: FiltroRegistrosParams) {
 export function useInvalidarPermisos() {
   const queryClient = useQueryClient();
   return async () => {
-    await queryClient.invalidateQueries({ queryKey: PERMISOS_QUERY_ROOT });
+    await queryClient.invalidateQueries({
+      queryKey: PERMISOS_QUERY_ROOT,
+      refetchType: "all",
+    });
+  };
+}
+
+export function useRemoverPermisoOptimista() {
+  const queryClient = useQueryClient();
+  return (id: string) => {
+    queryClient.setQueriesData<PermisoEmpleado[]>(
+      { queryKey: PERMISOS_QUERY_ROOT },
+      (oldData) => {
+        if (!Array.isArray(oldData)) return oldData;
+        return oldData.filter((item) => item.id !== id);
+      },
+    );
   };
 }
 

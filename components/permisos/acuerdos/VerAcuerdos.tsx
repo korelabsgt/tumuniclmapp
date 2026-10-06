@@ -20,9 +20,11 @@ import {
   LayoutGrid,
   MoreVertical,
   CreditCard,
+  FileSpreadsheet,
 } from "lucide-react";
 import PreviewAcuerdo from "./modals/PreviewAcuerdo";
 import ElegirDiasSemanaAcuerdo from "./modals/ElegirDiasSemanaAcuerdo";
+import ModalReporteDiasAcuerdo from "./modals/ModalReporteDiasAcuerdo";
 import TablaAcuerdosPrincipal from "./TablaAcuerdosPrincipal";
 import { AcuerdoEmpleado } from "./types";
 import { Button } from "@/components/ui/button";
@@ -106,6 +108,8 @@ export default function VerAcuerdos({ tipoVista }: Props) {
 
   const [modalPreviewAbierto, setModalPreviewAbierto] = React.useState(false);
   const [acuerdoParaImagen, setAcuerdoParaImagen] = React.useState<AcuerdoEmpleado | null>(null);
+  const [modalReporteAbierto, setModalReporteAbierto] = React.useState(false);
+  const [acuerdoParaReporte, setAcuerdoParaReporte] = React.useState<AcuerdoEmpleado | null>(null);
   const [modalElegirDiasAbierto, setModalElegirDiasAbierto] = React.useState(false);
   const [acuerdoParaElegirDias, setAcuerdoParaElegirDias] = React.useState<AcuerdoEmpleado | null>(null);
   const [modoVistaVisual, setModoVistaVisual] = React.useState<"tarjetas" | "tabla">("tabla");
@@ -122,6 +126,12 @@ export default function VerAcuerdos({ tipoVista }: Props) {
     e.stopPropagation();
     setAcuerdoParaImagen(acuerdo);
     setModalPreviewAbierto(true);
+  };
+
+  const handleVerReporte = (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => {
+    e.stopPropagation();
+    setAcuerdoParaReporte(acuerdo);
+    setModalReporteAbierto(true);
   };
 
   const handleElegirDiasSemana = (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => {
@@ -332,6 +342,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                 todosAbiertos={todosAbiertos}
                 perfilUsuario={perfilUsuario}
                 handleVerPreview={handleVerPreview}
+                handleVerReporte={handleVerReporte}
                 handleElegirDiasSemana={handleElegirDiasSemana}
                 handleClickFila={handleClickFila}
                 handleEliminarAcuerdo={handleEliminarAcuerdo}
@@ -403,6 +414,7 @@ export default function VerAcuerdos({ tipoVista }: Props) {
                                   tipoVista={tipoVista}
                                   perfilUsuario={perfilUsuario}
                                   handleVerPreview={handleVerPreview}
+                                  handleVerReporte={handleVerReporte}
                                   handleElegirDiasSemana={handleElegirDiasSemana}
                                   handleClickFila={handleClickFila}
                                   handleEliminarAcuerdo={handleEliminarAcuerdo}
@@ -445,6 +457,11 @@ export default function VerAcuerdos({ tipoVista }: Props) {
         acuerdo={acuerdoParaElegirDias}
         onSuccess={cargarDatos}
       />
+      <ModalReporteDiasAcuerdo
+        isOpen={modalReporteAbierto}
+        onClose={() => setModalReporteAbierto(false)}
+        acuerdo={acuerdoParaReporte}
+      />
     </>
   );
 }
@@ -454,6 +471,7 @@ function UsuarioGrupoAcuerdos({
   tipoVista,
   perfilUsuario,
   handleVerPreview,
+  handleVerReporte,
   handleElegirDiasSemana,
   handleClickFila,
   handleEliminarAcuerdo,
@@ -466,6 +484,7 @@ function UsuarioGrupoAcuerdos({
   tipoVista: TipoVistaAcuerdos;
   perfilUsuario: PerfilUsuario | null;
   handleVerPreview: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
+  handleVerReporte: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
   handleElegirDiasSemana: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
   handleClickFila: (a: AcuerdoEmpleado) => void;
   handleEliminarAcuerdo: (e: React.MouseEvent, id: string) => void;
@@ -672,6 +691,7 @@ function UsuarioGrupoAcuerdos({
                     puedeEditar={puedeEditar}
                     puedeEliminar={puedeEliminar}
                     handleVerPreview={handleVerPreview}
+                    handleVerReporte={handleVerReporte}
                     handleClickFila={handleClickFila}
                     handleEliminarAcuerdo={handleEliminarAcuerdo}
                   />
@@ -754,6 +774,7 @@ function AcuerdoTarjetaAccionesMenu({
   puedeEditar,
   puedeEliminar,
   handleVerPreview,
+  handleVerReporte,
   handleClickFila,
   handleEliminarAcuerdo,
 }: {
@@ -761,6 +782,7 @@ function AcuerdoTarjetaAccionesMenu({
   puedeEditar: boolean;
   puedeEliminar: boolean;
   handleVerPreview: (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => void;
+  handleVerReporte: (e: React.MouseEvent, acuerdo: AcuerdoEmpleado) => void;
   handleClickFila: (acuerdo: AcuerdoEmpleado) => void;
   handleEliminarAcuerdo: (e: React.MouseEvent, id: string) => void;
 }) {
@@ -796,6 +818,18 @@ function AcuerdoTarjetaAccionesMenu({
         >
           <Eye className="w-4 h-4 shrink-0 text-blue-500" />
           <span>Ver Vista Previa</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            setPopoverOpen(false);
+            handleVerReporte(e, acuerdo);
+          }}
+          className="flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 transition-colors w-full text-left cursor-pointer outline-none focus:outline-none"
+        >
+          <FileSpreadsheet className="w-4 h-4 shrink-0 text-emerald-500" />
+          <span>Ver Reportes</span>
         </button>
 
         {puedeEditar && (

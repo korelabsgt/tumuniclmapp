@@ -32,7 +32,7 @@ export const cargarLogoMunicipal = (): Promise<LogoMunicipal> =>
     img.src = `${window.location.origin}/images/logo-muni.png`;
   });
 
-const dibujarCintilloAzul = (doc: jsPDF, x: number, y: number, width: number) => {
+export const dibujarCintilloAzul = (doc: jsPDF, x: number, y: number, width: number) => {
   const barH = 1.2;
   const r = 0.35;
   const segW = width / 4;

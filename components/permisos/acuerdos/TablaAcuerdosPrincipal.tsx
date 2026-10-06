@@ -12,12 +12,16 @@ import {
   ChevronRight,
   MoreVertical,
   CalendarClock,
+  FileSpreadsheet,
   type LucideIcon,
 } from "lucide-react";
 import { AcuerdoEmpleado } from "./types";
 import { TipoVistaAcuerdos } from "./hooks";
 import { cn } from "@/lib/utils";
-import { formatearRangoTarjeta } from "@/components/permisos/lib/fechas";
+import {
+  formatearFechaTarjeta,
+  formatearRangoTarjeta,
+} from "@/components/permisos/lib/fechas";
 import {
   Popover,
   PopoverContent,
@@ -52,6 +56,7 @@ interface Props {
   todosAbiertos: boolean;
   perfilUsuario: PerfilUsuario | null;
   handleVerPreview: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
+  handleVerReporte: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
   handleElegirDiasSemana: (e: React.MouseEvent, a: AcuerdoEmpleado) => void;
   handleClickFila: (a: AcuerdoEmpleado) => void;
   handleEliminarAcuerdo: (e: React.MouseEvent, id: string) => void;
@@ -64,6 +69,7 @@ export default function TablaAcuerdosPrincipal({
   todosAbiertos,
   perfilUsuario,
   handleVerPreview,
+  handleVerReporte,
   handleElegirDiasSemana,
   handleClickFila,
   handleEliminarAcuerdo,
@@ -317,7 +323,9 @@ export default function TablaAcuerdosPrincipal({
                                         const fInicioStr = acuerdo.inicio || (acuerdo as any).fecha_inicio;
                                         const fFinStr = acuerdo.fin || (acuerdo as any).fecha_fin;
 
-                                        let textoRangoFechas = "—";
+                                        let textoFechaInicio = "—";
+                                        let textoFechaFin = "—";
+                                        let esMismoDia = false;
                                         let totalDiasCalc = 0;
 
                                         if (fInicioStr && fFinStr) {
@@ -334,18 +342,16 @@ export default function TablaAcuerdosPrincipal({
                                               finISO.getMonth(),
                                               finISO.getDate()
                                             );
-                                            const esMismo = isSameDay(fechaInicioObj, fechaFinObj);
-                                            textoRangoFechas = formatearRangoTarjeta(
-                                              fechaInicioObj,
-                                              fechaFinObj,
-                                              esMismo
-                                            );
+                                            esMismoDia = isSameDay(fechaInicioObj, fechaFinObj);
+                                            textoFechaInicio = formatearFechaTarjeta(fechaInicioObj);
+                                            textoFechaFin = formatearFechaTarjeta(fechaFinObj);
                                             const diffMs = Math.abs(
                                               fechaFinObj.getTime() - fechaInicioObj.getTime()
                                             );
                                             totalDiasCalc = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
                                           } catch {
-                                            textoRangoFechas = "—";
+                                            textoFechaInicio = "—";
+                                            textoFechaFin = "—";
                                           }
                                         }
 
@@ -412,9 +418,16 @@ export default function TablaAcuerdosPrincipal({
 
                                             {/* FECHAS / DURACIÓN */}
                                             <div className={cn(CELDA_BASE, "justify-center text-center flex-col gap-0.5")}>
-                                              <span className="font-semibold text-slate-700 dark:text-neutral-200 text-[10px]">
-                                                {textoRangoFechas}
-                                              </span>
+                                              {esMismoDia ? (
+                                                <span className="font-semibold text-slate-700 dark:text-neutral-200 text-[10px] whitespace-nowrap">
+                                                  {textoFechaInicio}
+                                                </span>
+                                              ) : (
+                                                <div className="flex flex-col items-center justify-center font-semibold text-slate-700 dark:text-neutral-200 text-[10px] leading-tight text-center">
+                                                  <span className="whitespace-nowrap">Del {textoFechaInicio}</span>
+                                                  <span className="whitespace-nowrap">Al {textoFechaFin}</span>
+                                                </div>
+                                              )}
                                               <span className="text-[9px] text-slate-400 dark:text-neutral-500">
                                                 {totalDiasCalc > 0
                                                   ? `${totalDiasCalc} día${totalDiasCalc !== 1 ? "s" : ""}`
@@ -499,6 +512,21 @@ export default function TablaAcuerdosPrincipal({
                                                     >
                                                       <Eye className="w-3.5 h-3.5 text-blue-500" />
                                                       <span>Ver Vista Previa</span>
+                                                    </button>
+
+                                                    <button
+                                                      type="button"
+                                                      onClick={(e) => {
+                                                        setPopoverAbierto((prev) => ({
+                                                          ...prev,
+                                                          [acuerdo.id]: false,
+                                                        }));
+                                                        handleVerReporte(e, acuerdo);
+                                                      }}
+                                                      className="flex items-center gap-2 w-full px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-neutral-200 hover:bg-slate-100 dark:hover:bg-neutral-800 rounded-md transition-colors text-left"
+                                                    >
+                                                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
+                                                      <span>Ver Reportes</span>
                                                     </button>
 
                                                     {tipoVista === "gestion_rrhh" && (

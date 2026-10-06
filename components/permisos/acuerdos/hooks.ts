@@ -17,6 +17,7 @@ import {
   useRegistrosPermisos,
   usePendientesPermisos,
   useInvalidarPermisos,
+  useRemoverPermisoOptimista,
   EMPTY_PERMISOS,
   type ModoFiltroPermisos,
 } from "@/components/permisos/lib/hooks-queries";
@@ -80,9 +81,10 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
     necesitaConteosPendientes && modoFiltro !== "pendientes",
   );
 
+  const removerPermisoOptimista = useRemoverPermisoOptimista();
   const invalidarPermisos = useInvalidarPermisos();
-  const cargarDatos = useCallback(() => {
-    void invalidarPermisos();
+  const cargarDatos = useCallback(async () => {
+    await invalidarPermisos();
   }, [invalidarPermisos]);
 
   const registrosRaw = useMemo(() => {
@@ -352,9 +354,12 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
     });
 
     if (result.isConfirmed) {
+      // Remover optimista inmediatamente de la UI
+      removerPermisoOptimista(id);
+
       try {
         await eliminarPermiso(id);
-        await cargarDatos();
+        void invalidarPermisos();
         Swal.fire({
           title: "¡Eliminado!",
           text: "El acuerdo ha sido eliminado correctamente.",
@@ -367,6 +372,7 @@ export const useAcuerdos = (tipoVista: TipoVistaAcuerdos) => {
             : "#000",
         });
       } catch {
+        void invalidarPermisos();
         Swal.fire({
           title: "Error",
           text: "No se pudo eliminar el acuerdo.",

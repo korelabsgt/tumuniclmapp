@@ -224,6 +224,47 @@ export const getJefesList = async () => {
       jefeNombre: u.nombre
     }));
 };
+export const marcarSolicitudJefeComoLeida = async (solicitudId: string) => {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) return { success: false, error: 'Usuario no autenticado.' };
+
+  const { data: currentData, error: fetchError } = await supabase
+    .from('solicitudes_municipales')
+    .select('checklists')
+    .eq('id', solicitudId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error al obtener solicitud para marcar como leída:', fetchError);
+    return { success: false, error: fetchError.message };
+  }
+
+  const existingChecklists = (currentData?.checklists && typeof currentData.checklists === 'object')
+    ? currentData.checklists
+    : {};
+
+  const updatedChecklists = {
+    ...existingChecklists,
+    leido_at: new Date().toISOString(),
+    leido_por_uid: user.id,
+  };
+
+  const { error: updateError } = await supabase
+    .from('solicitudes_municipales')
+    .update({ checklists: updatedChecklists })
+    .eq('id', solicitudId);
+
+  if (updateError) {
+    console.error('Error al marcar solicitud como leída:', updateError);
+    return { success: false, error: updateError.message };
+  }
+
+  revalidatePath('/solicitudes/jefes');
+  return { success: true };
+};
+
 export const obtenerSolicitudPendienteJefe = async () => {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -236,23 +277,26 @@ export const obtenerSolicitudPendienteJefe = async () => {
     .eq('tipo_solicitud', 'oficinas')
     .eq('estado', 'pendiente')
     .eq('asignado_a_uid', user.id)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle();
+    .order('created_at', { ascending: true });
 
   if (error) {
     console.error('Error fetching pending solicitud de jefe:', error);
     return { success: false, data: null };
   }
 
-  if (!data) return { success: true, data: null };
+  // Filtrar las que aún no hayan sido leídas/enteradas (checklists.leido_at)
+  const solicitudNoLeida = (data || []).find((item: any) => {
+    return !item.checklists?.leido_at;
+  });
+
+  if (!solicitudNoLeida) return { success: true, data: null };
 
   let creadorNombre = 'Desconocido';
-  if (data.solicitante_uid) {
+  if (solicitudNoLeida.solicitante_uid) {
     const { data: creadorData } = await supabase
       .from('info_usuario')
       .select('nombre')
-      .eq('user_id', data.solicitante_uid)
+      .eq('user_id', solicitudNoLeida.solicitante_uid)
       .single();
     if (creadorData) {
       creadorNombre = creadorData.nombre;
@@ -262,7 +306,7 @@ export const obtenerSolicitudPendienteJefe = async () => {
   return {
     success: true,
     data: {
-      ...data,
+      ...solicitudNoLeida,
       creador_nombre: creadorNombre,
     },
   };

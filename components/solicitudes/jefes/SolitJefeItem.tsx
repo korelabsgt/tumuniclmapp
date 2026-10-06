@@ -421,10 +421,15 @@ export default function SolitJefeItem({
                                                 ${sol.estado === 'rechazado' ? 'bg-red-500 ring-red-100 dark:ring-red-900/40' : ''}
                                                 ${sol.estado === 'pendiente' ? 'bg-amber-500 ring-amber-100 dark:ring-amber-900/40' : ''}
                                             `}></div>
-                                            <div>
+                                             <div>
                                                 <h6 className="font-bold text-[12px] text-slate-800 dark:text-slate-100 uppercase tracking-wide">
                                                     {sol.estado === 'completado' ? 'Solicitud Confirmada' : sol.estado === 'rechazado' ? 'Solicitud Rechazada' : 'Solicitud Pendiente'}
                                                 </h6>
+                                                {sol.estado === 'pendiente' && sol.checklists?.leido_at && (
+                                                    <div className="text-[11px] text-slate-400 dark:text-slate-500 space-y-0.5 mt-1">
+                                                        <p>Leído: el <span className="font-semibold text-slate-600 dark:text-slate-300">{getSimpleDate(sol.checklists.leido_at)}</span> a las <span className="font-semibold text-slate-600 dark:text-slate-300">{getSimpleTime(sol.checklists.leido_at)}</span></p>
+                                                    </div>
+                                                )}
                                                 {sol.fecha_terminado && (
                                                     <div className="text-[11px] text-slate-400 dark:text-slate-500 space-y-0.5 mt-1">
                                                         {sol.estado === 'completado' && sol.asignado && (

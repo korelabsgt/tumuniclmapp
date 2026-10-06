@@ -5,6 +5,7 @@ import {
   getSolicitudesJefes,
   crearSolicitudJefe,
   actualizarEstadoSolicitudJefe,
+  marcarSolicitudJefeComoLeida,
   editarSolicitudJefe,
   eliminarSolicitudJefe,
   getJefesList,
@@ -73,6 +74,11 @@ export const useSolicitudJefeMutations = () => {
     onSuccess: invalidarLista,
   });
 
+  const marcarComoLeida = useMutation({
+    mutationFn: (solicitudId: string) => marcarSolicitudJefeComoLeida(solicitudId),
+    onSuccess: invalidarLista,
+  });
+
   const editar = useMutation({
     mutationFn: ({ solicitudId, values }: { solicitudId: string; values: Partial<CrearSolicitudJefeValues> }) =>
       editarSolicitudJefe(solicitudId, values),
@@ -84,7 +90,7 @@ export const useSolicitudJefeMutations = () => {
     onSuccess: invalidarLista,
   });
 
-  return { crear, actualizarEstado, editar, eliminar };
+  return { crear, actualizarEstado, marcarComoLeida, editar, eliminar };
 };
 
 export function useSolicitudPendienteJefe() {

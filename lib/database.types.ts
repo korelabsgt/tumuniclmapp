@@ -406,32 +406,110 @@ export type Database = {
         }
         Relationships: []
       }
+      contrato: {
+        Row: {
+          created_at: string | null
+          dependencia_id: string | null
+          fecha_fin: string | null
+          fecha_inicio: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          dependencia_id?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          dependencia_id?: string | null
+          fecha_fin?: string | null
+          fecha_inicio?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrato_dependencia_id_fkey"
+            columns: ["dependencia_id"]
+            isOneToOne: false
+            referencedRelation: "dependencias"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dependencias: {
         Row: {
+          anio: number | null
+          antiguedad: number | null
+          bonificacion: number | null
           descripcion: string | null
+          dietas: number | null
           es_puesto: boolean | null
           id: string
+          isr: number | null
+          jefe_id: string | null
           no: number | null
           nombre: string
           parent_id: string | null
+          plan_prestaciones: boolean | null
+          prima: number | null
+          renglon: string | null
+          representacion: number | null
+          salario: number | null
+          unidades_tiempo: number | null
         }
         Insert: {
+          anio?: number | null
+          antiguedad?: number | null
+          bonificacion?: number | null
           descripcion?: string | null
+          dietas?: number | null
           es_puesto?: boolean | null
           id?: string
+          isr?: number | null
+          jefe_id?: string | null
           no?: number | null
           nombre: string
           parent_id?: string | null
+          plan_prestaciones?: boolean | null
+          prima?: number | null
+          renglon?: string | null
+          representacion?: number | null
+          salario?: number | null
+          unidades_tiempo?: number | null
         }
         Update: {
+          anio?: number | null
+          antiguedad?: number | null
+          bonificacion?: number | null
           descripcion?: string | null
+          dietas?: number | null
           es_puesto?: boolean | null
           id?: string
+          isr?: number | null
+          jefe_id?: string | null
           no?: number | null
           nombre?: string
           parent_id?: string | null
+          plan_prestaciones?: boolean | null
+          prima?: number | null
+          renglon?: string | null
+          representacion?: number | null
+          salario?: number | null
+          unidades_tiempo?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "dependencias_jefe_id_fkey"
+            columns: ["jefe_id"]
+            isOneToOne: false
+            referencedRelation: "info_usuario"
+            referencedColumns: ["user_id"]
+          },
           {
             foreignKeyName: "dependencias_parent_id_fkey"
             columns: ["parent_id"]

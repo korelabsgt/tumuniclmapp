@@ -1,36 +1,48 @@
 "use client";
 
-import React, { useState, useMemo, useRef, useEffect } from "react";
-import { toBlob } from "html-to-image";
+import { Button } from "@/components/ui/button";
+import { CintilloInstitucional } from "@/components/ui/cintillo-institucional";
+import { Input } from "@/components/ui/input";
+import { useDependencias } from "@/hooks/dependencias/useDependencias";
+import useUserData from "@/hooks/sesion/useUserData";
+import {
+  InfoUsuario,
+  useInfoUsuario,
+  useInfoUsuarios,
+} from "@/hooks/usuarios/useInfoUsuario";
+import { useListaUsuarios } from "@/hooks/usuarios/useListarUsuarios";
+import { Database } from "@/lib/database.types";
+import { Usuario } from "@/lib/usuarios/esquemas";
+import { createClient } from "@/utils/supabase/client";
 import { motion } from "framer-motion";
+import { toBlob } from "html-to-image";
+import {
+  ArrowRight,
+  Calendar,
+  ChevronsUpDown,
+  Copy,
+  Download,
+  FolderTree,
+  PlusCircle,
+  Search,
+} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import Swal from "sweetalert2";
+import { DependenciaNode } from "./DependenciaItem";
+import DependenciaList from "./DependenciaList";
+import DescriptionModal from "./DescriptionModal";
+import ContratoForm, { ContratoFormData } from "./forms/Contrato";
 import DependenciaForm, { type FormData } from "./forms/Dependencia";
 import EmpleadoForm from "./forms/Empleado";
-import InfoPersonalForm, { InfoPersonalFormData } from "./forms/InfoPersonal";
-import ContratoForm, { ContratoFormData } from "./forms/Contrato";
 import InfoFinancieraForm, {
   InfoFinancieraFormData,
 } from "./forms/InfoFinanciera";
+import InfoPersonalForm, { InfoPersonalFormData } from "./forms/InfoPersonal";
+import { copiarDependenciasAnioPaso } from "./lib/actions";
+import { useAsignacionesPuestos } from "./lib/hooks";
 import TarjetaEmpleado from "./TarjetaEmpleado";
-import DescriptionModal from "./DescriptionModal";
-import DependenciaList from "./DependenciaList";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PlusCircle, Search, Download, ChevronsUpDown } from "lucide-react";
-import Swal from "sweetalert2";
-import { createClient } from "@/utils/supabase/client";
-import { Database } from "@/lib/database.types";
-import { useDependencias } from "@/hooks/dependencias/useDependencias";
-import { useListaUsuarios } from "@/hooks/usuarios/useListarUsuarios";
-import {
-  useInfoUsuario,
-  useInfoUsuarios,
-  InfoUsuario,
-} from "@/hooks/usuarios/useInfoUsuario";
-import useUserData from "@/hooks/sesion/useUserData";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { DependenciaNode } from "./DependenciaItem";
-import { Usuario } from "@/lib/usuarios/esquemas";
 
 type BaseDependencia = Database["public"]["Tables"]["dependencias"]["Row"];
 export type Dependencia = BaseDependencia & {
@@ -46,6 +58,7 @@ function buildDependencyTree(
   dependencias: Dependencia[],
   infoUsuarios: InfoUsuario[],
   usuarios: Usuario[],
+  asignacionesExtra: { user_id: string; dependencia_id: string }[] = [],
 ): DependenciaNode[] {
   const userMap = new Map(usuarios.map((u) => [u.id, u]));
   const nodeMap = new Map<string, DependenciaNode>();
@@ -75,12 +88,22 @@ function buildDependencyTree(
     }
   });
 
+  const puestosConEmpleado = new Set<string>();
+  const colgarEmpleado = (dependenciaId: string, userId: string) => {
+    if (puestosConEmpleado.has(dependenciaId)) return;
+    const parentNode = nodeMap.get(dependenciaId);
+    const usuario = userMap.get(userId);
+    if (!parentNode || !usuario) return;
+    parentNode.children.push({ isEmployee: true, usuario: usuario as Usuario });
+    puestosConEmpleado.add(dependenciaId);
+  };
+
   infoUsuarios.forEach((info: InfoUsuario) => {
-    const parentNode = nodeMap.get(info.dependencia_id as string);
-    const usuario = userMap.get(info.user_id);
-    if (parentNode && usuario) {
-      parentNode.children.push({ isEmployee: true, usuario: usuario as any });
-    }
+    if (!info.dependencia_id) return;
+    colgarEmpleado(info.dependencia_id, info.user_id);
+  });
+  asignacionesExtra.forEach((asignacion) => {
+    colgarEmpleado(asignacion.dependencia_id, asignacion.user_id);
   });
 
   nodeMap.forEach((node) => {
@@ -214,6 +237,64 @@ const getSelectableDependencies = (
   return result;
 };
 
+function mostrarErrorCopia(mensaje: string) {
+  return Swal.fire({
+    icon: "error",
+    title: "No se pudo duplicar",
+    text: mensaje,
+    confirmButtonText: "Entendido",
+  });
+}
+
+function mostrarExitoCopia(mensaje: string) {
+  return Swal.fire({
+    icon: "success",
+    title: "Organización duplicada",
+    text: mensaje,
+    confirmButtonText: "Entendido",
+  });
+}
+
+function AnilloProgreso({ valor }: { valor: number }) {
+  const pct = Math.max(0, Math.min(100, valor));
+  const radio = 38;
+  const circunferencia = 2 * Math.PI * radio;
+  const offset = circunferencia - (pct / 100) * circunferencia;
+  return (
+    <div className="relative mx-auto h-28 w-28">
+      <svg className="h-28 w-28 -rotate-90" viewBox="0 0 96 96" aria-hidden>
+        <circle
+          cx="48"
+          cy="48"
+          r={radio}
+          fill="none"
+          className="text-zinc-200 dark:text-zinc-700"
+          stroke="currentColor"
+          strokeWidth="8"
+        />
+        <circle
+          cx="48"
+          cy="48"
+          r={radio}
+          fill="none"
+          className="text-[#0066cc] dark:text-blue-400"
+          stroke="currentColor"
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={circunferencia}
+          strokeDashoffset={offset}
+          style={{ transition: "stroke-dashoffset 0.45s ease" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-2xl font-bold tabular-nums text-[#0066cc] dark:text-blue-400">
+          {Math.round(pct)}%
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function Ver() {
   const { rol } = useUserData();
   const {
@@ -271,8 +352,77 @@ export default function Ver() {
     title: "",
     description: "",
   });
+  const [copiandoAnio, setCopiandoAnio] = useState(false);
+  const [progresoCopia, setProgresoCopia] = useState({
+    porcentaje: 0,
+    mensaje: "",
+  });
   const hasPermission = rol === "SUPER" || rol === "SECRETARIO";
   const [canShowActions, setCanShowActions] = useState(false);
+  const anioActual = new Date().getFullYear();
+  const [anioSeleccionado, setAnioSeleccionado] = useState(anioActual);
+  const anioInicializado = useRef(false);
+
+  const aniosDisponibles = useMemo(() => {
+    const existentes = [
+      ...new Set(dependencias.map((d) => d.anio ?? anioActual)),
+    ].sort((a, b) => b - a);
+    const base = existentes.length > 0 ? existentes : [anioActual];
+    const extra = Math.max(...base) + 1;
+    return [extra, ...base.filter((a) => a !== extra)];
+  }, [dependencias, anioActual]);
+
+  const dependenciasDelAnio = useMemo(() => {
+    return dependencias.filter(
+      (d) => (d.anio ?? anioActual) === anioSeleccionado,
+    );
+  }, [dependencias, anioSeleccionado, anioActual]);
+
+  const idsDependenciasDelAnio = useMemo(
+    () => dependenciasDelAnio.map((d) => d.id),
+    [dependenciasDelAnio],
+  );
+  const { asignaciones: asignacionesPuestos, mutate: mutateAsignaciones } =
+    useAsignacionesPuestos(idsDependenciasDelAnio);
+
+  const anioOrigenCopia = useMemo(() => {
+    const anteriores = [
+      ...new Set(dependencias.map((d) => d.anio ?? anioActual)),
+    ]
+      .filter((anio) => anio < anioSeleccionado)
+      .sort((a, b) => b - a);
+    return anteriores[0] ?? null;
+  }, [dependencias, anioSeleccionado, anioActual]);
+
+  useEffect(() => {
+    if (aniosDisponibles.length === 0) return;
+    if (aniosDisponibles.includes(anioSeleccionado)) return;
+    const existentes = aniosDisponibles.slice(1);
+    setAnioSeleccionado(existentes[0] ?? aniosDisponibles[0]);
+  }, [aniosDisponibles, anioSeleccionado]);
+
+  useEffect(() => {
+    if (anioInicializado.current || loadingDependencias) return;
+    anioInicializado.current = true;
+    const tieneAnioActual = dependencias.some(
+      (d) => (d.anio ?? anioActual) === anioActual,
+    );
+    if (tieneAnioActual) {
+      setAnioSeleccionado(anioActual);
+      return;
+    }
+    const existentes = dependencias
+      .map((d) => d.anio)
+      .filter((a): a is number => typeof a === "number");
+    if (existentes.length > 0) {
+      setAnioSeleccionado(Math.max(...existentes));
+    }
+  }, [dependencias, loadingDependencias, anioActual]);
+
+  useEffect(() => {
+    setOpenNodeIds([]);
+    setAreAllOpen(false);
+  }, [anioSeleccionado]);
 
   useEffect(() => {
     setCanShowActions(true);
@@ -342,7 +492,7 @@ export default function Ver() {
       if (blob) {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
-        link.download = "organigrama-municipal.png";
+        link.download = `organigrama-municipal-${anioSeleccionado}.png`;
         link.href = url;
         link.click();
         URL.revokeObjectURL(url);
@@ -367,6 +517,110 @@ export default function Ver() {
     }
     setAreAllOpen(!areAllOpen);
   };
+
+  const handleCopiarAnio = async () => {
+    if (!anioOrigenCopia || copiandoAnio) return;
+    const result = await Swal.fire({
+      title: `Duplicar organización de ${anioOrigenCopia}?`,
+      text: `Se duplicarán todas las dependencias, puestos y personas asignadas de ${anioOrigenCopia} en ${anioSeleccionado}.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Sí, copiar",
+      cancelButtonText: "Cancelar",
+    });
+    if (!result.isConfirmed) return;
+    setCopiandoAnio(true);
+    setProgresoCopia({ porcentaje: 4, mensaje: "Preparando copia..." });
+    try {
+      const prep = await copiarDependenciasAnioPaso({
+        anioOrigen: anioOrigenCopia,
+        anioDestino: anioSeleccionado,
+        fase: "preparar",
+      });
+      if (!prep.ok) {
+        await mostrarErrorCopia(prep.message);
+        return;
+      }
+      if (prep.fase !== "preparar") {
+        await mostrarErrorCopia(
+          "La preparación de la copia no se completó correctamente.",
+        );
+        return;
+      }
+      if (prep.niveles === 0) {
+        setProgresoCopia({
+          porcentaje: 40,
+          mensaje: "La estructura ya existe. Copiando personas...",
+        });
+      } else {
+        setProgresoCopia({
+          porcentaje: 10,
+          mensaje: `Copiando ${prep.total} dependencias...`,
+        });
+      }
+      const totalNiveles = Math.max(prep.niveles, 1);
+      for (let i = 0; i < prep.niveles; i++) {
+        const paso = await copiarDependenciasAnioPaso({
+          anioOrigen: anioOrigenCopia,
+          anioDestino: anioSeleccionado,
+          fase: "estructura",
+          nivel: i,
+          mapaIds: prep.mapaIds,
+        });
+        if (!paso.ok) {
+          await mostrarErrorCopia(paso.message);
+          return;
+        }
+        const porcentaje = 10 + Math.round(((i + 1) / totalNiveles) * 70);
+        setProgresoCopia({
+          porcentaje,
+          mensaje: `Copiando estructura ${i + 1} de ${prep.niveles}...`,
+        });
+      }
+      setProgresoCopia({
+        porcentaje: 88,
+        mensaje: "Copiando personas asignadas...",
+      });
+      const fin = await copiarDependenciasAnioPaso({
+        anioOrigen: anioOrigenCopia,
+        anioDestino: anioSeleccionado,
+        fase: "asignaciones",
+        mapaIds: prep.mapaIds,
+      });
+      if (!fin.ok) {
+        if (fin.code === "ERROR_ASIGNACIONES") {
+          await Promise.all([mutateDependencias(), mutateAsignaciones()]);
+        }
+        await mostrarErrorCopia(fin.message);
+        return;
+      }
+      if (fin.fase !== "asignaciones") {
+        await mostrarErrorCopia(
+          "La copia de personas asignadas no se completó correctamente.",
+        );
+        return;
+      }
+      setProgresoCopia({
+        porcentaje: 100,
+        mensaje: "Organización copiada",
+      });
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      await Promise.all([mutateDependencias(), mutateAsignaciones()]);
+      await mostrarExitoCopia(
+        fin.asignadas > 0
+          ? `Se copiaron ${fin.copiadas} dependencias y ${fin.asignadas} asignaciones a ${anioSeleccionado}.`
+          : `Se copiaron ${fin.copiadas} dependencias a ${anioSeleccionado}.`,
+      );
+    } catch {
+      await mostrarErrorCopia(
+        "Ocurrió un problema al duplicar la organización. Intente de nuevo.",
+      );
+    } finally {
+      setCopiandoAnio(false);
+      setProgresoCopia({ porcentaje: 0, mensaje: "" });
+    }
+  };
+
   const handleOpenForm = (dependencia: DependenciaNode | null = null) => {
     setEditingDependencia(dependencia);
     setPreselectedParentId(null);
@@ -418,7 +672,7 @@ export default function Ver() {
       // 1. Encontrar quién es el empleado asignado actualmente a este puesto
       // infoUsuarios ya está disponible en este componente
       const empleadoAsignado = infoUsuarios?.find(
-        (info: InfoUsuario) => info.dependencia_id === dependenciaFinanciera.id
+        (info: InfoUsuario) => info.dependencia_id === dependenciaFinanciera.id,
       );
 
       if (empleadoAsignado) {
@@ -442,18 +696,19 @@ export default function Ver() {
             .eq("id", contratosExistentes[0].id);
         } else {
           // No existe, creamos uno nuevo
-          await supabase
-            .from("contrato")
-            .insert({
-              user_id: empleadoAsignado.user_id,
-              dependencia_id: dependenciaFinanciera.id,
-              fecha_inicio: data.fecha_inicio,
-              fecha_fin: data.fecha_fin || null,
-            });
+          await supabase.from("contrato").insert({
+            user_id: empleadoAsignado.user_id,
+            dependencia_id: dependenciaFinanciera.id,
+            fecha_inicio: data.fecha_inicio,
+            fecha_fin: data.fecha_fin || null,
+          });
         }
       } else {
-         // Podrías mostrar una alerta si intentan asignar contrato pero el puesto está vacío
-         toast.warn("Fechas de contrato ignoradas: no hay un empleado asignado a este puesto aún.", { autoClose: 6000 });
+        // Podrías mostrar una alerta si intentan asignar contrato pero el puesto está vacío
+        toast.warn(
+          "Fechas de contrato ignoradas: no hay un empleado asignado a este puesto aún.",
+          { autoClose: 6000 },
+        );
       }
     }
 
@@ -496,19 +751,17 @@ export default function Ver() {
         error = updateError;
       }
     } else {
-      let query = supabase
-        .from("dependencias")
-        .select("no", { count: "exact" });
       const parentId = formData.parent_id ?? null;
-      if (parentId) {
-        query = query.eq("parent_id", parentId);
-      } else {
-        query = query.is("parent_id", null);
-      }
-      const { count } = await query;
+      const siblings = dependenciasDelAnio.filter(
+        (d) => (d.parent_id ?? null) === parentId,
+      );
       const { error: insertError } = await supabase
         .from("dependencias")
-        .insert({ ...dataToSubmit, no: (count || 0) + 1 });
+        .insert({
+          ...dataToSubmit,
+          no: siblings.length + 1,
+          anio: anioSeleccionado,
+        });
       error = insertError;
     }
     if (error) {
@@ -599,16 +852,51 @@ export default function Ver() {
     if (assignError) {
       toast.error("Error al asignar el empleado.");
     } else {
+      const { data: contratoExistente } = await supabase
+        .from("contrato")
+        .select("id")
+        .eq("user_id", newUserId)
+        .eq("dependencia_id", dependenciaId)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (!contratoExistente || contratoExistente.length === 0) {
+        const dependenciaAsignada = findNodeById(finalTree, dependenciaId);
+        const es011 = (dependenciaAsignada?.renglon ?? "").trim().startsWith("011");
+        let fechaInicio = `${anioSeleccionado}-01-01`;
+        let fechaFin: string | undefined = `${anioSeleccionado}-12-31`;
+        if (es011) {
+          const { data: contratoPrevio } = await supabase
+            .from("contrato")
+            .select("fecha_inicio, fecha_fin")
+            .eq("user_id", newUserId)
+            .not("fecha_inicio", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(1);
+          const inicioPrevio = contratoPrevio?.[0]?.fecha_inicio?.split("T")[0];
+          if (inicioPrevio) fechaInicio = inicioPrevio;
+          fechaFin = undefined;
+        }
+        await supabase.from("contrato").insert({
+          user_id: newUserId,
+          dependencia_id: dependenciaId,
+          fecha_inicio: fechaInicio,
+          ...(fechaFin ? { fecha_fin: fechaFin } : {}),
+        });
+      }
       const usuario = usuarios.find((u) => u.id === newUserId);
       const dependencia = findNodeById(finalTree, dependenciaId);
       toast.success(
         `"${usuario?.nombre}" fue añadido a "${dependencia?.nombre}"`,
       );
       mutateInfoUsuarios();
+      mutateAsignaciones();
     }
     handleCloseEmpleadoModal();
   };
-  const handleDeleteEmpleado = async (userId: string) => {
+  const handleDeleteEmpleado = async (
+    userId: string,
+    dependenciaId: string,
+  ) => {
     const result = await Swal.fire({
       title: "¿Está seguro?",
       text: "El empleado será desasignado de este puesto.",
@@ -619,16 +907,28 @@ export default function Ver() {
       confirmButtonColor: "#d33",
     });
     if (result.isConfirmed) {
-      const { error } = await supabase
-        .from("info_usuario")
-        .update({ dependencia_id: null })
-        .eq("user_id", userId);
-      if (error) {
-        toast.error("Error al desasignar al empleado.");
-      } else {
-        toast.success("Empleado desvinculado de la dependencia.");
-        mutateInfoUsuarios();
+      await supabase
+        .from("contrato")
+        .delete()
+        .eq("user_id", userId)
+        .eq("dependencia_id", dependenciaId);
+      const asignacionViva = infoUsuarios.find(
+        (info: InfoUsuario) =>
+          info.user_id === userId && info.dependencia_id === dependenciaId,
+      );
+      if (asignacionViva) {
+        const { error } = await supabase
+          .from("info_usuario")
+          .update({ dependencia_id: null })
+          .eq("user_id", userId);
+        if (error) {
+          toast.error("Error al desasignar al empleado.");
+          return;
+        }
       }
+      toast.success("Empleado desvinculado de la dependencia.");
+      mutateInfoUsuarios();
+      mutateAsignaciones();
     }
   };
   const handleOpenInfoPersonal = (usuario: Usuario) => {
@@ -720,14 +1020,16 @@ export default function Ver() {
   };
 
   const finalTree = useMemo(() => {
-    if (!dependencias || !infoUsuarios || !usuarios) return [];
+    if (!dependenciasDelAnio || !infoUsuarios || !usuarios) return [];
     const filteredDependencias = !searchTerm
-      ? dependencias
+      ? dependenciasDelAnio
       : (() => {
           const lowercasedTerm = searchTerm.toLowerCase();
-          const dependencyMap = new Map(dependencias.map((d) => [d.id, d]));
+          const dependencyMap = new Map(
+            dependenciasDelAnio.map((d) => [d.id, d]),
+          );
           const visibleIds = new Set<string>();
-          dependencias.forEach((dep) => {
+          dependenciasDelAnio.forEach((dep) => {
             if (
               dep.nombre.toLowerCase().includes(lowercasedTerm) ||
               (dep.descripcion || "").toLowerCase().includes(lowercasedTerm)
@@ -743,31 +1045,40 @@ export default function Ver() {
               }
             }
           });
-          return dependencias.filter((d) => visibleIds.has(d.id));
+          return dependenciasDelAnio.filter((d) => visibleIds.has(d.id));
         })();
     const tree = buildDependencyTree(
       filteredDependencias,
       infoUsuarios,
       usuarios as Usuario[],
+      asignacionesPuestos,
     );
     tree.forEach((rootNode) => {
       calculateBudgetTotals(rootNode);
     });
     return tree;
-  }, [dependencias, searchTerm, infoUsuarios, usuarios]);
+  }, [
+    dependenciasDelAnio,
+    searchTerm,
+    infoUsuarios,
+    usuarios,
+    asignacionesPuestos,
+  ]);
 
   const selectableDependencias = useMemo(() => {
-    if (!dependencias || !infoUsuarios || !usuarios) return [];
+    if (!dependenciasDelAnio || !infoUsuarios || !usuarios) return [];
     return getSelectableDependencies(
-      dependencias,
+      dependenciasDelAnio,
       infoUsuarios,
       usuarios as Usuario[],
       editingDependencia,
     );
-  }, [dependencias, infoUsuarios, usuarios, editingDependencia]);
+  }, [dependenciasDelAnio, infoUsuarios, usuarios, editingDependencia]);
   const empleadosAsignadosParaForm = useMemo(() => {
-    if (!infoUsuarios || !dependencias) return [];
-    const puestoMap = new Map(dependencias.map((dep) => [dep.id, dep.nombre]));
+    if (!infoUsuarios || !dependenciasDelAnio) return [];
+    const puestoMap = new Map(
+      dependenciasDelAnio.map((dep) => [dep.id, dep.nombre]),
+    );
     return infoUsuarios
       .filter(
         (info) => info.dependencia_id && puestoMap.has(info.dependencia_id),
@@ -777,14 +1088,15 @@ export default function Ver() {
         puestoNombre: puestoMap.get(info.dependencia_id!)!,
         puestoId: info.dependencia_id!,
       }));
-  }, [infoUsuarios, dependencias]);
+  }, [infoUsuarios, dependenciasDelAnio]);
 
   return (
     <div className="p-4 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg shadow-sm">
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex flex-col md:flex-row items-center mb-6 gap-2 md:gap-4">
-        <h1 className="text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 text-center md:text-left whitespace-nowrap">
-          Organización Municipal 🏛️
+        <h1 className="flex items-center gap-2 text-lg lg:text-2xl font-bold text-blue-600 dark:text-blue-400 text-center md:text-left whitespace-nowrap">
+          <FolderTree className="h-6 w-6 shrink-0 lg:h-7 lg:w-7" />
+          Organización Municipal
         </h1>
         <div className="relative w-full flex-grow exclude-from-capture">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -796,10 +1108,30 @@ export default function Ver() {
           />
         </div>
         <div className="w-full md:w-auto flex items-center gap-2 exclude-from-capture">
+          <div className="relative shrink-0">
+            <label htmlFor="filtro-anio-dependencias" className="sr-only">
+              Año
+            </label>
+            <Calendar className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <select
+              id="filtro-anio-dependencias"
+              value={anioSeleccionado}
+              onChange={(e) => setAnioSeleccionado(Number(e.target.value))}
+              disabled={copiandoAnio}
+              className="h-10 w-28 cursor-pointer rounded-md border border-gray-200 bg-white pl-9 pr-3 text-xs font-semibold dark:border-gray-700 dark:bg-gray-800 dark:text-white focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#0066cc] dark:focus-visible:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {aniosDisponibles.map((anio) => (
+                <option key={anio} value={anio}>
+                  {anio}
+                </option>
+              ))}
+            </select>
+          </div>
           {canShowActions && hasPermission && (
             <Button
               onClick={() => handleOpenForm()}
-              className="w-full text-xs md:w-auto bg-blue-100 text-blue-800 hover:bg-blue-200"
+              disabled={copiandoAnio}
+              className="w-full text-xs md:w-auto bg-blue-100 text-blue-800 hover:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <PlusCircle className="mr-2 h-4 w-4" /> Nueva Dependencia
             </Button>
@@ -832,7 +1164,7 @@ export default function Ver() {
             className="h-40 w-auto inline-block"
           />
           <h2 className="text-2xl font-bold mt-2 text-blue-600">
-            Organización Municipal
+            Organización Municipal {anioSeleccionado}
           </h2>
         </div>
 
@@ -842,7 +1174,7 @@ export default function Ver() {
             onClose={handleCloseForm}
             onSubmit={handleSubmit}
             initialData={editingDependencia}
-            todasLasDependencias={dependencias}
+            todasLasDependencias={dependenciasDelAnio}
             preselectedParentId={preselectedParentId}
             selectableDependencies={selectableDependencias}
           />
@@ -855,24 +1187,92 @@ export default function Ver() {
           dependencia={dependenciaFinanciera}
         />
 
-        <DependenciaList
-          dependencias={finalTree}
-          rol={rol}
-          onEdit={handleOpenForm}
-          onDelete={handleDelete}
-          onAddSub={handleOpenSubForm}
-          onMove={handleMove}
-          onMoveExtreme={handleMoveExtreme}
-          onAddEmpleado={handleOpenEmpleadoModal}
-          onDeleteEmpleado={handleDeleteEmpleado}
-          onOpenInfoPersonal={handleOpenInfoPersonal}
-          onOpenContrato={handleOpenContrato}
-          onViewCard={handleOpenTarjeta}
-          onOpenDescription={handleOpenDescriptionModal}
-          onOpenInfoFinanciera={handleOpenInfoFinanciera}
-          openNodeIds={openNodeIds}
-          setOpenNodeIds={setOpenNodeIds}
-        />
+        {loadingDependencias ? (
+          <p className="py-10 text-center text-sm text-muted-foreground">
+            Cargando...
+          </p>
+        ) : finalTree.length === 0 ? (
+          <div className="flex justify-center px-2 py-8">
+            <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-zinc-50 px-6 py-8 text-center shadow-xl dark:border-zinc-700 dark:bg-zinc-800 dark:shadow-black/50">
+              {copiandoAnio ? (
+                <>
+                  <AnilloProgreso valor={progresoCopia.porcentaje} />
+                  <h3 className="mt-4 text-lg font-bold text-[#0066cc] dark:text-blue-400">
+                    Duplicando organización
+                  </h3>
+                  <CintilloInstitucional className="mx-auto mt-3 mb-4 w-24 rounded-full" />
+                  <p className="text-sm text-muted-foreground">
+                    {progresoCopia.mensaje || "Copiando..."}
+                  </p>
+                  <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+                    <div
+                      className="h-full rounded-full bg-[#0066cc] dark:bg-blue-400"
+                      style={{
+                        width: `${Math.max(0, Math.min(100, progresoCopia.porcentaje))}%`,
+                        transition: "width 0.45s ease",
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-200 text-[#0066cc] dark:bg-zinc-700 dark:text-blue-400">
+                    <FolderTree className="h-7 w-7" />
+                  </div>
+                  <h3 className="text-lg font-bold text-[#0066cc] dark:text-blue-400">
+                    Sin organización en {anioSeleccionado}
+                  </h3>
+                  <CintilloInstitucional className="mx-auto mt-3 mb-4 w-24 rounded-full" />
+                  <p className="text-sm text-muted-foreground">
+                    {anioOrigenCopia
+                      ? `Este año aún no tiene dependencias. Puede copiar la organización de ${anioOrigenCopia}, con puestos, salarios y personas asignadas.`
+                      : `No hay dependencias para el año ${anioSeleccionado}.`}
+                  </p>
+                  {anioOrigenCopia && (
+                    <div className="mt-5 flex items-center justify-center gap-2">
+                      <span className="rounded-xl bg-zinc-200 px-3 py-1.5 text-sm font-semibold text-zinc-800 dark:bg-zinc-700 dark:text-white">
+                        {anioOrigenCopia}
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-zinc-400" />
+                      <span className="rounded-xl bg-zinc-200 px-3 py-1.5 text-sm font-semibold text-zinc-800 dark:bg-zinc-700 dark:text-white">
+                        {anioSeleccionado}
+                      </span>
+                    </div>
+                  )}
+                  {canShowActions && hasPermission && anioOrigenCopia && (
+                    <button
+                      type="button"
+                      onClick={handleCopiarAnio}
+                      className="mt-6 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-200 px-5 text-sm font-semibold text-zinc-900 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Duplicar organización de {anioOrigenCopia}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <DependenciaList
+            dependencias={finalTree}
+            rol={rol}
+            onEdit={handleOpenForm}
+            onDelete={handleDelete}
+            onAddSub={handleOpenSubForm}
+            onMove={handleMove}
+            onMoveExtreme={handleMoveExtreme}
+            onAddEmpleado={handleOpenEmpleadoModal}
+            onDeleteEmpleado={handleDeleteEmpleado}
+            onOpenInfoPersonal={handleOpenInfoPersonal}
+            onOpenContrato={handleOpenContrato}
+            onViewCard={handleOpenTarjeta}
+            onOpenDescription={handleOpenDescriptionModal}
+            onOpenInfoFinanciera={handleOpenInfoFinanciera}
+            openNodeIds={openNodeIds}
+            setOpenNodeIds={setOpenNodeIds}
+          />
+        )}
 
         <EmpleadoForm
           isOpen={!!dependenciaParaEmpleado}
@@ -880,7 +1280,7 @@ export default function Ver() {
           dependencia={dependenciaParaEmpleado}
           usuarios={usuarios}
           empleadosAsignados={empleadosAsignadosParaForm}
-          todasLasDependencias={dependencias}
+          todasLasDependencias={dependenciasDelAnio}
           onSave={handleSaveEmpleado}
         />
         <InfoPersonalForm

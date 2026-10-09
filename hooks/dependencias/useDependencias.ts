@@ -22,7 +22,7 @@ export function useDependencias() {
       
       const { data, error } = await supabase
         .from('dependencias')
-        .select('*, no')
+        .select('*')
         .order('no', { ascending: true });
       
       if (error) {

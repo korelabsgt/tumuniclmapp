@@ -13,7 +13,7 @@ interface DependenciaListProps {
   onMove: (id: string, direction: 'up' | 'down') => void;
   onMoveExtreme: (id: string, direction: 'inicio' | 'final') => void;
   onAddEmpleado: (parent: DependenciaNode) => void;
-  onDeleteEmpleado: (userId: string) => void;
+  onDeleteEmpleado: (userId: string, dependenciaId: string) => void;
   onOpenInfoPersonal: (usuario: Usuario) => void;
   onOpenContrato: (usuario: Usuario) => void;
   onViewCard: (usuario: Usuario) => void;

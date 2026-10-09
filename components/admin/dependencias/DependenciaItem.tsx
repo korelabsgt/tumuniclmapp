@@ -38,6 +38,7 @@ export interface DependenciaNode {
   nombre: string;
   descripcion: string | null;
   parent_id: string | null;
+  anio?: number | null;
   es_puesto: boolean | null;
   renglon?: string | null;
   salario?: number | null;
@@ -60,7 +61,7 @@ interface DependenciaItemProps {
   onMove: (id: string, direction: "up" | "down") => void;
   onMoveExtreme: (id: string, direction: "inicio" | "final") => void;
   onAddEmpleado: (parent: DependenciaNode) => void;
-  onDeleteEmpleado: (userId: string) => void;
+  onDeleteEmpleado: (userId: string, dependenciaId: string) => void;
   onOpenInfoPersonal: (usuario: Usuario) => void;
   onOpenContrato: (usuario: Usuario) => void;
   onViewCard: (usuario: Usuario) => void;
@@ -549,7 +550,9 @@ const DependenciaItem = ({
                     key={child.usuario.id}
                     empleado={child.usuario}
                     level={level + 1}
-                    onDelete={() => onDeleteEmpleado(child.usuario.id)}
+                    onDelete={() =>
+                      onDeleteEmpleado(child.usuario.id, node.id)
+                    }
                     onOpenInfoPersonal={onOpenInfoPersonal}
                     onViewCard={onViewCard}
                     rol={rol}

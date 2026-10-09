@@ -716,25 +716,58 @@ export const verificarPermisoSecretario = async (): Promise<boolean> => {
 
   return cargo.includes("SECRETARIO");
 };
-export const obtenerNombreDirectorDAFIM = async (): Promise<string> => {
-  const { data, error } = await supabase
+export type DirectorDAFIM = {
+  nombre: string;
+  cargo: string;
+  esDirectora: boolean;
+};
+
+const normalizarTextoPuesto = (valor: string): string =>
+  valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase()
+    .trim();
+
+const esPuestoDirectorDafim = (nombre: string): boolean => {
+  const n = normalizarTextoPuesto(nombre);
+  if (n.includes("AUXILIAR")) return false;
+  const esDirectora = n.startsWith("DIRECTORA");
+  const esDirector = n.startsWith("DIRECTOR ");
+  return (esDirectora || esDirector) && n.includes("FINANCIERA") && n.includes("MUNICIPAL");
+};
+
+export const obtenerNombreDirectorDAFIM = async (): Promise<DirectorDAFIM | null> => {
+  const { data: puestos, error: errorPuestos } = await supabase
+    .from("dependencias")
+    .select("id, nombre")
+    .ilike("nombre", "%Director%Financiera%");
+
+  if (errorPuestos || !puestos || puestos.length === 0) {
+    return null;
+  }
+
+  const puestoDirector = puestos.find((p) => esPuestoDirectorDafim(p.nombre));
+  if (!puestoDirector) {
+    return null;
+  }
+
+  const { data: usuario, error } = await supabase
     .from("info_usuario")
-    .select(
-      `
-      nombre,
-      dependencias!info_usuario_dependencia_id_fkey!inner (
-        nombre
-      )
-    `,
-    )
-    .ilike("dependencias.nombre", "%Financiera%Municipal%")
+    .select("nombre")
+    .eq("dependencia_id", puestoDirector.id)
     .eq("activo", true)
+    .not("nombre", "is", null)
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) {
-    return "";
+  if (error || !usuario?.nombre) {
+    return null;
   }
 
-  return data.nombre;
+  return {
+    nombre: usuario.nombre,
+    cargo: puestoDirector.nombre,
+    esDirectora: normalizarTextoPuesto(puestoDirector.nombre).startsWith("DIRECTORA"),
+  };
 };

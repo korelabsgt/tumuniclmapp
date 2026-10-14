@@ -10,7 +10,7 @@ import { ChecklistItem, NewTaskState, Tarea, Usuario, PerfilUsuario, TipoVistaTa
 async function getRolInterno(userId: string, supabase: any) {
   const { data } = await supabase.from('usuarios_roles').select(`roles (nombre)`).eq('user_id', userId);
   const rolesUsuario = data?.map((item: any) => item.roles?.nombre) || [];
-  const rolesPermitidos = ['RRHH', 'SECRETARIO', 'SUPER'];
+  const rolesPermitidos = ['RRHH', 'SECRETARIO', 'SUPER', 'ADMINISTRADOR'];
   return rolesUsuario.find((rol: string) => rolesPermitidos.includes(rol)) || null;
 }
 
@@ -225,14 +225,13 @@ export async function obtenerDatosGestor(tipoVista: TipoVistaTareas) {
       }
   }
   else if (tipoVista === 'gestion_rrhh') {
-      const esRRHH = ['RRHH', 'SUPER', 'SECRETARIO'].includes(perfil.rol || '');
+      const esRRHH = ['RRHH', 'SUPER', 'SECRETARIO', 'ADMINISTRADOR'].includes(perfil.rol || '');
       if (!esRRHH) return { perfil, tareas: [], usuarios: [] };
 
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('tasks')
         .select('*')
-        .order('due_date', { ascending: true })
-        .limit(500);
+        .order('due_date', { ascending: false });
 
       if (error) {
           console.error("Error fetching tasks:", error);

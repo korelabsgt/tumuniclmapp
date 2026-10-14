@@ -54,14 +54,16 @@ export default function InformeDietas({ isOpen, onClose, agendas }: Props) {
   
   const [numeroInforme, setNumeroInforme] = useState('');
   const [nombreDirectora, setNombreDirectora] = useState('');
+  const [esDirectoraDafim, setEsDirectoraDafim] = useState(true);
   
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
         setLoading(true);
-        obtenerNombreDirectorDAFIM().then((nombre) => {
-            setNombreDirectora(nombre ? nombre.toUpperCase() : '');
+        obtenerNombreDirectorDAFIM().then((director) => {
+            setNombreDirectora(director?.nombre ? director.nombre.toUpperCase() : '');
+            setEsDirectoraDafim(director?.esDirectora ?? true);
             setLoading(false);
         }).catch(() => {
             setLoading(false);
@@ -298,8 +300,8 @@ export default function InformeDietas({ isOpen, onClose, agendas }: Props) {
                   Sesiones Ordinaria y Extraordinarias del Concejo Municipal
               </div>
 
-              <div className="text-xs font-bold uppercase mb-1">LICENCIADA {nombreDirectora || '____________________'}</div>
-              <div className="text-xs font-bold uppercase mb-1">DIRECTORA DE LA DIRECCIÓN DE ADMINISTRACIÓN FINANCIERA INTEGRADA MUNICIPAL (DAFIM)</div>
+              <div className="text-xs font-bold uppercase mb-1">{esDirectoraDafim ? 'LICENCIADA' : 'LICENCIADO'} {nombreDirectora || '____________________'}</div>
+              <div className="text-xs font-bold uppercase mb-1">{esDirectoraDafim ? 'DIRECTORA' : 'DIRECTOR'} DE LA DIRECCIÓN DE ADMINISTRACIÓN FINANCIERA INTEGRADA MUNICIPAL (DAFIM)</div>
               <div className="text-xs font-bold uppercase mb-6">MUNICIPALIDAD DE CONCEPCIÓN LAS MINAS, CHIQUIMULA.</div>
 
               <div className="text-xs text-justify mb-4 leading-relaxed">

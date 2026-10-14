@@ -84,6 +84,7 @@ export default function InformeDietas({ isOpen, onClose, agendas }: Props) {
   const [mesSeleccionado, setMesSeleccionado] = useState<string>("");
   const [numeroInforme, setNumeroInforme] = useState("");
   const [nombreDirectora, setNombreDirectora] = useState("");
+  const [esDirectoraDafim, setEsDirectoraDafim] = useState(true);
   const [cargosEditados, setCargosEditados] = useState<Record<string, string>>({});
 
   const handleEditCargo = (userId: string, newVal: string) => {
@@ -127,8 +128,9 @@ export default function InformeDietas({ isOpen, onClose, agendas }: Props) {
     if (isOpen) {
       setLoading(true);
       obtenerNombreDirectorDAFIM()
-        .then((nombre) => {
-          setNombreDirectora(nombre ? nombre.toUpperCase() : "");
+        .then((director) => {
+          setNombreDirectora(director?.nombre ? director.nombre.toUpperCase() : "");
+          setEsDirectoraDafim(director?.esDirectora ?? true);
           setLoading(false);
         })
         .catch(() => {
@@ -542,11 +544,12 @@ export default function InformeDietas({ isOpen, onClose, agendas }: Props) {
               </div>
 
               <div className="text-xs font-bold uppercase mb-1">
-                LICENCIADA {nombreDirectora || "____________________"}
+                {esDirectoraDafim ? "LICENCIADA" : "LICENCIADO"}{" "}
+                {nombreDirectora || "____________________"}
               </div>
               <div className="text-xs font-bold uppercase mb-1">
-                DIRECTORA DE LA DIRECCIÓN DE ADMINISTRACIÓN FINANCIERA INTEGRADA
-                MUNICIPAL (DAFIM)
+                {esDirectoraDafim ? "DIRECTORA" : "DIRECTOR"} DE LA DIRECCIÓN DE
+                ADMINISTRACIÓN FINANCIERA INTEGRADA MUNICIPAL (DAFIM)
               </div>
               <div className="text-xs font-bold uppercase mb-6">
                 MUNICIPALIDAD DE CONCEPCIÓN LAS MINAS, CHIQUIMULA.

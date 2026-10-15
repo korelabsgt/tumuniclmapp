@@ -1030,8 +1030,15 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
   };
 
   return (
-    <Transition show={isOpen} as={Fragment}>
-      <Dialog onClose={() => onClose(hasChanged)} className="relative z-[200]">
+    <>
+    <Transition show={isOpen && !pdfViendo} as={Fragment}>
+      <Dialog
+        onClose={() => {
+          if (pdfViendo) return;
+          onClose(hasChanged);
+        }}
+        className="relative z-[200]"
+      >
         <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
           <div className="fixed inset-0 bg-zinc-100 dark:bg-zinc-900 sm:bg-zinc-700/20 sm:backdrop-blur-sm sm:dark:bg-zinc-900/60" />
         </TransitionChild>
@@ -1313,14 +1320,15 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
             </DialogPanel>
           </TransitionChild>
         </div>
-        <VerPDF
-          isOpen={!!pdfViendo?.ruta_storage}
-          onClose={() => setPdfViendo(null)}
-          filePath={pdfViendo?.ruta_storage || ''}
-          fileName={pdfViendo?.nombre || ''}
-          bucketName="archivos_actividades"
-        />
       </Dialog>
     </Transition>
+    <VerPDF
+      isOpen={!!pdfViendo?.ruta_storage}
+      onClose={() => setPdfViendo(null)}
+      filePath={pdfViendo?.ruta_storage || ''}
+      fileName={pdfViendo?.nombre || ''}
+      bucketName="archivos_actividades"
+    />
+    </>
   );
 }

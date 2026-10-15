@@ -15,7 +15,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import CargandoAnimacion from '@/components/ui/animations/Cargando';
 import Tabla from './Tabla';
 import HeaderAgenda from './HeaderAgenda';
-import TabsYFiltros from './TabsYFiltros';
+import TabsYFiltros, { type TabSesionAgenda } from './TabsYFiltros';
+import SeguimientoActividadesPendientes from './SeguimientoActividadesPendientes';
 import { format, subMinutes, isAfter } from 'date-fns';
 import Swal from 'sweetalert2';
 import { toast } from 'react-toastify';
@@ -57,7 +58,7 @@ export default function VerTareas() {
   const [isActividadesModalOpen, setIsActividadesModalOpen] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
   const [nombrePuesto, setNombrePuesto] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'agenda' | 'asistencia'>('agenda');
+  const [activeTab, setActiveTab] = useState<TabSesionAgenda>('agenda');
   const [puedeMarcarAsistencia, setPuedeMarcarAsistencia] = useState(false);
   const [mostrarAvisoAsistencia, setMostrarAvisoAsistencia] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
@@ -471,6 +472,20 @@ export default function VerTareas() {
                       handleOpenActividadesModal={handleOpenActividadesModal} 
                       handleOpenDocumentosModal={handleOpenDocumentosModal}
                       estadoAgenda={agenda?.estado || ''} 
+                    />
+                </motion.div>
+            ) : activeTab === 'pendientes_revision' ? (
+                <motion.div
+                    key="pendientes_revision"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                >
+                    <SeguimientoActividadesPendientes
+                      agendaId={agendaId}
+                      puedeAsignar={['SUPER', 'SECRETARIO', 'SEC-TECNICO'].includes(rol)}
+                      onActualizado={() => void fetchDatos()}
                     />
                 </motion.div>
             ) : (

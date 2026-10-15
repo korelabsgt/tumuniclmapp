@@ -8,8 +8,10 @@ import { ActividadConcejoConContexto } from './lib/esquemas';
 import type { ArchivoAdjunto } from '@/components/tareas/types';
 import ArchivosActividadModal from './modals/ArchivosActividadModal';
 import EditarActividadModal from './modals/EditarActividadModal';
+import ActividadesAsignadas from './tareas/modals/ActividadesAsignadas';
+import type { Tarea } from './lib/esquemas';
 import { Button } from '@/components/ui/button';
-import { User, Calendar, CheckCircle2, Clock, ChevronDown, Paperclip, ArrowRight, Pencil, AlertTriangle, Hourglass } from 'lucide-react';
+import { User, Calendar, CheckCircle2, Clock, ChevronDown, Paperclip, ArrowRight, Pencil, AlertTriangle, Hourglass, Eye } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CargandoAnimacion from '@/components/ui/animations/Cargando';
 import useUserData from '@/hooks/sesion/useUserData';
@@ -125,38 +127,26 @@ const estadoBadge = (actividad: ActividadConcejoConContexto) => {
 };
 
 type ResumenEstadosGrupo = {
-  pendientes: number;
-  asignadas: number;
-  vencidas: number;
+  sinTerminar: number;
   completadas: number;
   pendientesRevision: number;
   revisadas: number;
 };
 
 const contarEstadosGrupo = (items: ActividadConcejoConContexto[]): ResumenEstadosGrupo => {
-  const resumen = { pendientes: 0, asignadas: 0, vencidas: 0, completadas: 0, pendientesRevision: 0, revisadas: 0 };
-  const ahora = new Date();
+  const resumen = { sinTerminar: 0, completadas: 0, pendientesRevision: 0, revisadas: 0 };
 
   items.forEach((actividad) => {
-    if (actividad.revisado_por) {
-      resumen.revisadas += 1;
-    } else {
-      resumen.pendientesRevision += 1;
-    }
-
     if (actividad.status === 'Completado') {
       resumen.completadas += 1;
+      if (actividad.revisado_por) {
+        resumen.revisadas += 1;
+      } else {
+        resumen.pendientesRevision += 1;
+      }
       return;
     }
-    if (!actividad.confirmed_at) {
-      resumen.pendientes += 1;
-      return;
-    }
-    if (actividad.due_date && new Date(actividad.due_date) < ahora) {
-      resumen.vencidas += 1;
-      return;
-    }
-    resumen.asignadas += 1;
+    resumen.sinTerminar += 1;
   });
 
   return resumen;
@@ -169,6 +159,8 @@ type ListaActividadesAsignadasProps = {
   filtroAnio: string;
   filtroMes: string | null;
 };
+
+type FiltroActividadesLista = 'todas' | 'sin_completar' | 'pendiente_revision';
 
 export default function ListaActividadesAsignadas({
   filtroAnio,
@@ -188,7 +180,26 @@ export default function ListaActividadesAsignadas({
   const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
   const [actividadArchivos, setActividadArchivos] = useState<ActividadConcejoConContexto | null>(null);
   const [actividadEditando, setActividadEditando] = useState<ActividadConcejoConContexto | null>(null);
-  const [mostrarSoloPendientes, setMostrarSoloPendientes] = useState(false);
+  const [tareaActividades, setTareaActividades] = useState<Tarea | null>(null);
+  const [filtroLista, setFiltroLista] = useState<FiltroActividadesLista>('todas');
+
+  const abrirActividadesPunto = (actividad: ActividadConcejoConContexto) => {
+    setTareaActividades({
+      id: actividad.punto_id,
+      titulo_item: actividad.punto_titulo,
+      estado: '',
+      votacion: null,
+      notas: null,
+      seguimiento: null,
+    });
+  };
+
+  const cerrarActividadesPunto = (hasChanged: boolean) => {
+    setTareaActividades(null);
+    if (hasChanged) {
+      void queryClient.invalidateQueries({ queryKey: ACTIVIDADES_QUERY_KEY });
+    }
+  };
 
   useEffect(() => {
     setGrupoAbierto(null);
@@ -203,10 +214,15 @@ export default function ListaActividadesAsignadas({
       const agendaMonth = agendaDate.getMonth().toString();
       const cumpleAnio = filtroAnio === '' || agendaYear === filtroAnio;
       const cumpleMes = filtroMes === null || agendaMonth === filtroMes;
-      const cumpleFiltroPendientes = mostrarSoloPendientes ? actividad.status !== 'Completado' : true;
-      return cumpleAnio && cumpleMes && cumpleFiltroPendientes;
+      const cumpleFiltroLista =
+        filtroLista === 'sin_completar'
+          ? actividad.status !== 'Completado'
+          : filtroLista === 'pendiente_revision'
+            ? actividad.status === 'Completado' && !actividad.revisado_por
+            : true;
+      return cumpleAnio && cumpleMes && cumpleFiltroLista;
     });
-  }, [data, filtroAnio, filtroMes, mostrarSoloPendientes]);
+  }, [data, filtroAnio, filtroMes, filtroLista]);
 
   const archivosPorActividad = useMemo(() => {
     const map = new Map<string, ArchivoAdjunto[]>();
@@ -257,17 +273,30 @@ export default function ListaActividadesAsignadas({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center gap-2 px-1">
-        <input 
-          type="checkbox" 
-          id="filtro-pendientes" 
-          checked={mostrarSoloPendientes}
-          onChange={(e) => setMostrarSoloPendientes(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 dark:border-neutral-700 dark:bg-neutral-900 dark:checked:bg-purple-500 cursor-pointer"
-        />
-        <label htmlFor="filtro-pendientes" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-          Ocultar actividades completadas
-        </label>
+      <div className="flex flex-wrap items-center gap-1.5 px-1">
+        {(
+          [
+            { id: 'todas', label: 'Todas' },
+            { id: 'sin_completar', label: 'Sin completar' },
+            { id: 'pendiente_revision', label: 'Terminadas pendientes de revisión' },
+          ] as const
+        ).map((opcion) => {
+          const activa = filtroLista === opcion.id;
+          return (
+            <button
+              key={opcion.id}
+              type="button"
+              onClick={() => setFiltroLista(opcion.id)}
+              className={`h-8 cursor-pointer rounded-xl px-3 text-xs font-semibold transition-colors ${
+                activa
+                  ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-white'
+                  : 'text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/80'
+              }`}
+            >
+              {opcion.label}
+            </button>
+          );
+        })}
       </div>
 
       {actividades.length === 0 ? (
@@ -275,7 +304,9 @@ export default function ListaActividadesAsignadas({
           <p className="text-gray-500 dark:text-gray-400">
             {sinActividades
               ? 'El Concejo aún no ha asignado actividades.'
-              : 'No hay actividades asignadas o pendientes en el período seleccionado.'}
+              : filtroLista === 'pendiente_revision'
+                ? 'No hay actividades terminadas pendientes de revisión en el período seleccionado.'
+                : 'No hay actividades asignadas o pendientes en el período seleccionado.'}
           </p>
         </div>
       ) : (
@@ -334,19 +365,9 @@ export default function ListaActividadesAsignadas({
                     </span>
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {resumen.asignadas > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                        {resumen.asignadas} {resumen.asignadas === 1 ? 'asignada' : 'asignadas'}
-                      </span>
-                    )}
-                    {resumen.pendientes > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                        {resumen.pendientes} {resumen.pendientes === 1 ? 'pendiente' : 'pendientes'}
-                      </span>
-                    )}
-                    {resumen.vencidas > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-medium text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
-                        {resumen.vencidas} {resumen.vencidas === 1 ? 'vencida' : 'vencidas'}
+                    {resumen.sinTerminar > 0 && (
+                      <span className="inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
+                        {resumen.sinTerminar} {resumen.sinTerminar === 1 ? 'sin terminar' : 'sin terminar'}
                       </span>
                     )}
                     {resumen.completadas > 0 && (
@@ -419,7 +440,7 @@ export default function ListaActividadesAsignadas({
 
                       return (
                         <li
-                          key={actividad.id}
+                          key={`${actividad.punto_id}-${actividad.id}`}
                           className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
                         >
                           <div className="min-w-0">
@@ -445,13 +466,17 @@ export default function ListaActividadesAsignadas({
                                   <User size={14} className="shrink-0" />
                                   {actividad.assignee_nombre}
                                 </p>
-                                {actividad.revisado_por ? (
+                                {actividad.status === 'Completado' && actividad.revisado_por ? (
                                   <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20 dark:bg-green-900/30 dark:text-green-400 dark:ring-green-500/20">
                                     Revisado por: {actividad.revisado_por.nombre}
                                   </span>
-                                ) : (
+                                ) : actividad.status === 'Completado' ? (
                                   <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/10 dark:bg-red-900/30 dark:text-red-400 dark:ring-red-500/20">
                                     Pendiente de revisión
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center rounded-md bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600 ring-1 ring-inset ring-zinc-300/80 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-600">
+                                    Sin terminar
                                   </span>
                                 )}
                               </div>
@@ -511,6 +536,14 @@ export default function ListaActividadesAsignadas({
                                 )}
                               </div>
                               <div className="flex shrink-0 items-center justify-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => abrirActividadesPunto(actividad)}
+                                  className="flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 text-xs font-semibold text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-700"
+                                >
+                                  <Eye size={14} className="shrink-0 text-[#0066cc] dark:text-blue-400" />
+                                  Ver
+                                </button>
                                 {puedeEditar && (
                                   <button
                                     type="button"
@@ -566,6 +599,14 @@ export default function ListaActividadesAsignadas({
           void queryClient.invalidateQueries({ queryKey: ACTIVIDADES_QUERY_KEY });
         }}
       />
+      {tareaActividades && (
+        <ActividadesAsignadas
+          isOpen={!!tareaActividades}
+          onClose={cerrarActividadesPunto}
+          tarea={tareaActividades}
+          puedeEditar={puedeEditar}
+        />
+      )}
     </div>
   );
 }

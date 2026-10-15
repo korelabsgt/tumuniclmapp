@@ -533,6 +533,13 @@ function DetalleActividadPanel({
           </p>
         )}
 
+        {actividad.status === 'Completado' && actividad.updated_at ? (
+          <p className="flex items-center gap-1.5 text-sm text-emerald-600 dark:text-emerald-400">
+            <CheckCircle2 size={14} />
+            Completada el: {formatearFechaActividad(actividad.updated_at)}
+          </p>
+        ) : null}
+
         {/* Botones de acción y badge de revisión */}
         <div className="pt-2">
           {actividad.revisado_por ? (
@@ -1026,37 +1033,34 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
     <Transition show={isOpen} as={Fragment}>
       <Dialog onClose={() => onClose(hasChanged)} className="relative z-[200]">
         <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100" leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0">
-          <div className="fixed inset-0 bg-zinc-100 dark:bg-zinc-900" />
+          <div className="fixed inset-0 bg-zinc-100 dark:bg-zinc-900 sm:bg-zinc-700/20 sm:backdrop-blur-sm sm:dark:bg-zinc-900/60" />
         </TransitionChild>
-        <div className="fixed inset-0 flex flex-col">
-          <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-2" enterTo="opacity-100 translate-y-0" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0" leaveTo="opacity-0 translate-y-2">
-            <DialogPanel className="flex h-[100dvh] w-full flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-800">
+        <div className="fixed inset-0 flex flex-col sm:items-center sm:justify-center sm:p-4">
+          <TransitionChild as={Fragment} enter="ease-out duration-300" enterFrom="opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95" enterTo="opacity-100 translate-y-0 sm:scale-100" leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0 sm:scale-100" leaveTo="opacity-0 translate-y-2 sm:translate-y-0 sm:scale-95">
+            <DialogPanel className="flex h-[100dvh] w-full max-w-none flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-800 sm:h-auto sm:max-h-[min(90vh,52rem)] sm:w-full sm:max-w-2xl sm:rounded-3xl sm:border sm:border-zinc-200 sm:shadow-xl dark:sm:border-zinc-700 dark:sm:shadow-black/50">
 
-              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-zinc-200 px-4 pb-3 pt-[max(1rem,env(safe-area-inset-top))] dark:border-zinc-700 sm:px-6">
-                <div className="min-w-0 pr-2">
-                  <DialogTitle className="text-xl font-bold tracking-tight text-[#0066cc] dark:text-blue-400">
+              <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-200 px-4 pb-2 pt-[max(0.75rem,env(safe-area-inset-top))] dark:border-zinc-700 sm:rounded-t-3xl sm:px-5 sm:pb-2.5 sm:pt-4">
+                <div className="min-w-0 pr-1">
+                  <DialogTitle className="text-base font-semibold leading-snug text-[#0066cc] line-clamp-1 dark:text-blue-400 sm:text-lg">
                     Actividades asignadas
                   </DialogTitle>
-                  <p className="mt-1 text-[10px] font-medium uppercase tracking-widest text-muted-foreground line-clamp-2">
-                    {tarea.titulo_item}
-                  </p>
                 </div>
                 <button
                   onClick={() => onClose(hasChanged)}
-                  className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-white"
+                  className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-white"
                   aria-label="Cerrar"
                 >
-                  <X size={22} />
+                  <X size={20} />
                 </button>
               </div>
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 custom-scrollbar sm:px-6">
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] custom-scrollbar sm:px-5 sm:pb-4">
                 {cargando ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin" />
                   </div>
                 ) : vista === 'lista' ? (
-                  <div className="mx-auto flex w-full max-w-3xl flex-col gap-4">
+                  <div className="flex w-full flex-col gap-4">
                     {puedeEditar && (
                       <button
                         onClick={abrirNueva}
@@ -1109,7 +1113,7 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                     )}
                   </div>
                 ) : (
-                  <div className="mx-auto w-full max-w-3xl space-y-4">
+                  <div className="w-full space-y-4">
                     <button
                       onClick={() => { limpiarFormulario(); setVista('lista'); }}
                       className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 transition-colors"
@@ -1305,12 +1309,6 @@ export default function ActividadesAsignadas({ isOpen, onClose, tarea, puedeEdit
                     </Button>
                   </div>
                 )}
-              </div>
-
-              <div className="shrink-0 border-t border-zinc-200 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-zinc-700 sm:px-6">
-                <p className="text-center text-xs text-muted-foreground">
-                  {actividades.length} actividad{actividades.length === 1 ? '' : 'es'} en este punto
-                </p>
               </div>
             </DialogPanel>
           </TransitionChild>

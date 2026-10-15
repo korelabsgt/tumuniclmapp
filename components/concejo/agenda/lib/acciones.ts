@@ -303,6 +303,16 @@ export const crearTarea = async (
   return data as Tarea;
 };
 
+const esTextoRevision = (valor: string | null | undefined) => {
+  const texto = (valor || "").trim().toLowerCase();
+  return (
+    texto === "revisión de actividad" ||
+    texto === "revision de actividad" ||
+    texto.startsWith("revisión de actividad:") ||
+    texto.startsWith("revision de actividad:")
+  );
+};
+
 export const editarTarea = async (
   id: string,
   formData: TareaFormData,
@@ -326,11 +336,72 @@ export const editarTarea = async (
     toast.error("Error al editar la tarea.");
     return null;
   }
+
+  const { data: categoria } = await supabase
+    .from("categorias_tareas_concejo")
+    .select("nombre")
+    .eq("id", formData.categoria_id)
+    .maybeSingle();
+
+  if (esTextoRevision(formData.titulo_item) || esTextoRevision(categoria?.nombre)) {
+    await supabase
+      .from("tareas_concejo_actividades")
+      .update({ es_origen: false })
+      .eq("tarea_concejo_id", id);
+  }
+
   toast.success("Tarea actualizada con éxito.");
   return data as Tarea;
 };
 
 export const eliminarTarea = async (id: string): Promise<void> => {
+  const { data: punto, error: errorPunto } = await supabase
+    .from("tareas_concejo")
+    .select("titulo_item, categoria:categorias_tareas_concejo(nombre)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (errorPunto) {
+    console.error(errorPunto.message);
+    throw new Error("Error al revisar el punto.");
+  }
+
+  const categoriaPunto = punto?.categoria as { nombre?: string } | { nombre?: string }[] | null;
+  const nombreCategoria = Array.isArray(categoriaPunto)
+    ? categoriaPunto[0]?.nombre
+    : categoriaPunto?.nombre;
+
+  const esPuntoRevision =
+    esTextoRevision(punto?.titulo_item) || esTextoRevision(nombreCategoria);
+
+  if (!esPuntoRevision) {
+    const { data: enlaces, error: errorEnlaces } = await supabase
+      .from("tareas_concejo_actividades")
+      .select("task_id, es_origen")
+      .eq("tarea_concejo_id", id);
+
+    if (errorEnlaces) {
+      console.error(errorEnlaces.message);
+      throw new Error("Error al revisar las actividades del punto.");
+    }
+
+    const tareasOrigen = Array.from(
+      new Set(
+        (enlaces || [])
+          .filter((enlace) => enlace.es_origen !== false)
+          .map((enlace) => enlace.task_id as string),
+      ),
+    );
+
+    if (tareasOrigen.length > 0) {
+      const { error: errorTasks } = await supabase.from("tasks").delete().in("id", tareasOrigen);
+      if (errorTasks) {
+        console.error(errorTasks.message);
+        throw new Error("Error al eliminar las actividades originadas en este punto.");
+      }
+    }
+  }
+
   const { error } = await supabase.from("tareas_concejo").delete().eq("id", id);
 
   if (error) {

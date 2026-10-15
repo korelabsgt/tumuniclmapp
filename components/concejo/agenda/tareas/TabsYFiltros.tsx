@@ -1,12 +1,14 @@
 'use client';
 
-import { LayoutList, Users } from 'lucide-react';
+import { LayoutList, Users, ClipboardCheck } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+export type TabSesionAgenda = 'agenda' | 'pendientes_revision' | 'asistencia';
+
 interface TabsYFiltrosProps {
-  activeTab: 'agenda' | 'asistencia';
-  setActiveTab: (tab: 'agenda' | 'asistencia') => void;
+  activeTab: TabSesionAgenda;
+  setActiveTab: (tab: TabSesionAgenda) => void;
   filtrosActivos: string[];
   toggleFiltro: (estado: string) => void;
   clearFiltros: () => void;
@@ -52,6 +54,25 @@ export default function TabsYFiltros({
             <LayoutList className="h-4 w-4" />
             <span>Agenda</span>
             {activeTab === 'agenda' && (
+              <motion.div
+                layoutId="activeTabTareas"
+                className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600 dark:bg-blue-400"
+              />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pendientes_revision')}
+            className={cn(
+              "relative flex items-center gap-2 pb-2 text-sm font-medium transition-colors whitespace-nowrap",
+              activeTab === 'pendientes_revision'
+                ? "text-blue-600 dark:text-blue-400"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            )}
+          >
+            <ClipboardCheck className="h-4 w-4 shrink-0" />
+            <span className="max-w-[10rem] sm:max-w-none">Actividades pendientes de revisar</span>
+            {activeTab === 'pendientes_revision' && (
               <motion.div
                 layoutId="activeTabTareas"
                 className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600 dark:bg-blue-400"

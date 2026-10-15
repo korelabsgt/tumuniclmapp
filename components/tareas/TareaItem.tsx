@@ -563,6 +563,12 @@ export default function TareaItem({ tarea, isExpanded = false, onToggle, isJefe,
                         </div>
                     )}
 
+                    {tarea.status === 'Completado' && tarea.updated_at && (
+                        <p className="pt-2 text-center text-[11px] font-medium text-emerald-700 dark:text-emerald-400">
+                            Completada: {formatearSesion(tarea.updated_at)}
+                        </p>
+                    )}
+
                     {/* Botón marcar como revisado */}
                     {tarea.status === 'Completado' && !tarea.revisado_por && (
                         <div className="mt-auto pt-2">

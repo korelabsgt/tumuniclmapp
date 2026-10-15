@@ -5,6 +5,7 @@ import Swal from 'sweetalert2'
 
 export const ACTIVIDAD_PENDIENTE_REFRESH = 'actividad-pendiente-refresh'
 export const PERMISO_MENSAJE_REFRESH = 'permiso-mensaje-refresh'
+export const CONCEJO_ACTIVIDAD_MENSAJE_REFRESH = 'concejo-actividad-mensaje-refresh'
 
 function navegar(url: string) {
   const path = url.startsWith('http') ? new URL(url).pathname : url
@@ -12,6 +13,7 @@ function navegar(url: string) {
   if (window.location.pathname === path) {
     window.dispatchEvent(new CustomEvent(ACTIVIDAD_PENDIENTE_REFRESH))
     window.dispatchEvent(new CustomEvent(PERMISO_MENSAJE_REFRESH))
+    window.dispatchEvent(new CustomEvent(CONCEJO_ACTIVIDAD_MENSAJE_REFRESH))
     return
   }
 
@@ -32,6 +34,7 @@ export default function NotificationListener() {
       }
 
       if (event.data.type === 'SHOW_SWAL') {
+        window.dispatchEvent(new CustomEvent(CONCEJO_ACTIVIDAD_MENSAJE_REFRESH))
         const { title, text, url } = event.data.payload
 
         const isDarkMode = document.documentElement.classList.contains('dark')

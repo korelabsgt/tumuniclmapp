@@ -61,6 +61,9 @@ export interface ActividadConcejoConContexto extends ActividadConcejo {
   agenda_fecha: string;
   agenda_estado: string;
   agenda_descripcion: string;
+  agenda_acta?: string | null;
+  agenda_libro?: string | null;
+  es_enlace_origen?: boolean;
 }
 
 export interface Tarea {

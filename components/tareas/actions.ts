@@ -3,7 +3,11 @@
 import { createClient } from '@/utils/supabase/server';
 import supabaseAdmin from '@/utils/supabase/admin';
 import { revalidatePath } from 'next/cache';
-import { ChecklistItem, NewTaskState, Tarea, Usuario, PerfilUsuario, TipoVistaTareas, AsignacionMiembro, ActMiembro } from './types'; 
+import { ChecklistItem, NewTaskState, Tarea, Usuario, PerfilUsuario, TipoVistaTareas, AsignacionMiembro, ActMiembro } from './types';
+import {
+  notificarActividadConcejoCompletada,
+  notificarActividadConcejoRevisada,
+} from '@/components/concejo/agenda/tareas/lib/notificaciones'; 
 
 // ─── Helpers internos ────────────────────────────────────────────────────────
 
@@ -313,7 +317,7 @@ export async function obtenerDatosGestor(tipoVista: TipoVistaTareas) {
       const chunk = taskIds.slice(i, i + chunkSize);
       const { data: enlacesChunk, error: errEnlaces } = await clientToUse
         .from('tareas_concejo_actividades')
-        .select('task_id, tarea_concejo_id')
+        .select('task_id, tarea_concejo_id, es_origen')
         .in('task_id', chunk);
 
       if (errEnlaces) console.error('Error fetching concejo enlaces:', errEnlaces);
@@ -353,7 +357,15 @@ export async function obtenerDatosGestor(tipoVista: TipoVistaTareas) {
 
       const agendaMap = new Map((agendas || []).map((a: any) => [a.id, a]));
 
+      const enlacePorTask = new Map<string, any>();
       enlaces.forEach((e: any) => {
+        const actual = enlacePorTask.get(e.task_id);
+        if (!actual || (e.es_origen !== false && actual.es_origen === false)) {
+          enlacePorTask.set(e.task_id, e);
+        }
+      });
+
+      enlacePorTask.forEach((e) => {
         const punto = puntoMap.get(e.tarea_concejo_id);
         const agenda = punto ? agendaMap.get(punto.agenda_concejo_id) : undefined;
         concejoContexto.set(e.task_id, {
@@ -515,9 +527,11 @@ export async function updateChecklist(taskId: string, newChecklist: ChecklistIte
 export async function cambiarEstado(taskId: string, nuevoEstado: string) {
   const supabase = await createClient();
 
+  let estadoPrevio: string | null = null;
+
   if (nuevoEstado === 'Completado') {
-    // Validar checklist del encargado
-    const { data: tarea } = await supabase.from('tasks').select('checklist').eq('id', taskId).single();
+    const { data: tarea } = await supabase.from('tasks').select('checklist, status').eq('id', taskId).single();
+    estadoPrevio = tarea?.status ?? null;
     if (tarea && tarea.checklist) {
       const lista = tarea.checklist as unknown as ChecklistItem[];
       if (lista.some(item => !item.is_completed)) {
@@ -539,15 +553,22 @@ export async function cambiarEstado(taskId: string, nuevoEstado: string) {
     }
   }
 
+  const completadaEn = new Date().toISOString();
   const { error } = await supabase
     .from('tasks')
     .update(
       nuevoEstado === 'Completado'
-        ? { status: nuevoEstado, updated_at: new Date().toISOString() }
+        ? { status: nuevoEstado, updated_at: completadaEn }
         : { status: nuevoEstado, updated_at: null, revisado_por: null },
     )
     .eq('id', taskId);
   if (error) throw new Error(error.message);
+
+  if (nuevoEstado === 'Completado' && estadoPrevio !== 'Completado') {
+    const { data: { user } } = await supabase.auth.getUser();
+    await notificarActividadConcejoCompletada(taskId, completadaEn, user?.id ?? null);
+  }
+
   revalidatePath('/protected/actividades', 'layout');
 }
 
@@ -660,13 +681,13 @@ export async function obtenerActividadPendienteConfirmacion() {
 
   if (!pendingData) return { success: true, data: null };
 
-  const { data: enlaceConcejo } = await supabase
+  const { data: enlacesConcejo } = await supabase
     .from('tareas_concejo_actividades')
     .select('id')
     .eq('task_id', pendingData.id)
-    .maybeSingle();
+    .limit(1);
 
-  const esConcejo = !!enlaceConcejo;
+  const esConcejo = (enlacesConcejo || []).length > 0;
 
   const { data: creador } = await supabase
     .from('info_usuario')
@@ -883,7 +904,14 @@ export async function marcarRevisadoPorConcejo(taskId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('No autenticado');
-  
+
+  const { data: previa } = await supabase
+    .from('tasks')
+    .select('revisado_por')
+    .eq('id', taskId)
+    .maybeSingle();
+
+  const yaRevisada = Boolean(previa?.revisado_por);
   const revisadoPor = {
     nombre: "Concejo Municipal",
     fecha: new Date().toISOString()
@@ -895,6 +923,11 @@ export async function marcarRevisadoPorConcejo(taskId: string) {
     .eq('id', taskId);
 
   if (error) throw new Error(error.message);
+
+  if (!yaRevisada) {
+    await notificarActividadConcejoRevisada(taskId, revisadoPor.fecha, user.id);
+  }
+
   revalidatePath('/protected/actividades', 'layout');
   revalidatePath('/protected/concejo/agenda', 'layout');
 }

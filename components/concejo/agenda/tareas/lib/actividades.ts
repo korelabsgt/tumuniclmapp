@@ -97,7 +97,7 @@ export async function obtenerActividadesDeAgenda(
     : { data: [] as { user_id: string; nombre: string }[] };
 
   const nombrePorId = new Map((usuarios || []).map((u) => [u.user_id, u.nombre]));
-  const tareaPorTask = new Map(enlaces.map((e) => [e.task_id, e.tarea_concejo_id]));
+  const taskMapAgenda = new Map(tasks.map((t) => [t.id, t]));
 
   const miembrosPorTask = new Map<string, any[]>();
   (rawMiembros || []).forEach((m: any) => {
@@ -111,33 +111,34 @@ export async function obtenerActividadesDeAgenda(
 
   const resultado: Record<string, ActividadConcejo[]> = {};
 
-  tasks
-    .slice()
-    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
-    .forEach((t) => {
-      const tareaConcejoId = tareaPorTask.get(t.id);
-      if (!tareaConcejoId) return;
+  enlaces.forEach((enlace) => {
+    const t = taskMapAgenda.get(enlace.task_id);
+    if (!t) return;
 
-      const actividad: ActividadConcejo = {
-        id: t.id,
-        title: t.title,
-        description: t.description,
-        due_date: t.due_date,
-        status: t.status,
-        assigned_to: t.assigned_to,
-        confirmed_at: t.confirmed_at,
-        updated_at: t.updated_at ?? null,
-        assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
-        checklist: t.checklist as ActividadConcejo['checklist'],
-        archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
-        created_at: t.created_at,
-        miembros: miembrosPorTask.get(t.id) || [],
-        revisado_por: t.revisado_por as { nombre: string; fecha: string } | null,
-      };
+    const actividad: ActividadConcejo = {
+      id: t.id,
+      title: t.title,
+      description: t.description,
+      due_date: t.due_date,
+      status: t.status,
+      assigned_to: t.assigned_to,
+      confirmed_at: t.confirmed_at,
+      updated_at: t.updated_at ?? null,
+      assignee_nombre: t.assigned_to ? nombrePorId.get(t.assigned_to) || 'Sin asignar' : 'Sin asignar',
+      checklist: t.checklist as ActividadConcejo['checklist'],
+      archivos: (t.archivos as ActividadConcejo['archivos']) ?? null,
+      created_at: t.created_at,
+      miembros: miembrosPorTask.get(t.id) || [],
+      revisado_por: t.revisado_por as { nombre: string; fecha: string } | null,
+    };
 
-      if (!resultado[tareaConcejoId]) resultado[tareaConcejoId] = [];
-      resultado[tareaConcejoId].push(actividad);
-    });
+    if (!resultado[enlace.tarea_concejo_id]) resultado[enlace.tarea_concejo_id] = [];
+    resultado[enlace.tarea_concejo_id].push(actividad);
+  });
+
+  Object.values(resultado).forEach((lista) => {
+    lista.sort((a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime());
+  });
 
   return resultado;
 }
@@ -147,7 +148,7 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
 
   const { data: enlaces, error: errorEnlaces } = await supabase
     .from('tareas_concejo_actividades')
-    .select('tarea_concejo_id, task_id');
+    .select('tarea_concejo_id, task_id, es_origen');
 
   if (errorEnlaces || !enlaces || enlaces.length === 0) return [];
 
@@ -161,25 +162,42 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
 
   if (errorTasks || !tasks) return [];
 
-  const { data: puntos } = await supabase
-    .from('tareas_concejo')
-    .select('id, titulo_item, agenda_concejo_id')
-    .in('id', puntoIds);
+  const puntos: { id: string; titulo_item: string; agenda_concejo_id: string | null }[] = [];
+  for (let i = 0; i < puntoIds.length; i += 80) {
+    const chunk = puntoIds.slice(i, i + 80);
+    const { data, error } = await supabase
+      .from('tareas_concejo')
+      .select('id, titulo_item, agenda_concejo_id')
+      .in('id', chunk);
+    if (error) console.error('Error cargando puntos de actividades:', error.message);
+    if (data) puntos.push(...data);
+  }
 
-  const puntoMap = new Map((puntos || []).map((p) => [p.id, p]));
+  const puntoMap = new Map(puntos.map((p) => [p.id, p]));
 
   const agendaIds = Array.from(
-    new Set((puntos || []).map((p) => p.agenda_concejo_id).filter((id): id is string => !!id)),
+    new Set(puntos.map((p) => p.agenda_concejo_id).filter((id): id is string => !!id)),
   );
 
-  const { data: agendas } = agendaIds.length
-    ? await supabase
-        .from('agenda_concejo')
-        .select('id, titulo, fecha_reunion, estado, descripcion')
-        .in('id', agendaIds)
-    : { data: [] as { id: string; titulo: string; fecha_reunion: string; estado: string; descripcion: string }[] };
+  const agendas: {
+    id: string;
+    titulo: string;
+    fecha_reunion: string;
+    estado: string;
+    descripcion: string | null;
+  }[] = [];
 
-  const agendaMap = new Map((agendas || []).map((a) => [a.id, a]));
+  for (let i = 0; i < agendaIds.length; i += 80) {
+    const chunk = agendaIds.slice(i, i + 80);
+    const { data, error } = await supabase
+      .from('agenda_concejo')
+      .select('id, titulo, fecha_reunion, estado, descripcion')
+      .in('id', chunk);
+    if (error) console.error('Error cargando sesiones de actividades:', error.message);
+    if (data) agendas.push(...data);
+  }
+
+  const agendaMap = new Map(agendas.map((a) => [a.id, a]));
 
   const assignedIds = Array.from(
     new Set(tasks.map((t) => t.assigned_to).filter((id): id is string => !!id)),
@@ -217,7 +235,7 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
     const t = taskMap.get(enlace.task_id);
     if (!t) return;
     const punto = puntoMap.get(enlace.tarea_concejo_id);
-    const agenda = punto ? agendaMap.get(punto.agenda_concejo_id || '') : undefined;
+    const agenda = punto?.agenda_concejo_id ? agendaMap.get(punto.agenda_concejo_id) : undefined;
 
     resultado.push({
       id: t.id,
@@ -237,10 +255,13 @@ export async function obtenerTodasActividadesConcejo(): Promise<ActividadConcejo
       punto_id: enlace.tarea_concejo_id,
       punto_titulo: punto?.titulo_item || 'Punto desconocido',
       agenda_id: punto?.agenda_concejo_id || '',
-      agenda_titulo: agenda?.titulo || 'Sesión desconocida',
+      agenda_titulo: agenda?.titulo?.trim() || '',
       agenda_fecha: agenda?.fecha_reunion || '',
       agenda_estado: agenda?.estado || '',
       agenda_descripcion: agenda?.descripcion || '',
+      agenda_acta: null,
+      agenda_libro: null,
+      es_enlace_origen: enlace.es_origen !== false,
     });
   });
 
@@ -346,7 +367,7 @@ export async function crearActividadConcejo(input: CrearActividadInput): Promise
 
   const { error: errorEnlace } = await supabase
     .from('tareas_concejo_actividades')
-    .insert({ tarea_concejo_id: input.tareaConcejoId, task_id: task.id });
+    .insert({ tarea_concejo_id: input.tareaConcejoId, task_id: task.id, es_origen: true });
 
   if (errorEnlace) {
     await supabase.from('tasks').delete().eq('id', task.id);
@@ -445,6 +466,146 @@ export async function editarActividadConcejo(
   }
 
   revalidatePath('/protected/actividades', 'layout');
+}
+
+export async function obtenerActividadesPendientesRevisionConcejo(
+  agendaConcejoId: string,
+): Promise<ActividadConcejoConContexto[]> {
+  const supabase = await createClient();
+
+  const { data: puntosSesion } = await supabase
+    .from('tareas_concejo')
+    .select('id')
+    .eq('agenda_concejo_id', agendaConcejoId);
+
+  const puntosIdsSesion = new Set((puntosSesion || []).map((p) => p.id));
+
+  const todas = await obtenerTodasActividadesConcejo();
+  const yaEnSesion = new Set(
+    todas.filter((a) => puntosIdsSesion.has(a.punto_id)).map((a) => a.id),
+  );
+
+  return todas.filter(
+    (a) =>
+      a.status === 'Completado' &&
+      !a.revisado_por &&
+      a.es_enlace_origen !== false &&
+      !yaEnSesion.has(a.id),
+  );
+}
+
+const tituloPuntoRevision = (tituloActividad: string) => {
+  const base = `Revisión de actividad: ${tituloActividad.trim()}`;
+  return base.length > 500 ? `${base.slice(0, 497)}…` : base;
+};
+
+export async function crearPuntoSeguimientoActividad(
+  taskId: string,
+  agendaConcejoId: string,
+): Promise<string> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('No autenticado');
+
+  const { data: task, error: errorTask } = await supabase
+    .from('tasks')
+    .select('id, title, status, revisado_por')
+    .eq('id', taskId)
+    .single();
+
+  if (errorTask || !task) throw new Error('Actividad no encontrada');
+  if (task.status !== 'Completado') {
+    throw new Error('Solo se puede crear seguimiento para actividades completadas');
+  }
+  if (task.revisado_por) {
+    throw new Error('Esta actividad ya fue revisada');
+  }
+
+  const { data: puntosSesion } = await supabase
+    .from('tareas_concejo')
+    .select('id')
+    .eq('agenda_concejo_id', agendaConcejoId);
+
+  const puntosIdsSesion = new Set((puntosSesion || []).map((p) => p.id));
+
+  const { data: enlacesActividad } = await supabase
+    .from('tareas_concejo_actividades')
+    .select('tarea_concejo_id')
+    .eq('task_id', taskId);
+
+  if ((enlacesActividad || []).some((enlace) => puntosIdsSesion.has(enlace.tarea_concejo_id))) {
+    throw new Error('Esta actividad ya tiene un punto de revisión en esta sesión');
+  }
+
+  const nombreCategoriaRevision = 'Revisión de actividad';
+  let { data: categoria } = await supabase
+    .from('categorias_tareas_concejo')
+    .select('id')
+    .eq('nombre', nombreCategoriaRevision)
+    .maybeSingle();
+
+  if (!categoria?.id) {
+    const { data: categoriaNueva, error: errorCategoria } = await supabase
+      .from('categorias_tareas_concejo')
+      .insert({ nombre: nombreCategoriaRevision })
+      .select('id')
+      .single();
+
+    if (errorCategoria || !categoriaNueva?.id) {
+      const { data: categoriaRespaldo } = await supabase
+        .from('categorias_tareas_concejo')
+        .select('id')
+        .order('nombre', { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (!categoriaRespaldo?.id) {
+        throw new Error('No hay categorías de agenda configuradas');
+      }
+      categoria = categoriaRespaldo;
+    } else {
+      categoria = categoriaNueva;
+    }
+  }
+
+  const { data: nuevoPunto, error: errorPunto } = await supabase
+    .from('tareas_concejo')
+    .insert({
+      titulo_item: tituloPuntoRevision(task.title),
+      categoria_id: categoria.id,
+      estado: 'No iniciado',
+      votacion: 'No Emitido',
+      notas: [],
+      seguimiento: [],
+      agenda_concejo_id: agendaConcejoId,
+    })
+    .select('id')
+    .single();
+
+  if (errorPunto || !nuevoPunto) {
+    throw new Error(errorPunto?.message || 'No se pudo crear el punto de seguimiento');
+  }
+
+  const esPrimeraRelacion = (enlacesActividad || []).length === 0;
+
+  const { error: errorInsert } = await supabase.from('tareas_concejo_actividades').insert({
+    tarea_concejo_id: nuevoPunto.id,
+    task_id: taskId,
+    es_origen: esPrimeraRelacion,
+  });
+
+  if (errorInsert) {
+    await supabase.from('tareas_concejo').delete().eq('id', nuevoPunto.id);
+    throw new Error(errorInsert.message);
+  }
+
+  revalidatePath('/protected/concejo/agenda', 'layout');
+  revalidatePath(`/protected/concejo/agenda/${agendaConcejoId}`);
+  revalidatePath('/protected/actividades', 'layout');
+
+  return nuevoPunto.id;
 }
 
 export async function eliminarActividadConcejo(taskId: string): Promise<void> {

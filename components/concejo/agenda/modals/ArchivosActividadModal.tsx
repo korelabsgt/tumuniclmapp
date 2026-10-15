@@ -40,9 +40,13 @@ export default function ArchivosActividadModal({
         onClose={onClose}
         title="Archivos cargados"
         subtitle={tituloActividad}
+        compactHeader
+        footerClassName="px-4 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:hidden"
         footer={
           <ModalFooter>
-            <ModalCancel onClick={onClose}>Cerrar</ModalCancel>
+            <ModalCancel onClick={onClose} className="h-9 px-4 text-xs">
+              Cerrar
+            </ModalCancel>
           </ModalFooter>
         }
       >

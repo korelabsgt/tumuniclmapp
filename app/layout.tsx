@@ -14,6 +14,7 @@ import BloqueoCitacion from "@/components/admin/users/BloqueoCitacion";
 import BloqueoActividad from "@/components/tareas/BloqueoActividad";
 import BloqueoSolicitudesJefes from "@/components/solicitudes/jefes/BloqueoSolicitudesJefes";
 import BloqueoPermisoMensaje from "@/components/permisos/BloqueoPermisoMensaje";
+import BloqueoActividadConcejo from "@/components/concejo/agenda/tareas/BloqueoActividadConcejo";
 import BloqueoContrasenaVencida from "@/components/cambiar-contrasena/BloqueoContrasenaVencida";
 import ProtectedChrome from "@/components/layout/ProtectedChrome";
 import { PAGE_BG_CLASS } from "@/components/layout/chrome";
@@ -77,6 +78,7 @@ export default async function RootLayout({
                 <BloqueoCitacion />
                 <BloqueoActividad />
                 <BloqueoPermisoMensaje />
+                <BloqueoActividadConcejo />
                 <BloqueoSolicitudesJefes />
                 <BloqueoContrasenaVencida />
 

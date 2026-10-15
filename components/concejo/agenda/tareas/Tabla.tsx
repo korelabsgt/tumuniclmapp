@@ -8,8 +8,40 @@ import {
   ColumnDef,
 } from '@tanstack/react-table';
 import { ChevronDown, ChevronUp, Edit, FileText, ClipboardList, Paperclip, User } from 'lucide-react';
-import { Tarea } from '../lib/esquemas';
+import { ActividadConcejo, Tarea } from '../lib/esquemas';
 import { Button } from '@/components/ui/button';
+import ArchivosActividadModal from '../modals/ArchivosActividadModal';
+
+const PREFIJOS_REVISION = ['Revisión de actividad:', 'Revision de actividad:'] as const;
+const CATEGORIA_REVISION = 'Revisión de actividad';
+
+function prefijoRevision(titulo: string) {
+  return PREFIJOS_REVISION.find((prefijo) => titulo.startsWith(prefijo));
+}
+
+function esPuntoRevision(titulo: string) {
+  return Boolean(prefijoRevision(titulo));
+}
+
+function nombreCategoriaPunto(tarea: Tarea) {
+  if (esPuntoRevision(tarea.titulo_item)) return CATEGORIA_REVISION;
+  return tarea.categoria?.nombre || '-';
+}
+
+function TituloPunto({ titulo, enfatizar = false }: { titulo: string; enfatizar?: boolean }) {
+  const prefijo = prefijoRevision(titulo);
+  if (prefijo) {
+    const nombre = titulo.slice(prefijo.length).trim();
+    return (
+      <span className="flex flex-col items-start gap-0.5 py-0.5 leading-snug">
+        <span className="font-bold">Revisión de actividad</span>
+        {nombre ? <span className="font-normal">{nombre}</span> : null}
+      </span>
+    );
+  }
+
+  return <span className={enfatizar ? 'font-semibold' : undefined}>{titulo}</span>;
+}
 
 function BadgeConteoDocumentos({ count }: { count: number }) {
   if (count <= 0) return null;
@@ -18,6 +50,37 @@ function BadgeConteoDocumentos({ count }: { count: number }) {
     <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#0066cc] px-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-white dark:bg-blue-400 dark:text-zinc-900 dark:ring-zinc-900">
       {count > 99 ? '99+' : count}
     </span>
+  );
+}
+
+function FilaActividad({
+  actividad,
+  indice,
+  onVerArchivos,
+}: {
+  actividad: ActividadConcejo;
+  indice: number;
+  onVerArchivos: (actividad: ActividadConcejo, e: MouseEvent) => void;
+}) {
+  const totalArchivos = actividad.archivos?.length ?? 0;
+
+  return (
+    <li className="w-full min-w-0">
+      {totalArchivos > 0 ? (
+        <BotonDocumentos
+          count={totalArchivos}
+          onClick={(e) => onVerArchivos(actividad, e)}
+        />
+      ) : null}
+      <p className="mt-1 break-words text-xs font-medium leading-5 text-gray-700 dark:text-gray-300">
+        <span className="font-bold text-gray-400 dark:text-gray-500">{indice}. </span>
+        {actividad.title}
+      </p>
+      <p className="mt-0.5 break-words text-[10px] text-gray-400 dark:text-gray-500">
+        <User size={10} className="mr-1 inline-block align-text-bottom" />
+        {actividad.assignee_nombre}
+      </p>
+    </li>
   );
 }
 
@@ -112,6 +175,7 @@ interface TablaProps {
 
 export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNotasModal, handleOpenActividadesModal, handleOpenDocumentosModal, estadoAgenda }: TablaProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [actividadArchivos, setActividadArchivos] = useState<ActividadConcejo | null>(null);
 
   const puedeEditar = ['SUPER', 'SECRETARIO', 'SEC-TECNICO'].includes(rol);
 
@@ -147,7 +211,11 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
         accessorKey: 'titulo_item',
         header: 'Punto a Tratar',
         size: 200,
-        cell: info => <div className="flex justify-start items-center h-full text-left text-gray-800 dark:text-gray-200">{info.getValue() as string}</div>,
+        cell: info => (
+          <div className="flex justify-start items-center h-full text-left text-gray-800 dark:text-gray-200">
+            <TituloPunto titulo={info.getValue() as string} />
+          </div>
+        ),
       },
       {
         accessorKey: 'estado',
@@ -177,7 +245,11 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
         accessorKey: 'categoria.nombre',
         header: 'Categoría',
         size: 170,
-        cell: info => <div className="flex justify-start items-center h-full text-left text-gray-700 dark:text-gray-300">{info.getValue() as string}</div>,
+        cell: info => (
+          <div className="flex justify-start items-center h-full text-left text-gray-700 dark:text-gray-300">
+            {nombreCategoriaPunto(info.row.original)}
+          </div>
+        ),
       },
     ];
 
@@ -208,17 +280,17 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
               return <span className="text-gray-400 dark:text-gray-600 text-xs italic">Sin actividades</span>;
             }
             return (
-              <ol className="flex flex-col gap-1.5 w-full justify-start items-start max-h-32 overflow-y-auto custom-scrollbar">
+              <ol className="min-w-0 w-full space-y-2">
                 {actividades.map((actividad, index) => (
-                  <li key={actividad.id} className="w-full flex items-start gap-1.5">
-                    <span className="text-xs font-bold text-gray-400 dark:text-gray-500 shrink-0">{index + 1}.</span>
-                    <div className="min-w-0">
-                      <p className="text-xs font-medium text-gray-700 dark:text-gray-300 leading-snug">{actividad.title}</p>
-                      <span className="text-[10px] text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                        <User size={10} /> {actividad.assignee_nombre}
-                      </span>
-                    </div>
-                  </li>
+                  <FilaActividad
+                    key={actividad.id}
+                    actividad={actividad}
+                    indice={index + 1}
+                    onVerArchivos={(item, e) => {
+                      e.stopPropagation();
+                      setActividadArchivos(item);
+                    }}
+                  />
                 ))}
               </ol>
             );
@@ -253,7 +325,7 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
     <div className="w-full">
       
       <div className="hidden md:block w-full overflow-x-auto rounded-lg shadow-sm border border-gray-200 dark:border-neutral-800">
-        <table className="min-w-max w-full table-fixed bg-white dark:bg-neutral-900">
+        <table className="w-full table-fixed bg-white dark:bg-neutral-900">
           <thead className="bg-gray-50 dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-800">
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}>
@@ -286,7 +358,8 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
                 {row.getVisibleCells().map(cell => (
                   <td
                     key={cell.id}
-                    className={`p-2 text-sm border-r border-gray-100 dark:border-neutral-800 last:border-r-0 
+                    className={`align-top whitespace-normal p-2 text-sm border-r border-gray-100 dark:border-neutral-800 last:border-r-0 
+                      ${cell.column.id === 'actividades' || cell.column.id === 'notas' || cell.column.id === 'titulo_item' ? 'max-w-0' : ''}
                       ${puedeEditar && cell.column.id !== 'documentos' ? 'cursor-pointer hover:bg-black/5 dark:hover:bg-white/5' : 'cursor-default'}
                     `}
                     style={{ width: `${cell.column.getSize()}px` }}
@@ -344,8 +417,8 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
                             {tarea.estado}
                         </span>
                     </div>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-200 line-clamp-2">
-                        {tarea.titulo_item}
+                    <p className="text-sm text-gray-800 dark:text-gray-200">
+                        <TituloPunto titulo={tarea.titulo_item} enfatizar />
                     </p>
                 </div>
                 <div className="text-gray-400 dark:text-gray-500 mt-1">
@@ -367,7 +440,7 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
                   <div className="mt-3 grid grid-cols-2 gap-4 text-sm">
                     <div>
                         <span className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Categoría</span>
-                        <p className="text-gray-700 dark:text-gray-300 mt-0.5">{tarea.categoria?.nombre || '-'}</p>
+                        <p className="text-gray-700 dark:text-gray-300 mt-0.5">{nombreCategoriaPunto(tarea)}</p>
                     </div>
                     <div>
                         <span className="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold">Votación</span>
@@ -402,13 +475,15 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
                                 {tieneActividades ? (
                                     <ol className="text-xs text-gray-600 dark:text-gray-300 space-y-1.5">
                                         {actividades.map((actividad, i) => (
-                                            <li key={actividad.id} className="flex items-start gap-1.5">
-                                                <span className="font-bold text-gray-400 dark:text-gray-500">{i + 1}.</span>
-                                                <span className="min-w-0">
-                                                    {actividad.title}
-                                                    <span className="block text-[10px] text-gray-400 dark:text-gray-500">{actividad.assignee_nombre}</span>
-                                                </span>
-                                            </li>
+                                            <FilaActividad
+                                                key={actividad.id}
+                                                actividad={actividad}
+                                                indice={i + 1}
+                                                onVerArchivos={(item, e) => {
+                                                  e.stopPropagation();
+                                                  setActividadArchivos(item);
+                                                }}
+                                            />
                                         ))}
                                     </ol>
                                 ) : (
@@ -458,6 +533,13 @@ export default function Tabla({ rol, tareas, handleOpenEditModal, handleOpenNota
           );
         })}
       </div>
+
+      <ArchivosActividadModal
+        open={!!actividadArchivos}
+        onClose={() => setActividadArchivos(null)}
+        tituloActividad={actividadArchivos?.title ?? ''}
+        archivos={actividadArchivos?.archivos ?? []}
+      />
     </div>
   );
 }

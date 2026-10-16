@@ -13,16 +13,28 @@ import InformeDietas from './modals/InformeDietas';
 import GestorActa from '@/components/concejo/agenda/gestorActa';
 import ListaActividadesAsignadas from './ListaActividadesAsignadas';
 import FiltroPeriodoAgenda from './FiltroPeriodoAgenda';
-import { CalendarPlus, Pencil, ArrowRight, Trash2, CalendarClock, CalendarDays, CalendarCheck, FileText, Table, FileUp, X, ChevronDown, ChevronUp, ClipboardList } from 'lucide-react';
+import { CalendarPlus, Pencil, ArrowRight, Trash2, CalendarClock, CalendarDays, CalendarCheck, FileText, Table, FileUp, X, ClipboardList } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AnimatePresence, motion } from 'framer-motion';
 import CargandoAnimacion from '@/components/ui/animations/Cargando';
 import { useRouter } from 'next/navigation';
-import { getYear, format, differenceInDays, isToday, isFuture, isPast } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { getYear, differenceInDays, isToday, isFuture, isPast } from 'date-fns';
 import BotonVolver from '@/components/ui/botones/BotonVolver';
 import Swal from 'sweetalert2';
 import { cn } from '@/lib/utils';
+
+const formatearFechaSesion = (iso: string) => {
+  const fecha = new Date(iso);
+  const dias = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const anio = String(fecha.getFullYear()).slice(-2);
+  let hora = fecha.getHours();
+  const minutos = String(fecha.getMinutes()).padStart(2, '0');
+  const periodo = hora >= 12 ? 'PM' : 'AM';
+  hora = hora % 12 || 12;
+  return `${dias[fecha.getDay()]} ${dia}/${mes}/${anio}, ${String(hora).padStart(2, '0')}:${minutos} ${periodo}`;
+};
 
 const calcularDiasRestantes = (fechaReunion: string): string => {
   const fecha = new Date(fechaReunion);
@@ -34,9 +46,6 @@ const calcularDiasRestantes = (fechaReunion: string): string => {
 
 const AgendaCard = memo(({ 
   agenda, 
-  isSelected, 
-  isLoading, 
-  onSelect, 
   onDelete, 
   onEdit, 
   onGoTo, 
@@ -45,9 +54,6 @@ const AgendaCard = memo(({
   onSetActa 
 }: {
   agenda: AgendaConcejo;
-  isSelected: boolean;
-  isLoading: boolean;
-  onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onEdit: (agenda: AgendaConcejo) => void;
   onGoTo: (id: string) => void;
@@ -55,14 +61,11 @@ const AgendaCard = memo(({
   permisos: string[];
   onSetActa: (agenda: AgendaConcejo) => void;
 }) => {
-  let borderColorClass = 'border-l-blue-500 dark:border-l-blue-500';
   let textColorClass = 'text-blue-600 dark:text-blue-400';
   
   if (agenda.estado === 'En progreso') {
-    borderColorClass = 'border-l-green-500 dark:border-l-green-500';
     textColorClass = 'text-green-600 dark:text-green-400';
   } else if (agenda.estado === 'Finalizada') {
-    borderColorClass = 'border-l-gray-400 dark:border-l-gray-500';
     textColorClass = 'text-gray-500 dark:text-gray-400';
   }
 
@@ -80,97 +83,94 @@ const hayActa = Boolean(
   const textoActa = hayActa ? 'Ver Acta' : 'Subir Acta';
   const IconoActa = hayActa ? FileText : FileUp;
 
-  return (
-    <motion.div
-      layout
-      transition={{ layout: { duration: 0.2, type: "tween" } }}
-      onClick={() => onSelect(agenda.id)}
-      className={`group relative bg-white dark:bg-neutral-900 rounded-lg border border-gray-200 dark:border-neutral-800 shadow-sm border-l-4 ${borderColorClass} flex flex-col overflow-hidden ${isSelected ? 'ring-1 ring-blue-500 dark:ring-blue-400' : ''} cursor-pointer`}
-    >
-      <div className="flex-1 p-4">
-        <div className="flex items-baseline justify-between gap-x-3 flex-wrap">
-          <div className="flex items-baseline gap-2">
-              <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm md:text-2xl">{agenda.titulo}</p>
-              <span className="text-gray-500 dark:text-gray-400 font-normal whitespace-nowrap text-sm md:text-2xl">
-              {format(new Date(agenda.fecha_reunion), "EEEE, d 'de' MMMM 'de' yyyy, h:mm a", { locale: es })}
-              </span>
-          </div>
-          <div className="text-gray-400">
-              {isSelected ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-          </div>
-        </div>
-        <p className="text-sm md:text-xl mt-2 text-gray-600 dark:text-gray-300 font-normal">{agenda.descripcion}</p>
-        <p className="text-sm md:text-xl mt-2">
-          <span className={`font-bold ${textColorClass}`}>{agenda.estado}</span>,{' '}
-          <span className="font-semibold text-gray-700 dark:text-gray-300">
-            {calcularDiasRestantes(agenda.fecha_reunion)}
-            {calcularDiasRestantes(agenda.fecha_reunion).includes('días') && ' restantes'}
-          </span>
-        </p>
-      </div>
+  const diasRestantes = calcularDiasRestantes(agenda.fecha_reunion);
+  const textoDias = diasRestantes.includes('días') ? `${diasRestantes} restantes` : diasRestantes;
 
-      <AnimatePresence initial={false}>
-        {isSelected && (
-          <motion.div 
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-              className="overflow-hidden"
+  const acciones = () => (
+        <div className="flex shrink-0 items-center justify-end gap-1">
+          {puedeEliminar && (
+            <Button
+              type="button"
+              onClick={() => onDelete(agenda.id)}
+              variant="ghost"
+              aria-label="Eliminar"
+              title="Eliminar"
+              className="h-8 w-8 cursor-pointer p-0 text-red-600 hover:bg-red-100 sm:h-9 sm:w-9 dark:text-red-400 dark:hover:bg-red-900/30"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          {puedeEditar && (
+            <Button
+              type="button"
+              onClick={() => onEdit(agenda)}
+              variant="ghost"
+              aria-label="Editar"
+              title="Editar"
+              className="h-8 w-8 cursor-pointer p-0 text-blue-600 hover:bg-blue-100 sm:h-9 sm:w-9 dark:text-blue-400 dark:hover:bg-blue-900/30"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {mostrarBotonActa && (
+            <Button
+              type="button"
+              onClick={() => onSetActa(agenda)}
+              variant="ghost"
+              className={`h-8 cursor-pointer px-2 text-xs sm:h-9 sm:px-3 sm:text-sm ${
+                hayActa
+                  ? 'text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900/30'
+                  : 'text-purple-600 hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-purple-900/30'
+              }`}
+            >
+              <IconoActa className="mr-2 h-4 w-4" /> {textoActa}
+            </Button>
+          )}
+          <Button
+            type="button"
+            onClick={() => onGoTo(agenda.id)}
+            variant="ghost"
+            className="h-8 cursor-pointer gap-1 px-2 text-xs font-medium text-green-600 hover:bg-green-100 hover:text-green-700 sm:h-9 sm:gap-2 sm:px-3 sm:text-sm dark:text-green-400 dark:hover:bg-green-900/50"
           >
-              <div className="border-t border-gray-100 dark:border-neutral-800 bg-gray-50 dark:bg-black/20 px-4 py-3">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                        {puedeEliminar && (
-                            <Button 
-                                onClick={(e) => { e.stopPropagation(); onDelete(agenda.id); }} 
-                                variant="ghost" 
-                                className="text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/30 px-3 h-9"
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" /> Eliminar
-                            </Button>
-                        )}
-                    </div>
+            Entrar <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+  );
 
-                    <div className="flex items-center gap-2">
-                        {puedeEditar && (
-                            <Button 
-                                onClick={(e) => { e.stopPropagation(); onEdit(agenda); }} 
-                                variant="ghost" 
-                                className="text-blue-600 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30 px-3 h-9"
-                            >
-                                <Pencil className="h-4 w-4 mr-2" /> Editar
-                            </Button>
-                        )}
-
-                        {mostrarBotonActa && (
-                            <Button 
-                                onClick={(e) => { e.stopPropagation(); onSetActa(agenda); }} 
-                                variant="ghost" 
-                                className={`px-3 h-9 ${
-                                    hayActa 
-                                    ? 'text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-indigo-900/30' 
-                                    : 'text-purple-600 hover:bg-purple-100 dark:text-purple-400 dark:hover:bg-purple-900/30'
-                                }`}
-                            >
-                                <IconoActa className="h-4 w-4 mr-2" /> {textoActa}
-                            </Button>
-                        )}
-
-                        <Button 
-                            onClick={(e) => { e.stopPropagation(); onGoTo(agenda.id); }} 
-                            variant="ghost"
-                             className="h-10 px-4 text-green-600 hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/50 gap-2 font-medium"
-                        >
-                            Entrar <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                    </div>
-                </div>
-              </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+  return (
+    <div className="border-b border-slate-300 last:border-b-0 dark:border-neutral-700">
+      <div className="flex select-none flex-col gap-0.5 bg-white px-3 py-2 sm:hidden dark:bg-neutral-900">
+        <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+          {agenda.titulo}
+        </p>
+        <p className={`text-xs font-semibold ${textColorClass}`}>{agenda.estado}</p>
+        <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">{textoDias}</p>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">{agenda.descripcion}</p>
+        <div className="flex items-center justify-between gap-2">
+          <p className="min-w-0 text-[11px] text-slate-500 dark:text-slate-400">
+            {formatearFechaSesion(agenda.fecha_reunion)}
+          </p>
+          {acciones()}
+        </div>
+      </div>
+      <div className="hidden select-none items-center justify-between gap-3 bg-white px-4 py-2.5 sm:flex dark:bg-neutral-900">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase leading-snug tracking-wider text-blue-600 dark:text-blue-400">
+            <span>{agenda.titulo}</span>
+            <span className={`ml-2 normal-case tracking-normal ${textColorClass}`}>{agenda.estado}</span>
+            <span className="ml-1 font-semibold normal-case tracking-normal text-slate-500 dark:text-slate-400">
+              · {textoDias}
+            </span>
+          </p>
+          <p className="truncate text-[11px] font-normal text-slate-500 dark:text-slate-400">
+            {agenda.descripcion}
+            <span className="mx-1.5">·</span>
+            {formatearFechaSesion(agenda.fecha_reunion)}
+          </p>
+        </div>
+        {acciones()}
+      </div>
+    </div>
   );
 });
 
@@ -222,8 +222,6 @@ export default function Ver() {
   }, [filtroMes]);
   
   const [loadingAgendaId, setLoadingAgendaId] = useState<string | null>(null);
-  const [selectedAgendaId, setSelectedAgendaId] = useState<string | null>(null);
-  
   const [vista, setVista] = useState<VistaType>('hoy');
   const [haCargadoVistaInicial, setHaCargadoVistaInicial] = useState(false);
 
@@ -327,15 +325,6 @@ export default function Ver() {
     }
   };
 
-  const handleCardClick = (id: string) => {
-    if (loadingAgendaId) return;
-    if (selectedAgendaId === id) {
-      setSelectedAgendaId(null);
-    } else {
-      setSelectedAgendaId(id);
-    }
-  };
-
   if (cargandoUsuario || cargandoAgendas) return <CargandoAnimacion texto="Cargando Agenda..." />;
   if (error) return <div className="text-center py-10 text-red-500 dark:text-red-400"><p>{error}</p></div>;
 
@@ -344,11 +333,9 @@ export default function Ver() {
 
       <header className="w-full min-w-0 flex flex-col gap-4 mt-2 md:mb-6">
         
-        <div className="w-full flex flex-col gap-3 xl:flex-row xl:items-center">
-            
-            <div className="flex w-full xl:w-auto items-center gap-3">
-                <BotonVolver ruta="/protected/" />
-                
+        <div className="flex w-full flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex w-full min-w-0 items-center gap-3 lg:w-auto lg:flex-1">
+                <BotonVolver ruta="/protected/" className="h-8 shrink-0 gap-1 px-1 text-sm [&_svg]:h-4 [&_svg]:w-4 sm:h-10 sm:gap-2 sm:px-4 sm:text-xl sm:[&_svg]:h-5 sm:[&_svg]:w-5" />
                 <FiltroPeriodoAgenda
                   filtroAnio={filtroAnio}
                   filtroMes={filtroMes}
@@ -357,28 +344,28 @@ export default function Ver() {
                 />
             </div>
 
-
-            <div className="flex flex-wrap items-center justify-center gap-2 w-full xl:w-auto xl:ml-auto">
-                <Button onClick={() => setIsResumenOpen(true)} variant="ghost" size="sm" className="h-10 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-100 dark:text-blue-400 dark:hover:bg-blue-900/30 gap-2 border border-gray-100 dark:border-neutral-800 xl:border-none">
-                    <Table size={16} /> <span className="text-xs sm:text-sm">Resumen de asistencia</span>
+            <div className="flex w-full flex-wrap items-center justify-center gap-1.5 sm:gap-2 lg:ml-4 lg:w-auto lg:shrink-0 lg:flex-nowrap lg:justify-end">
+                <Button onClick={() => setIsResumenOpen(true)} variant="ghost" size="sm" className="h-8 gap-1.5 border border-gray-100 px-1.5 text-blue-600 hover:bg-blue-100 hover:text-blue-700 dark:border-neutral-800 dark:text-blue-400 dark:hover:bg-blue-900/30 sm:h-10 sm:gap-2 sm:px-2 lg:border-none">
+                    <Table size={14} className="sm:h-4 sm:w-4" /> <span className="text-[11px] sm:text-sm">Resumen de asistencia</span>
                 </Button>
-                <Button onClick={() => setIsInformeOpen(true)} variant="ghost" size="sm" className="h-10 px-2 text-green-600 hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/50 gap-2 border border-gray-100 dark:border-neutral-800 xl:border-none">
-                    <FileText size={16} /> <span className="text-xs sm:text-sm">Informe Pago DAFIM</span>
+                <Button onClick={() => setIsInformeOpen(true)} variant="ghost" size="sm" className="h-8 gap-1.5 border border-gray-100 px-1.5 text-green-600 hover:bg-green-100 hover:text-green-700 dark:border-neutral-800 dark:text-green-400 dark:hover:bg-green-900/50 sm:h-10 sm:gap-2 sm:px-2 lg:border-none">
+                    <FileText size={14} className="sm:h-4 sm:w-4" /> <span className="text-[11px] sm:text-sm">Informe Pago DAFIM</span>
                 </Button>
                 {(permisos.includes('EDITAR') || permisos.includes('TODO')) && (
                     <Button 
                     onClick={() => { setAgendaAEditar(null); setIsModalOpen(true); }} 
                     variant="ghost" 
-                    className="h-10 px-2 border-2 border-green-600 dark:border-green-400 text-green-600 hover:text-green-700 hover:bg-green-100 dark:text-green-400 dark:hover:bg-green-900/50 gap-2 font-semibold"
+                    className="h-8 gap-1.5 border border-green-600 px-1.5 text-[11px] font-semibold text-green-600 hover:bg-green-100 hover:text-green-700 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-900/50 sm:h-10 sm:gap-2 sm:border-2 sm:px-2 sm:text-sm"
                     >
-                    <CalendarPlus size={18} /> <span className="text-xs sm:text-sm">Nueva Sesión</span>
+                    <CalendarPlus size={14} className="sm:h-[18px] sm:w-[18px]" /> <span>Nueva Sesión</span>
                     </Button>
                 )}
             </div>
         </div>
 
         <div className="w-full min-w-0 border-t border-gray-100 dark:border-neutral-800 pt-2 xl:border-none xl:pt-0">
-            <div className="flex items-center gap-1 overflow-x-auto overscroll-x-contain pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4 xl:overflow-x-visible">
+            <div className="flex flex-col items-center gap-1 sm:flex-row sm:gap-4 sm:overflow-x-auto sm:overscroll-x-contain sm:pb-1 sm:[-ms-overflow-style:none] sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden xl:overflow-x-visible">
+                <div className="flex items-center justify-center gap-3 sm:contents">
                 {(counts.hoy > 0 || vista === 'hoy') && (
                     <button onClick={() => setVista('hoy')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'hoy' ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
                         <CalendarClock className="h-4 w-4" /> <span>Hoy ({counts.hoy})</span>
@@ -397,12 +384,15 @@ export default function Ver() {
                         {vista === 'terminadas' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-red-600 dark:bg-red-400" />}
                     </button>
                 )}
+                </div>
+                <div className="flex items-center justify-center sm:contents">
                 {(hayActividades || vista === 'actividades' || cargandoActividades) && !errorActividades && (
                     <button onClick={() => setVista('actividades')} className={cn("relative flex shrink-0 items-center gap-1.5 px-2 py-1 text-sm font-medium transition-colors whitespace-nowrap", vista === 'actividades' ? "text-purple-600 dark:text-purple-400" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200")}>
                         <ClipboardList className="h-4 w-4" /> <span>Actividades Asignadas</span>
                         {vista === 'actividades' && <motion.div layoutId="activeTab" className="absolute bottom-0 left-0 right-0 h-[2px] bg-purple-600 dark:bg-purple-400" />}
                     </button>
                 )}
+                </div>
             </div>
         </div>
 
@@ -432,15 +422,12 @@ export default function Ver() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
-              className="grid grid-cols-1 gap-4"
+              className="overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900"
             >
               {agendasVisibles.map(agenda => (
                 <AgendaCard
                   key={agenda.id}
                   agenda={agenda}
-                  isSelected={selectedAgendaId === agenda.id}
-                  isLoading={loadingAgendaId === agenda.id}
-                  onSelect={handleCardClick}
                   onDelete={handleDeleteAgenda}
                   onEdit={handleOpenEditModal}
                   onGoTo={handleGoToAgenda}

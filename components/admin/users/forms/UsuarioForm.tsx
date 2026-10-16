@@ -19,7 +19,7 @@ import {
   ModalInput,
   ModalSelect,
 } from "@/components/ui/general-modal";
-import { CampoFormulario, CAMPO_SUBMIT_BTN_CLASS } from "./CampoFormulario";
+import { CampoFormulario, CAMPO_INPUT_CLASS, CAMPO_SUBMIT_BTN_CLASS } from "./CampoFormulario";
 import { CintilloInstitucional } from "@/components/ui/cintillo-institucional";
 import PasswordSection from "./PasswordForm";
 import InfoForm from "./InfoForm";
@@ -129,7 +129,7 @@ const USUARIO_TAB_WRAP =
   "relative grid w-full grid-cols-2 gap-2 pt-2 pb-2.5";
 
 const USUARIO_TAB_BTN =
-  "inline-flex h-10 w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors";
+  "inline-flex h-9 w-full cursor-pointer items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-semibold transition-colors sm:h-8 sm:text-[13px]";
 
 const USUARIO_TAB_ACTIVA =
   "bg-blue-100 text-[#0066cc] dark:bg-blue-950/50 dark:text-blue-400";
@@ -568,8 +568,8 @@ export default function UserForm({
   if (!usuario) return null;
 
   return (
-    <div className="flex flex-col gap-5">
-      <CintilloInstitucional className="rounded-full w-[90%] md:w-[80%] mx-auto" />
+    <div className="flex h-full min-h-0 flex-col gap-3 sm:gap-2">
+      <CintilloInstitucional className="!h-1 mx-auto w-40 rounded-full" />
 
       <div className="flex items-center gap-2">
         <div className="min-w-0 flex-1">
@@ -580,9 +580,12 @@ export default function UserForm({
 
       <div
         className={
-          activeTab === "informacion" ? "flex flex-col gap-3" : "hidden"
+          activeTab === "informacion"
+            ? "flex min-h-0 flex-1 flex-col gap-2"
+            : "hidden"
         }
       >
+      <div className="grid min-h-0 flex-1 grid-cols-1 content-start gap-x-3 gap-y-2 overflow-y-auto sm:grid-cols-2">
             <CampoFormulario
               icon={Contact}
               label="Nombre"
@@ -595,7 +598,7 @@ export default function UserForm({
                   setNombre(e.target.value);
                   validateForm();
                 }}
-                className={errorDe("nombre") ? "border-red-400" : undefined}
+                className={cn(CAMPO_INPUT_CLASS, errorDe("nombre") ? "border-red-400" : undefined)}
               />
             </CampoFormulario>
 
@@ -620,11 +623,11 @@ export default function UserForm({
                     e.preventDefault();
                   }
                 }}
-                className={errorDe("usuario") ? "border-red-400" : undefined}
+                className={cn(CAMPO_INPUT_CLASS, errorDe("usuario") ? "border-red-400" : undefined)}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={ShieldCheck} label="Rol" error={errorDe("rol")}>
+            <CampoFormulario icon={ShieldCheck} label="Rol" error={errorDe("rol")} className="sm:col-span-2">
               <ModalSelect
                 id="rol"
                 value={rol || ""}
@@ -632,7 +635,7 @@ export default function UserForm({
                   setRol(e.target.value);
                   validateForm();
                 }}
-                className={errorDe("rol") ? "border-red-400" : undefined}
+                className={cn(CAMPO_INPUT_CLASS, errorDe("rol") ? "border-red-400" : undefined)}
               >
                 <option value="">Seleccione un rol</option>
                 {rolesFiltrados.map((rolItem) => (
@@ -643,12 +646,12 @@ export default function UserForm({
               </ModalSelect>
             </CampoFormulario>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:col-span-2">
               <div className="grid grid-cols-2 rounded-xl bg-zinc-100 p-1 dark:bg-zinc-900">
                 <button
                   type="button"
                   onClick={() => setActivo(true)}
-                  className={`h-10 cursor-pointer rounded-lg text-xs font-semibold transition-colors sm:text-sm ${
+                  className={`h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors sm:h-8 sm:text-sm ${
                     activo
                       ? "bg-white text-emerald-600 shadow-sm dark:bg-zinc-700 dark:text-emerald-400"
                       : "text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200"
@@ -665,7 +668,7 @@ export default function UserForm({
                       ? "No puede inactivarse a sí mismo."
                       : undefined
                   }
-                  className={`h-10 rounded-lg text-xs font-semibold transition-colors sm:text-sm ${
+                  className={`h-9 rounded-lg text-xs font-semibold transition-colors sm:h-8 sm:text-sm ${
                     esPropio
                       ? "cursor-not-allowed opacity-40"
                       : "cursor-pointer"
@@ -682,7 +685,7 @@ export default function UserForm({
                 <button
                   type="button"
                   onClick={() => setEsJefe(true)}
-                  className={`h-10 cursor-pointer rounded-lg text-xs font-semibold transition-colors sm:text-sm ${
+                  className={`h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors sm:h-8 sm:text-sm ${
                     esJefe
                       ? "bg-white text-violet-600 shadow-sm dark:bg-zinc-700 dark:text-violet-400"
                       : "text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200"
@@ -693,7 +696,7 @@ export default function UserForm({
                 <button
                   type="button"
                   onClick={() => setEsJefe(false)}
-                  className={`h-10 cursor-pointer rounded-lg text-xs font-semibold transition-colors sm:text-sm ${
+                  className={`h-9 cursor-pointer rounded-lg text-xs font-semibold transition-colors sm:h-8 sm:text-sm ${
                     !esJefe
                       ? "bg-white text-[#0066cc] shadow-sm dark:bg-zinc-700 dark:text-blue-400"
                       : "text-muted-foreground hover:text-zinc-700 dark:hover:text-zinc-200"
@@ -704,11 +707,11 @@ export default function UserForm({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900/40">
+            <div className="rounded-2xl border border-zinc-200 bg-white sm:col-span-2 dark:border-zinc-700 dark:bg-zinc-900/40">
               <button
                 type="button"
                 onClick={() => setAcordeonPassword((v) => !v)}
-                className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left"
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left sm:py-2.5"
               >
                 <span className="text-sm font-semibold text-[#0066cc] dark:text-blue-400">
                   Cambiar contraseña
@@ -732,7 +735,7 @@ export default function UserForm({
                             type="button"
                             onClick={() => void alternarLink()}
                             disabled={generandoLink}
-                            className={`flex h-12 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 text-center text-sm font-semibold leading-tight disabled:cursor-not-allowed disabled:opacity-50 ${
+                            className={`flex h-12 w-full shrink-0 cursor-pointer items-center justify-center gap-2 rounded-xl border px-4 text-center text-sm font-semibold leading-tight disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 ${
                               linkActivo
                                 ? "border-red-500 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-400 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
                                 : "border-emerald-500 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300 dark:hover:bg-emerald-900"
@@ -748,7 +751,7 @@ export default function UserForm({
                                 : "Generar nuevo link de contraseña"}
                           </button>
                           {linkActivo ? (
-                            <div className="flex h-12 w-full shrink-0 items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 dark:border-zinc-700 dark:bg-zinc-900">
+                            <div className="flex h-12 w-full shrink-0 items-center justify-between rounded-xl border border-zinc-200 bg-white px-4 sm:h-10 dark:border-zinc-700 dark:bg-zinc-900">
                               <span className="pr-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                                 Tiempo restante
                               </span>
@@ -757,7 +760,7 @@ export default function UserForm({
                               </span>
                             </div>
                           ) : (
-                            <div className="flex h-12 w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 dark:border-zinc-700 dark:bg-zinc-900">
+                            <div className="flex h-12 w-full shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 sm:h-10 dark:border-zinc-700 dark:bg-zinc-900">
                               <p className="text-center text-sm font-semibold text-muted-foreground">
                                 El link de contraseña está inactivo.
                               </p>
@@ -774,7 +777,7 @@ export default function UserForm({
                               onChange={(e) =>
                                 setTelefono(e.target.value.replace(/\D/g, "").slice(0, 8))
                               }
-                              className="min-w-0 flex-1"
+                              className={cn("min-w-0 flex-1", CAMPO_INPUT_CLASS)}
                               aria-label="Teléfono para restablecer contraseña"
                             />
                             <button
@@ -782,7 +785,7 @@ export default function UserForm({
                               onClick={() => void enviarWhatsApp()}
                               disabled={!linkActivo || generandoLink}
                               aria-label="Enviar por WhatsApp"
-                              className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50"
+                              className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl bg-emerald-500 text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10"
                             >
                               <IconoWhatsApp className="h-6 w-6" />
                             </button>
@@ -791,7 +794,7 @@ export default function UserForm({
                               onClick={() => void copiarMensaje()}
                               disabled={!linkActivo || generandoLink}
                               aria-label="Copiar mensaje"
-                              className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                              className="inline-flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-zinc-300 bg-white text-zinc-700 transition-colors hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 sm:w-10 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
                             >
                               {copiado ? (
                                 <Check className="h-5 w-5 text-emerald-600" />
@@ -810,7 +813,7 @@ export default function UserForm({
                           confirmar={confirmar}
                           onPasswordChange={setPassword}
                           onConfirmarChange={setConfirmar}
-                          inputClassName={`${MODAL_FIELD_CLASS} pr-11`}
+                          inputClassName={`${MODAL_FIELD_CLASS} ${CAMPO_INPUT_CLASS} pr-11`}
                           passwordLabel="Nueva contraseña"
                           idPrefix="admin-user-"
                           passwordName="new-password"
@@ -822,7 +825,7 @@ export default function UserForm({
                           type="button"
                           onClick={() => void guardarPassword()}
                           disabled={!passwordValida || guardandoPassword}
-                          className="mt-4 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-200 text-sm font-semibold text-zinc-900 hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
+                          className="mt-4 inline-flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-zinc-200 text-sm font-semibold text-zinc-900 hover:bg-zinc-300 disabled:cursor-not-allowed disabled:opacity-50 sm:h-10 dark:bg-zinc-700 dark:text-white dark:hover:bg-zinc-600"
                         >
                           {guardandoPassword
                             ? "Guardando..."
@@ -835,19 +838,18 @@ export default function UserForm({
               </AnimatePresence>
             </div>
 
-            {!acordeonPassword ? (
-              <button
-                type="button"
-                onClick={() => void guardarCambios()}
-                disabled={!hayCambios || cargando}
-                className={CAMPO_SUBMIT_BTN_CLASS}
-              >
-                {cargando ? "Guardando..." : "Guardar cambios de cuenta"}
-              </button>
-            ) : null}
+      </div>
+            <button
+              type="button"
+              onClick={() => void guardarCambios()}
+              disabled={!hayCambios || cargando || acordeonPassword}
+              className={cn(CAMPO_SUBMIT_BTN_CLASS, "mt-auto shrink-0")}
+            >
+              {cargando ? "Guardando..." : "Guardar cambios de cuenta"}
+            </button>
       </div>
 
-      <div className={activeTab === "personal" ? "block" : "hidden"}>
+      <div className={activeTab === "personal" ? "flex min-h-0 flex-1 flex-col overflow-hidden" : "hidden"}>
         <InfoForm userData={usuario} />
       </div>
     </div>

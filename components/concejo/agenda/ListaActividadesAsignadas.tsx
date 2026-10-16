@@ -11,10 +11,11 @@ import EditarActividadModal from './modals/EditarActividadModal';
 import ActividadesAsignadas from './tareas/modals/ActividadesAsignadas';
 import type { Tarea } from './lib/esquemas';
 import { Button } from '@/components/ui/button';
-import { User, Calendar, CheckCircle2, Clock, ChevronDown, Paperclip, ArrowRight, Pencil, AlertTriangle, Hourglass, Eye } from 'lucide-react';
+import { User, Calendar, CheckCircle2, Clock, ChevronDown, Paperclip, ArrowRight, Pencil, AlertTriangle, Hourglass, Eye, FileBarChart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CargandoAnimacion from '@/components/ui/animations/Cargando';
 import useUserData from '@/hooks/sesion/useUserData';
+import ReporteActividadesAsignadas from './ReporteActividadesAsignadas';
 
 const ACTIVIDADES_QUERY_KEY = ['actividades-concejo-todas', 'v3'] as const;
 
@@ -152,15 +153,38 @@ const contarEstadosGrupo = (items: ActividadConcejoConContexto[]): ResumenEstado
   return resumen;
 };
 
-const ACCORDION_TRANSITION = { duration: 0.48, ease: [0.32, 0.72, 0, 1] as const };
-const CONTENIDO_TRANSITION = { duration: 0.42, ease: [0.32, 0.72, 0, 1] as const };
+const BORDE_TABLA = 'border-slate-300 dark:border-neutral-700';
+
+const nombresParticipantes = (actividad: ActividadConcejoConContexto) =>
+  (actividad.miembros ?? []).map((m) => m.nombre_usuario).filter(Boolean);
+
+const fragmentarMenciones = (texto: string, nombres: string[]) => {
+  if (!nombres.length) return [texto];
+  const ordenados = [...nombres].sort((a, b) => b.length - a.length);
+  const escaped = ordenados.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const re = new RegExp(`@(${escaped.join('|')})`, 'g');
+  const nodos: React.ReactNode[] = [];
+  let ultimo = 0;
+  for (const coincidencia of texto.matchAll(re)) {
+    const indice = coincidencia.index ?? 0;
+    if (indice > ultimo) nodos.push(texto.slice(ultimo, indice));
+    nodos.push(
+      <span key={indice} className="font-bold text-[#0066cc] dark:text-blue-400">
+        {coincidencia[1]}
+      </span>,
+    );
+    ultimo = indice + coincidencia[0].length;
+  }
+  if (ultimo < texto.length) nodos.push(texto.slice(ultimo));
+  return nodos.length ? nodos : [texto];
+};
 
 type ListaActividadesAsignadasProps = {
   filtroAnio: string;
   filtroMes: string | null;
 };
 
-type FiltroActividadesLista = 'todas' | 'sin_completar' | 'pendiente_revision';
+type FiltroActividadesLista = 'todas' | 'sin_completar' | 'pendiente_revision' | 'reporte';
 
 export default function ListaActividadesAsignadas({
   filtroAnio,
@@ -177,7 +201,7 @@ export default function ListaActividadesAsignadas({
     gcTime: 1000 * 60 * 10,
   });
 
-  const [grupoAbierto, setGrupoAbierto] = useState<string | null>(null);
+  const [gruposAbiertos, setGruposAbiertos] = useState<Record<string, boolean>>({});
   const [actividadArchivos, setActividadArchivos] = useState<ActividadConcejoConContexto | null>(null);
   const [actividadEditando, setActividadEditando] = useState<ActividadConcejoConContexto | null>(null);
   const [tareaActividades, setTareaActividades] = useState<Tarea | null>(null);
@@ -202,27 +226,48 @@ export default function ListaActividadesAsignadas({
   };
 
   useEffect(() => {
-    setGrupoAbierto(null);
+    setGruposAbiertos({});
   }, [filtroAnio, filtroMes]);
 
-  const actividades = useMemo(() => {
-    const todas = data ?? [];
-    return todas.filter((actividad) => {
-      if (!actividad.agenda_fecha) return false;
-      const agendaDate = new Date(actividad.agenda_fecha);
-      const agendaYear = agendaDate.getFullYear().toString();
-      const agendaMonth = agendaDate.getMonth().toString();
-      const cumpleAnio = filtroAnio === '' || agendaYear === filtroAnio;
-      const cumpleMes = filtroMes === null || agendaMonth === filtroMes;
-      const cumpleFiltroLista =
-        filtroLista === 'sin_completar'
-          ? actividad.status !== 'Completado'
-          : filtroLista === 'pendiente_revision'
-            ? actividad.status === 'Completado' && !actividad.revisado_por
-            : true;
-      return cumpleAnio && cumpleMes && cumpleFiltroLista;
+  const enPeriodo = (actividad: ActividadConcejoConContexto) => {
+    if (!actividad.agenda_fecha) return false;
+    const agendaDate = new Date(actividad.agenda_fecha);
+    const agendaYear = agendaDate.getFullYear().toString();
+    const agendaMonth = agendaDate.getMonth().toString();
+    const cumpleAnio = filtroAnio === '' || agendaYear === filtroAnio;
+    const cumpleMes = filtroMes === null || agendaMonth === filtroMes;
+    return cumpleAnio && cumpleMes;
+  };
+
+  const actividadesPeriodo = useMemo(() => {
+    const unicas = new Map<string, ActividadConcejoConContexto>();
+    (data ?? []).forEach((actividad) => {
+      if (!enPeriodo(actividad) || unicas.has(actividad.id)) return;
+      unicas.set(actividad.id, actividad);
     });
-  }, [data, filtroAnio, filtroMes, filtroLista]);
+    return Array.from(unicas.values());
+  }, [data, filtroAnio, filtroMes]);
+
+  const actividadesReporte = useMemo(() => {
+    const unicas = new Map<string, ActividadConcejoConContexto>();
+    (data ?? []).forEach((actividad) => {
+      if (!actividad.agenda_fecha || unicas.has(actividad.id)) return;
+      unicas.set(actividad.id, actividad);
+    });
+    return Array.from(unicas.values());
+  }, [data]);
+
+  const actividades = useMemo(() => {
+    if (filtroLista === 'reporte') return actividadesPeriodo;
+    return (data ?? []).filter((actividad) => {
+      if (!enPeriodo(actividad)) return false;
+      if (filtroLista === 'sin_completar') return actividad.status !== 'Completado';
+      if (filtroLista === 'pendiente_revision') {
+        return actividad.status === 'Completado' && !actividad.revisado_por;
+      }
+      return true;
+    });
+  }, [data, filtroAnio, filtroMes, filtroLista, actividadesPeriodo]);
 
   const archivosPorActividad = useMemo(() => {
     const map = new Map<string, ArchivoAdjunto[]>();
@@ -253,10 +298,8 @@ export default function ListaActividadesAsignadas({
 
   const getGrupoKey = (grupo: GrupoActividades) => grupo.agendaId || 'sin-sesion';
 
-  const isGrupoAbierto = (key: string) => grupoAbierto === key;
-
   const toggleGrupo = (key: string) => {
-    setGrupoAbierto((actual) => (actual === key ? null : key));
+    setGruposAbiertos((actual) => ({ ...actual, [key]: !actual[key] }));
   };
 
   const cerrarArchivos = () => setActividadArchivos(null);
@@ -273,33 +316,56 @@ export default function ListaActividadesAsignadas({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-1.5 px-1">
-        {(
-          [
-            { id: 'todas', label: 'Todas' },
-            { id: 'sin_completar', label: 'Sin completar' },
-            { id: 'pendiente_revision', label: 'Terminadas pendientes de revisión' },
-          ] as const
-        ).map((opcion) => {
-          const activa = filtroLista === opcion.id;
-          return (
-            <button
-              key={opcion.id}
-              type="button"
-              onClick={() => setFiltroLista(opcion.id)}
-              className={`h-8 cursor-pointer rounded-xl px-3 text-xs font-semibold transition-colors ${
-                activa
-                  ? 'bg-zinc-200 text-zinc-900 dark:bg-zinc-700 dark:text-white'
-                  : 'text-muted-foreground hover:bg-zinc-100 dark:hover:bg-zinc-800/80'
-              }`}
-            >
-              {opcion.label}
-            </button>
-          );
-        })}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div
+          className={`inline-flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${BORDE_TABLA} bg-zinc-50 dark:bg-neutral-900/50`}
+          role="tablist"
+          aria-label="Filtrar actividades"
+        >
+          {(
+            [
+              { id: 'todas', label: 'Todas' },
+              { id: 'sin_completar', label: 'Sin completar' },
+              { id: 'pendiente_revision', label: 'Pendientes de revisión' },
+            ] as const
+          ).map((opcion) => {
+            const activa = filtroLista === opcion.id;
+            return (
+              <button
+                key={opcion.id}
+                type="button"
+                role="tab"
+                aria-selected={activa}
+                onClick={() => setFiltroLista(opcion.id)}
+                className={`cursor-pointer rounded-md px-2 py-1 text-[11px] font-semibold leading-tight whitespace-nowrap transition-colors sm:px-2.5 sm:text-xs ${
+                  activa
+                    ? 'bg-white text-[#0066cc] shadow-sm dark:bg-zinc-800 dark:text-blue-400'
+                    : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200'
+                }`}
+              >
+                {opcion.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setFiltroLista('reporte')}
+          className={`ml-auto flex shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-semibold transition-colors sm:px-3 sm:text-xs ${
+            filtroLista === 'reporte'
+              ? 'border-purple-300 bg-purple-50 text-purple-700 dark:border-purple-500/50 dark:bg-purple-950/40 dark:text-purple-300'
+              : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800'
+          }`}
+        >
+          <FileBarChart className="h-3.5 w-3.5 shrink-0 opacity-80" aria-hidden />
+          Reporte
+        </button>
       </div>
 
-      {actividades.length === 0 ? (
+      {filtroLista === 'reporte' ? (
+        <ReporteActividadesAsignadas actividades={actividadesReporte} onVer={abrirActividadesPunto} />
+      ) : actividades.length === 0 ? (
         <div className="text-center py-10 border-2 border-dashed border-gray-300 dark:border-neutral-800 rounded-lg">
           <p className="text-gray-500 dark:text-gray-400">
             {sinActividades
@@ -310,127 +376,121 @@ export default function ListaActividadesAsignadas({
           </p>
         </div>
       ) : (
-        <AnimatePresence initial={false} mode="popLayout">
-        {grupos
-          .filter((grupo) => grupoAbierto === null || getGrupoKey(grupo) === grupoAbierto)
-          .map((grupo) => {
+        <div className={`overflow-hidden rounded-xl border bg-white shadow-sm dark:bg-neutral-900 ${BORDE_TABLA}`}>
+        {grupos.map((grupo) => {
           const grupoKey = getGrupoKey(grupo);
-          const abierto = isGrupoAbierto(grupoKey);
+          const abierto = !!gruposAbiertos[grupoKey];
           const resumen = contarEstadosGrupo(grupo.items);
 
           return (
-            <motion.div
-              layout
-              key={grupoKey}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={ACCORDION_TRANSITION}
-              className="overflow-hidden rounded-lg border border-gray-200 border-l-4 border-l-purple-500 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900"
+            <div key={grupoKey} className={`border-b last:border-b-0 ${BORDE_TABLA}`}>
+            <div
+              onClick={() => toggleGrupo(grupoKey)}
+              className={`cursor-pointer select-none bg-slate-100 transition-colors hover:bg-slate-200/70 dark:bg-neutral-800/90 dark:hover:bg-neutral-800 ${BORDE_TABLA} border-b`}
             >
-            <div className="px-4 py-3 hover:bg-gray-50 dark:hover:bg-neutral-800/50 transition-colors">
-              <div className="flex items-stretch gap-2">
-                <button
-                  type="button"
-                  onClick={() => toggleGrupo(grupoKey)}
-                  className="min-w-0 flex-1 cursor-pointer text-left"
-                >
-                  <p className="font-semibold text-gray-800 dark:text-gray-100 text-sm md:text-base min-w-0">
-                    <span>{grupo.agendaTitulo}</span>
-                    {grupo.agendaDescripcion && (
-                      <>
-                        <span className="mx-1.5 font-normal text-gray-400 dark:text-gray-500">·</span>
-                        <span className="font-normal text-gray-600 dark:text-gray-300">{grupo.agendaDescripcion}</span>
-                      </>
-                    )}
-                    {grupo.agendaFecha && (
-                      <>
-                        <span className="mx-1.5 hidden font-normal text-gray-400 dark:text-gray-500 lg:inline">·</span>
-                        <span className="hidden font-normal text-gray-500 dark:text-gray-400 lg:inline">
-                          {formatearFechaHorario(grupo.agendaFecha)}
-                        </span>
-                      </>
-                    )}
-                  </p>
-                  {grupo.agendaFecha && (
-                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400 md:text-sm lg:hidden">
-                      {formatearFechaHorario(grupo.agendaFecha)}
+              <div className="flex flex-col gap-0.5 px-3 py-2 sm:hidden">
+                <div className="flex items-start gap-2">
+                  <motion.div initial={false} animate={{ rotate: abierto ? 180 : 0 }} transition={{ duration: 0.2 }} className="mt-0.5 shrink-0">
+                    <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </motion.div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                      {grupo.agendaTitulo || 'Sin sesión'}
+                      <span className="ml-2 font-semibold normal-case tracking-normal text-slate-500 dark:text-slate-400">
+                        ({grupo.items.length} {grupo.items.length === 1 ? 'actividad' : 'actividades'})
+                      </span>
                     </p>
-                  )}
-                  <p className="mt-1 text-xs font-medium">
-                    <span className={estadoAgendaClase(grupo.agendaEstado)}>{grupo.agendaEstado}</span>
-                    <span className="text-gray-400 dark:text-gray-500"> · </span>
-                    <span className="text-gray-600 dark:text-gray-300">
-                      {grupo.items.length} {grupo.items.length === 1 ? 'actividad' : 'actividades'}
+                    <p className={`text-xs font-semibold ${estadoAgendaClase(grupo.agendaEstado)}`}>{grupo.agendaEstado}</p>
+                    {grupo.agendaDescripcion ? (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{grupo.agendaDescripcion}</p>
+                    ) : null}
+                    {resumen.sinTerminar > 0 ? (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{resumen.sinTerminar} sin terminar</p>
+                    ) : null}
+                    {resumen.completadas > 0 ? (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{resumen.completadas} completadas</p>
+                    ) : null}
+                    {resumen.pendientesRevision > 0 ? (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{resumen.pendientesRevision} pend. revisión</p>
+                    ) : null}
+                    {resumen.revisadas > 0 ? (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400">{resumen.revisadas} revisadas</p>
+                    ) : null}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="min-w-0 text-[11px] text-slate-500 dark:text-slate-400">
+                        {grupo.agendaFecha ? formatearFechaHorario(grupo.agendaFecha) : ''}
+                      </p>
+                      {grupo.agendaId ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            router.push(`/protected/concejo/agenda/${grupo.agendaId}`);
+                          }}
+                          className="h-8 shrink-0 cursor-pointer gap-1 px-2 text-xs text-green-600 hover:bg-green-100 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-900/30"
+                        >
+                          Entrar
+                          <ArrowRight size={14} />
+                        </Button>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="hidden items-center justify-between gap-3 px-4 py-2.5 sm:flex">
+              <div className="flex min-w-0 items-center gap-2">
+                <motion.div initial={false} animate={{ rotate: abierto ? 180 : 0 }} transition={{ duration: 0.2 }} className="shrink-0">
+                  <ChevronDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </motion.div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    <span>{grupo.agendaTitulo || 'Sin sesión'}</span>
+                    <span className="ml-2 font-semibold normal-case tracking-normal text-slate-500 dark:text-slate-400">
+                      ({grupo.items.length} {grupo.items.length === 1 ? 'actividad' : 'actividades'})
                     </span>
                   </p>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    {resumen.sinTerminar > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-[11px] font-medium text-zinc-700 dark:bg-zinc-700 dark:text-zinc-200">
-                        {resumen.sinTerminar} {resumen.sinTerminar === 1 ? 'sin terminar' : 'sin terminar'}
-                      </span>
-                    )}
-                    {resumen.completadas > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-[11px] font-medium text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
-                        {resumen.completadas} {resumen.completadas === 1 ? 'completada' : 'completadas'}
-                      </span>
-                    )}
-                    {(resumen.pendientesRevision > 0 || resumen.revisadas > 0) && (
-                      <span className="mx-0.5 font-bold text-gray-300 dark:text-gray-600">|</span>
-                    )}
-                    {resumen.pendientesRevision > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-medium text-red-700 dark:bg-red-900/30 dark:text-red-400">
-                        {resumen.pendientesRevision} pend. revisión
-                      </span>
-                    )}
-                    {resumen.revisadas > 0 && (
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[11px] font-medium text-green-700 dark:bg-green-900/30 dark:text-green-400">
-                        {resumen.revisadas} {resumen.revisadas === 1 ? 'revisada' : 'revisadas'}
-                      </span>
-                    )}
-                  </div>
-                </button>
-
-                <div className="flex shrink-0 flex-col items-end justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleGrupo(grupoKey)}
-                    className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-neutral-800 dark:hover:text-gray-200"
-                    aria-expanded={abierto}
-                    aria-label={abierto ? 'Contraer actividades' : 'Expandir actividades'}
-                  >
-                    <ChevronDown
-                      size={20}
-                      className={`transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${abierto ? 'rotate-180' : ''}`}
-                    />
-                  </button>
-                  {grupo.agendaId && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/protected/concejo/agenda/${grupo.agendaId}`)}
-                      className="h-8 shrink-0 cursor-pointer gap-1.5 px-2 text-green-600 hover:bg-green-100 hover:text-green-700 dark:text-green-400 dark:hover:bg-green-900/30 border border-green-600 dark:border-green-400"
-                    >
-                      Ir a sesión
-                      <ArrowRight size={14} />
-                    </Button>
-                  )}
+                  <p className="truncate text-[11px] font-normal normal-case tracking-normal text-slate-500 dark:text-slate-400">
+                    <span className={estadoAgendaClase(grupo.agendaEstado)}>{grupo.agendaEstado}</span>
+                    {grupo.agendaDescripcion ? ` · ${grupo.agendaDescripcion}` : ''}
+                    {grupo.agendaFecha ? ` · ${formatearFechaHorario(grupo.agendaFecha)}` : ''}
+                    {resumen.sinTerminar > 0 ? ` · ${resumen.sinTerminar} sin terminar` : ''}
+                    {resumen.completadas > 0 ? ` · ${resumen.completadas} completadas` : ''}
+                    {resumen.pendientesRevision > 0 ? ` · ${resumen.pendientesRevision} pend. revisión` : ''}
+                    {resumen.revisadas > 0 ? ` · ${resumen.revisadas} revisadas` : ''}
+                  </p>
                 </div>
+              </div>
+              {grupo.agendaId && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    router.push(`/protected/concejo/agenda/${grupo.agendaId}`);
+                  }}
+                  className="h-8 shrink-0 cursor-pointer gap-1.5 border border-green-600 px-2 text-green-600 hover:bg-green-100 hover:text-green-700 dark:border-green-400 dark:text-green-400 dark:hover:bg-green-900/30"
+                >
+                  Ir a sesión
+                  <ArrowRight size={14} />
+                </Button>
+              )}
               </div>
             </div>
 
-            <AnimatePresence initial={false} mode="sync">
+            <AnimatePresence initial={false}>
               {abierto && (
                 <motion.div
                   key={`contenido-${grupoKey}`}
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={CONTENIDO_TRANSITION}
+                  transition={{ duration: 0.25 }}
                   className="overflow-hidden"
                 >
-                  <ul className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-100/70 p-3 dark:border-zinc-700 dark:bg-zinc-950/40">
+                  <ul className="divide-y divide-slate-200 dark:divide-neutral-800">
                     {grupo.items.map((actividad, index) => {
                       const badge = estadoBadge(actividad);
                       const totalArchivos = archivosPorActividad.get(actividad.id)?.length ?? 0;
@@ -441,7 +501,7 @@ export default function ListaActividadesAsignadas({
                       return (
                         <li
                           key={`${actividad.punto_id}-${actividad.id}`}
-                          className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700 dark:bg-zinc-800"
+                          className="bg-white px-4 py-3 dark:bg-neutral-900"
                         >
                           <div className="min-w-0">
                             <div className="flex items-start justify-between gap-3">
@@ -481,8 +541,11 @@ export default function ListaActividadesAsignadas({
                                 )}
                               </div>
                               {actividad.description?.trim() ? (
-                                <p className="whitespace-pre-wrap rounded-xl bg-zinc-50 px-3 py-2 text-sm leading-relaxed text-zinc-600 dark:bg-zinc-900/70 dark:text-zinc-300">
-                                  {actividad.description}
+                                <p className="whitespace-pre-wrap rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm leading-relaxed text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-300">
+                                  {fragmentarMenciones(
+                                    actividad.description,
+                                    nombresParticipantes(actividad),
+                                  )}
                                 </p>
                               ) : null}
                               {actividad.miembros && actividad.miembros.length > 0 && (
@@ -579,10 +642,10 @@ export default function ListaActividadesAsignadas({
                 </motion.div>
               )}
             </AnimatePresence>
-            </motion.div>
+            </div>
           );
         })}
-      </AnimatePresence>
+        </div>
       )}
 
       <ArchivosActividadModal

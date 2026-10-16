@@ -332,8 +332,9 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
     <>
       <div className="w-full xl:w-4/5 mx-auto md:px-4">
         <div className="p-2 bg-white dark:bg-neutral-900 rounded-lg shadow-md border border-gray-100 dark:border-neutral-800 space-y-4 w-full transition-colors duration-200">
-          <div className="flex flex-col gap-2 w-full items-stretch p-2 bg-slate-50 dark:bg-neutral-900 rounded-lg sm:flex-row sm:items-center">
-            <div className="flex shrink-0 flex-col gap-2 w-full sm:w-auto sm:flex-row">
+          <div className="flex w-full flex-col gap-2 rounded-lg bg-slate-50 p-2 dark:bg-neutral-900">
+            <div className="flex w-full flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+            <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
               {cargandoDependencias ? (
                 <Cargando texto="Cargando..." />
               ) : (
@@ -510,28 +511,10 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
               )}
             </div>
 
-            <div className="relative min-w-0 w-full flex-1">
-              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <Input
-                type="text"
-                placeholder="Buscar por Nombre..."
-                value={terminoBusqueda}
-                onChange={(e) => setTerminoBusqueda(e.target.value)}
-                className="w-full text-xs pl-8 bg-white dark:bg-neutral-800 dark:text-gray-100 dark:border-neutral-700 h-9"
-              />
-            </div>
-
             <div
-              className="relative flex w-full shrink-0 gap-2 sm:w-auto items-center"
+              className="relative flex w-full shrink-0 items-center justify-end gap-2 sm:ml-auto sm:w-auto"
               ref={menuRef}
             >
-              <div className="flex items-center">
-                <AccordionToggleButton
-                  expanded={todosAbiertos}
-                  onToggle={toggleTodosAcordeon}
-                />
-              </div>
-
               {hasCreatePermission && (
                 <div className="relative w-full sm:w-auto">
                   <button
@@ -634,6 +617,25 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                 </div>
               )}
             </div>
+            </div>
+
+            <div className="flex w-full items-center gap-2">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Buscar por Nombre..."
+                  value={terminoBusqueda}
+                  onChange={(e) => setTerminoBusqueda(e.target.value)}
+                  className="h-9 w-full bg-white pl-8 text-xs dark:border-neutral-700 dark:bg-neutral-800 dark:text-gray-100"
+                />
+              </div>
+              <AccordionToggleButton
+                expanded={todosAbiertos}
+                onToggle={toggleTodosAcordeon}
+                className="h-9 w-9"
+              />
+            </div>
           </div>
 
           <div className="pt-2 mt-2">
@@ -644,9 +646,8 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                 No se encontraron usuarios con los filtros seleccionados.
               </p>
             ) : (
-              <div className="bg-white dark:bg-neutral-900 border border-slate-300 dark:border-neutral-700 rounded-xl shadow-sm overflow-hidden w-full">
-                <div className="overflow-x-auto w-full">
-                  <div className="divide-y divide-slate-300 dark:divide-neutral-700 min-w-[700px] w-full">
+              <div className="w-full overflow-x-auto overscroll-x-contain rounded-xl border border-slate-300 bg-white shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+                  <div className="min-w-[1200px] w-full divide-y divide-slate-300 dark:divide-neutral-700">
                     {/* Lista de Grupos por Oficina */}
                     {usuariosAgrupados.map((grupo) => {
                       const estaAbierta =
@@ -688,7 +689,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                               >
                                 <div>
                                   {/* Encabezados de Columna dentro de la Oficina */}
-                                  <div className="grid grid-cols-[3.5rem_1.5fr_1.5fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-slate-100/90 dark:bg-neutral-800/80 font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-300 dark:border-neutral-700">
+                                  <div className="grid grid-cols-[3.5rem_minmax(220px,1.4fr)_minmax(220px,1.2fr)_minmax(380px,2fr)] items-stretch text-[11px] sm:text-xs bg-slate-100/90 dark:bg-neutral-800/80 font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wide border-b border-slate-300 dark:border-neutral-700">
                                     <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center">
                                       No.
                                     </div>
@@ -709,21 +710,23 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                                       <div
                                         key={usuario.id}
                                         onClick={() => handleVerUsuario(usuario.id)}
-                                        className={`grid grid-cols-[3.5rem_1.5fr_1.5fr_1.2fr] items-stretch text-[11px] sm:text-xs bg-white dark:bg-neutral-900/80 hover:bg-slate-50/80 dark:hover:bg-neutral-800/60 transition-colors ${
+                                        className={`grid grid-cols-[3.5rem_minmax(220px,1.4fr)_minmax(220px,1.2fr)_minmax(380px,2fr)] items-stretch text-[11px] sm:text-xs bg-white dark:bg-neutral-900/80 hover:bg-slate-50/80 dark:hover:bg-neutral-800/60 transition-colors ${
                                           canOpenModal ? "cursor-pointer" : "cursor-default"
                                         }`}
                                       >
                                         <div className="px-2 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center justify-center text-slate-500 dark:text-slate-400 font-semibold font-mono">
                                           {String(idx + 1).padStart(2, "0")}
                                         </div>
-                                        <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-700 dark:text-slate-300 font-medium truncate">
+                                        <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-700 dark:text-slate-300 font-medium whitespace-nowrap">
                                           {usuario.nombre || "—"}
                                         </div>
-                                        <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-600 dark:text-slate-400 truncate">
+                                        <div className="px-3 sm:px-4 py-2.5 border-r border-slate-300 dark:border-neutral-700 flex items-center text-slate-600 dark:text-slate-400 whitespace-nowrap">
                                           {usuario.email || "—"}
                                         </div>
-                                        <div className="px-3 sm:px-4 py-2.5 flex items-center text-slate-600 dark:text-slate-400 truncate">
-                                          {usuario.puesto_nombre || "—"}
+                                        <div className="flex items-center px-3 py-2.5 text-slate-600 dark:text-slate-400 sm:px-4">
+                                          <span className="line-clamp-2 leading-snug break-words">
+                                            {usuario.puesto_nombre || "—"}
+                                          </span>
                                         </div>
                                       </div>
                                     ))}
@@ -736,7 +739,6 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                       );
                     })}
                   </div>
-                </div>
               </div>
             )}
           </div>
@@ -752,8 +754,11 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
       <ModalShell
         open={Boolean(usuarioIdSeleccionado)}
         onClose={handleCancel}
-        panelClassName="max-w-4xl"
-        bodyClassName="!pt-1"
+        compactHeader
+        fillBody
+        panelClassName="max-w-lg sm:h-[min(34rem,88vh)] sm:max-h-[min(34rem,88vh)]"
+        bodyClassName="flex min-h-0 flex-1 flex-col overflow-hidden px-4 py-2 sm:px-4 sm:py-2"
+        titleClassName="text-base font-bold leading-snug sm:text-lg"
         title={
           <>
             Editar : {" "}
@@ -777,7 +782,7 @@ export default function UsersTable({ usuarios, rolActual }: Props) {
                   variant="ghost"
                   onClick={handleEliminarUsuario}
                   disabled={eliminando}
-                  className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/40"
+                  className="inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 rounded-xl border border-red-300 bg-white px-3 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed dark:border-red-800 dark:bg-zinc-900 dark:text-red-300 dark:hover:bg-red-950/40"
                 >
                   <Trash2 className="h-4 w-4" />
                   {eliminando ? "Eliminando..." : "Eliminar"}

@@ -30,7 +30,7 @@ export default function FiltroPeriodoAgenda({
     : `${format(setMonth(new Date(), mes), 'LLLL', { locale: es })} ${anio}`;
 
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2 xl:flex-none">
+    <div className="flex min-w-0 flex-1 items-center gap-2 lg:flex-none">
       <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-xl border border-zinc-300 bg-white px-3 dark:border-zinc-700 dark:bg-zinc-900 sm:flex-none">
         <Calendar size={16} className="shrink-0 text-[#0066cc] dark:text-blue-400" />
         <SelectorMesAnio

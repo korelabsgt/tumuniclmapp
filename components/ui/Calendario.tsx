@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 import {
   format,
   isToday,
@@ -17,9 +18,10 @@ interface CalendarioProps {
   fechaSeleccionada: string;
   onSelectDate: (date: string) => void;
   modo?: 'dia' | 'mes';
+  className?: string;
 }
 
-export default function Calendario({ fechaSeleccionada, onSelectDate, modo = 'dia' }: CalendarioProps) {
+export default function Calendario({ fechaSeleccionada, onSelectDate, modo = 'dia', className }: CalendarioProps) {
   const [fechaDeReferencia, setFechaDeReferencia] = useState(new Date(fechaSeleccionada + 'T00:00:00'));
 
   const inicioDeMes = startOfMonth(fechaDeReferencia);
@@ -41,7 +43,7 @@ export default function Calendario({ fechaSeleccionada, onSelectDate, modo = 'di
   const mesesCortos = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
   return (
-    <div className="p-4 bg-white dark:bg-neutral-950 rounded-lg border border-gray-200 dark:border-neutral-800 space-y-4 transition-colors">
+    <div className={cn("space-y-4 rounded-lg border border-gray-200 bg-white p-4 transition-colors dark:border-neutral-800 dark:bg-neutral-950", className)}>
       <div className="flex justify-between items-center p-2 rounded-lg">
         <button 
           type="button" 

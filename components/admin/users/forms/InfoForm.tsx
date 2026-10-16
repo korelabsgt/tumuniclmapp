@@ -1,6 +1,7 @@
 "use client";
 
 import { useLayoutEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Calendar,
   CircleDollarSign,
@@ -15,14 +16,12 @@ import {
   Briefcase,
   Clock,
   User,
-  ArrowRight,
-  ArrowLeft,
   ChevronsLeft,
   ChevronsRight,
-  Save,
 } from "lucide-react";
 import { MODAL_FIELD_CLASS, ModalInput, ModalSelect } from "@/components/ui/general-modal";
 import {
+  CAMPO_INPUT_CLASS,
   CAMPO_MONO_CLASS,
   CAMPO_SUBMIT_BTN_CLASS,
   CampoFormulario,
@@ -109,7 +108,15 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
   });
 
   const [step, setStep] = useState(1);
+  const [stepDir, setStepDir] = useState(1);
   const totalSteps = 3;
+
+  const irAPaso = (siguiente: number) => {
+    const destino = Math.min(totalSteps, Math.max(1, siguiente));
+    if (destino === step) return;
+    setStepDir(destino > step ? 1 : -1);
+    setStep(destino);
+  };
   const [profesionFocused, setProfesionFocused] = useState(false);
 
   const [formData, setFormData] = useState<InfoFormData>({
@@ -256,55 +263,85 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
   const igssComoDpi =
     formData.igss === formData.dpi && formData.igss !== "";
 
+  const tecladoNumerico = {
+    type: "tel" as const,
+    inputMode: "numeric" as const,
+    autoComplete: "off" as const,
+    enterKeyHint: "done" as const,
+  };
+
   return (
     <form
       onSubmit={onSubmit}
-      className="flex animate-in flex-col gap-3 py-1 duration-500 fade-in"
+      className="flex h-full min-h-0 animate-in flex-col gap-2 py-0 duration-500 fade-in sm:gap-2"
     >
-      <div className="mb-0.5 flex flex-col gap-1 px-1">
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-          {step === 1 && "Paso 1: Datos Personales"}
-          {step === 2 && "Paso 2: Ubicación y Contacto"}
-          {step === 3 && "Paso 3: Laboral y Administrativo"}
-        </h3>
+      <div className="mb-0.5 h-5 shrink-0 px-1">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.h3
+            key={step}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18 }}
+            className="text-sm font-semibold text-gray-800 dark:text-gray-200 sm:text-[13px]"
+          >
+            {step === 1 && "Paso 1: Datos Personales"}
+            {step === 2 && "Paso 2: Ubicación y Contacto"}
+            {step === 3 && "Paso 3: Laboral y Administrativo"}
+          </motion.h3>
+        </AnimatePresence>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-6 content-start min-h-[500px] md:min-h-0">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        <AnimatePresence mode="wait" initial={false} custom={stepDir}>
+          <motion.div
+            key={step}
+            custom={stepDir}
+            initial="enter"
+            animate="center"
+            exit="leave"
+            variants={{
+              enter: (dir: number) => ({ opacity: 0, x: dir * 28 }),
+              center: { opacity: 1, x: 0 },
+              leave: (dir: number) => ({ opacity: 0, x: dir * -28 }),
+            }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute inset-0 grid grid-cols-1 content-start gap-x-3 gap-y-2 overflow-y-auto sm:grid-cols-2"
+          >
         {step === 1 && (
           <>
-            <CampoFormulario icon={Fingerprint} label="DPI" className="md:col-span-3">
+            <CampoFormulario icon={Fingerprint} label="DPI">
               <ModalInput
-                type="text"
+                {...tecladoNumerico}
                 name="dpi"
                 value={formatDPIDisplay(formData.dpi)}
                 onChange={handleChange}
-                inputMode="numeric"
                 className={CAMPO_MONO_CLASS}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={Hash} label="NIT" className="md:col-span-3">
+            <CampoFormulario icon={Hash} label="NIT">
               <ModalInput
-                type="text"
+                {...tecladoNumerico}
                 name="nit"
                 value={formatEveryFour(formData.nit)}
                 onChange={handleChange}
-                inputMode="numeric"
                 className={CAMPO_MONO_CLASS}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={Calendar} label="Fecha de nacimiento" className="md:col-span-2">
+            <CampoFormulario icon={Calendar} label="Fecha de nacimiento">
               <ModalInput
                 type="date"
                 name="nacimiento"
                 value={formData.nacimiento}
                 onChange={handleChange}
+                className={CAMPO_INPUT_CLASS}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={User} label="Género" className="md:col-span-2">
-              <div className={`w-full flex items-center gap-6 ${MODAL_FIELD_CLASS}`}>
+            <CampoFormulario icon={User} label="Género">
+              <div className={`flex w-full flex-wrap items-center gap-x-4 gap-y-1 ${MODAL_FIELD_CLASS} ${CAMPO_INPUT_CLASS}`}>
                 <label className="flex items-center gap-2 cursor-pointer group">
                   <input
                     type="radio"
@@ -336,11 +373,12 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
               </div>
             </CampoFormulario>
 
-            <CampoFormulario icon={Heart} label="Estado civil" className="md:col-span-2">
+            <CampoFormulario icon={Heart} label="Estado civil">
               <ModalSelect
                 name="estado_civil"
                 value={formData.estado_civil}
                 onChange={handleChange}
+                className={CAMPO_INPUT_CLASS}
               >
                 <option value="">Seleccione...</option>
                 <option value="Soltero/a">Soltero/a</option>
@@ -355,43 +393,44 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
 
         {step === 2 && (
           <>
-            <CampoFormulario icon={Phone} label="Teléfono" className="md:col-span-3">
+            <CampoFormulario icon={Phone} label="Teléfono">
               <ModalInput
-                type="tel"
+                {...tecladoNumerico}
                 name="telefono"
                 value={formatPhoneDisplay(formData.telefono)}
                 onChange={handleChange}
-                inputMode="numeric"
-                autoComplete="tel"
                 className={CAMPO_MONO_CLASS}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={Home} label="Domicilio" className="md:col-span-3">
+            <CampoFormulario icon={Home} label="Domicilio">
               <ModalInput
                 name="domicilio"
                 value={formData.domicilio}
                 onChange={handleChange}
+                className={CAMPO_INPUT_CLASS}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={Map} label="Vecindad" className="md:col-span-3">
+            <CampoFormulario icon={Map} label="Vecindad">
               <ModalInput
                 name="vecindad"
                 value={formData.vecindad}
                 onChange={handleChange}
+                className={CAMPO_INPUT_CLASS}
               />
             </CampoFormulario>
 
             <CampoFormulario
               icon={MapPin}
               label="Dirección de residencia"
-              className="md:col-span-3"
+              className="sm:col-span-2"
             >
               <ModalInput
                 name="direccion"
                 value={formData.direccion}
                 onChange={handleChange}
+                className={CAMPO_INPUT_CLASS}
               />
             </CampoFormulario>
           </>
@@ -399,9 +438,9 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
 
         {step === 3 && (
           <>
-            <CampoFormulario icon={Shield} label="Afiliación IGSS" className="md:col-span-3">
+            <CampoFormulario icon={Shield} label="Afiliación IGSS">
               <ModalInput
-                type="text"
+                {...tecladoNumerico}
                 name="igss"
                 value={
                   igssComoDpi
@@ -409,29 +448,28 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
                     : formData.igss
                 }
                 onChange={handleChange}
-                inputMode="numeric"
-                className={igssComoDpi ? CAMPO_MONO_CLASS : MODAL_FIELD_CLASS}
+                className={igssComoDpi ? CAMPO_MONO_CLASS : `${MODAL_FIELD_CLASS} ${CAMPO_INPUT_CLASS}`}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={CircleDollarSign} label="No. cuenta (Banrural)" className="md:col-span-3">
+            <CampoFormulario icon={CircleDollarSign} label="No. cuenta (Banrural)">
               <ModalInput
-                type="text"
+                {...tecladoNumerico}
                 name="cuenta_no"
                 value={formatEveryFour(formData.cuenta_no)}
                 onChange={handleChange}
-                inputMode="numeric"
                 className={CAMPO_MONO_CLASS}
               />
             </CampoFormulario>
 
-            <CampoFormulario icon={Briefcase} label="Profesión" className="md:col-span-3">
+            <CampoFormulario icon={Briefcase} label="Profesión">
               <div className="relative group">
                 <ModalInput
                   name="profesion"
                   value={formData.profesion}
                   onChange={handleChange}
                   autoComplete="off"
+                  className={CAMPO_INPUT_CLASS}
                   onFocus={() => setProfesionFocused(true)}
                   onBlur={() => {
                     setTimeout(() => setProfesionFocused(false), 200);
@@ -485,26 +523,28 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
                   )}
                 </span>
               } 
-              className="md:col-span-3"
             >
               <ModalInput
                 type="date"
                 name="fecha_antiguedad"
                 value={formData.fecha_antiguedad}
                 onChange={handleChange}
+                className={CAMPO_INPUT_CLASS}
               />
             </CampoFormulario>
           </>
         )}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
-      <div className="flex flex-col gap-3 mt-auto pt-4">
-        <div className="flex items-center justify-center gap-3 w-full py-4 bg-zinc-100 dark:bg-[#1a1c23] rounded-xl border border-zinc-200 dark:border-zinc-800">
+      <div className="mt-auto flex shrink-0 flex-col gap-2 pt-2">
+        <div className="flex w-full items-center justify-center gap-3 rounded-xl border border-zinc-200 bg-zinc-100 py-2 dark:border-zinc-800 dark:bg-[#1a1c23] sm:py-1.5">
           <button
             type="button"
-            onClick={() => setStep((s) => Math.max(1, s - 1))}
+            onClick={() => irAPaso(step - 1)}
             disabled={step === 1}
-            className="text-gray-500 dark:text-gray-600 hover:text-gray-800 dark:hover:text-white disabled:opacity-50 transition-colors"
+            className="cursor-pointer text-gray-500 transition-colors hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-600 dark:hover:text-white"
           >
             <ChevronsLeft size={20} />
           </button>
@@ -514,8 +554,8 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
               <div key={i} className="flex items-center">
                 <button
                   type="button"
-                  onClick={() => setStep(i)}
-                  className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all ${step === i
+                  onClick={() => irAPaso(i)}
+                  className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-xs font-bold transition-all sm:h-7 sm:w-7 ${step === i
                     ? "bg-blue-500 text-white"
                     : "border border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800"
                     }`}
@@ -531,23 +571,21 @@ export default function InfoForm({ userData }: { userData: InfoFormUser }) {
 
           <button
             type="button"
-            onClick={() => setStep((s) => Math.min(totalSteps, s + 1))}
+            onClick={() => irAPaso(step + 1)}
             disabled={step === totalSteps}
-            className="text-gray-500 dark:text-gray-600 hover:text-gray-800 dark:hover:text-white disabled:opacity-50 transition-colors"
+            className="cursor-pointer text-gray-500 transition-colors hover:text-gray-800 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-600 dark:hover:text-white"
           >
             <ChevronsRight size={20} />
           </button>
         </div>
 
-        {step === totalSteps && (
-          <button
-            type="submit"
-            disabled={!hayCambios || isSaving}
-            className={`flex items-center justify-center gap-2 h-12 w-fit mx-auto px-8 rounded-xl bg-green-600 text-sm font-semibold text-white transition-colors ${(!hayCambios || isSaving) ? "opacity-50 cursor-not-allowed" : "hover:bg-green-500"}`}
-          >
-            {isSaving ? "Guardando..." : "Guardar información personal"} <Save size={18} />
-          </button>
-        )}
+        <button
+          type="submit"
+          disabled={!hayCambios || isSaving}
+          className={CAMPO_SUBMIT_BTN_CLASS}
+        >
+          {isSaving ? "Guardando..." : "Guardar información personal"}
+        </button>
       </div>
     </form>
   );

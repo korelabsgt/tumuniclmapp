@@ -40,6 +40,9 @@ type ModalShellProps = {
   panelClassName?: string;
   bodyClassName?: string;
   footerClassName?: string;
+  titleClassName?: string;
+  hideHeader?: boolean;
+  animated?: boolean;
   onBack?: () => void;
   backLabel?: string;
 };
@@ -56,6 +59,9 @@ export function ModalShell({
   panelClassName,
   bodyClassName,
   footerClassName,
+  titleClassName,
+  hideHeader = false,
+  animated = false,
   onBack,
   backLabel = "Volver",
 }: ModalShellProps) {
@@ -79,7 +85,10 @@ export function ModalShell({
   return createPortal(
     <div className="fixed inset-0 z-[200] flex items-stretch justify-center sm:items-center sm:p-4">
       <div
-        className="absolute inset-0 bg-zinc-100 dark:bg-zinc-900 sm:bg-zinc-700/20 sm:backdrop-blur-sm sm:dark:bg-zinc-900/60"
+        className={cn(
+          "absolute inset-0 bg-zinc-100 dark:bg-zinc-900 sm:bg-zinc-700/20 sm:backdrop-blur-sm sm:dark:bg-zinc-900/60",
+          animated && "animate-in fade-in duration-200",
+        )}
         onClick={onClose}
         aria-hidden
       />
@@ -87,15 +96,30 @@ export function ModalShell({
         className={cn(
           "relative z-10 flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden bg-zinc-50 dark:bg-zinc-800 sm:h-auto sm:max-h-[90vh] sm:rounded-3xl sm:border sm:border-zinc-200 sm:shadow-xl dark:sm:border-zinc-700 dark:sm:shadow-black/50",
           fillBody && "sm:max-h-[92vh]",
+          animated && "animate-in fade-in zoom-in-95 duration-200",
           panelClassName,
         )}
         onClick={(e) => e.stopPropagation()}
       >
+        {hideHeader ? (
+          <>
+            <h2 className="sr-only">{title}</h2>
+            <button
+              type="button"
+              onClick={onClose}
+              className="absolute right-2 top-2 z-20 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-zinc-400 transition-colors hover:bg-zinc-200 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-white"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </>
+        ) : null}
         <header
           className={cn(
             "shrink-0 px-6 pb-2 pt-[max(1.25rem,env(safe-area-inset-top))] sm:pt-6",
             compactHeader && "px-4 pb-1.5 pt-3 sm:pt-4",
             compactHeader && onBack && "px-3 pb-1 pt-2 sm:pt-3",
+            hideHeader && "hidden",
           )}
         >
           <div className="flex items-start justify-between gap-3">
@@ -115,6 +139,7 @@ export function ModalShell({
                   className={cn(
                     "text-xl font-bold tracking-tight text-[#0066cc] dark:text-blue-400 sm:text-2xl",
                     compactHeader && "text-sm font-semibold leading-snug line-clamp-2 sm:text-base",
+                    titleClassName,
                   )}
                 >
                   {title}

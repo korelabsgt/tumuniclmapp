@@ -336,9 +336,7 @@ export default function AuthButton({
                           <Megaphone className="h-8 w-8" strokeWidth={2.25} />
                         </button>
                       ) : null}
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-                        <SubscribeButton userId={userId} variant="plain" reserveSlot />
-                      </div>
+                      <ThemeSwitcher className="h-10 w-10" />
                     </div>
                   </div>
 
@@ -437,7 +435,11 @@ export default function AuthButton({
   return (
     <>
       <div className="flex items-center gap-0 sm:gap-1">
-        <ThemeSwitcher className="h-9 w-9 sm:h-10 sm:w-10" />
+        {!cargando && userId ? (
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center sm:h-10 sm:w-10">
+            <SubscribeButton userId={userId} variant="plain" reserveSlot />
+          </div>
+        ) : null}
 
         <button
           type="button"
